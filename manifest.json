@@ -1,0 +1,10 @@
+{
+  "id": "obsidian-pdf-digital-signature",
+  "name": "PDF Digital Signature",
+  "version": "1.0.0",
+  "minAppVersion": "1.5.0",
+  "description": "Zero-dependency cryptographic digital signing (PAdES/PKCS#7) and custom footer stamping for exported PDFs in Obsidian.",
+  "author": "Benjamín Alcalde G.",
+  "authorUrl": "https://github.com/balca",
+  "isDesktopOnly": true
+}

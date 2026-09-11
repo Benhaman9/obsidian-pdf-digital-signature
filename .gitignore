@@ -1,0 +1,22 @@
+# Dependencias
+node_modules/
+
+# Archivos de certificados y firmas privadas
+*.pfx
+*.p12
+*.key
+*.pem
+
+# Archivos de prueba PDF
+*.pdf
+*.signed.tmp
+
+# Logs
+*.log
+npm-debug.log*
+
+# Configuración de IDE y SO
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
