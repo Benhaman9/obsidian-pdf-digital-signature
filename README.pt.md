@@ -63,7 +63,7 @@ Quando abertos em visualizadores padrão como o **Adobe Acrobat Reader**, os doc
 ### Método 2: Via BRAT (Beta Reviewer's Auto-update Tool)
 1. Instale o plugin **BRAT** no Obsidian.
 2. Em BRAT, selecione **Add Beta plugin**.
-3. Cole a URL: `https://github.com/balca/obsidian-pdf-digital-signature`
+3. Cole a URL: `https://github.com/Benhaman9/obsidian-pdf-digital-signature`
 4. Clique em **Add Plugin** e ative-o.
 
 ---
@@ -72,4 +72,4 @@ Quando abertos em visualizadores padrão como o **Adobe Acrobat Reader**, os doc
 
 Este projeto está licenciado sob a [Licença MIT](LICENSE).
 
-Criado com ❤️ por [Benjamín Alcalde G.](https://github.com/balca)
+Criado com ❤️ por [Benjamín Alcalde G.](https://github.com/Benhaman9)

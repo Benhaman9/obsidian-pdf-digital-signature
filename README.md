@@ -64,11 +64,11 @@ When opened in standard PDF viewers like **Adobe Acrobat Reader**, documents are
 ### Method 2: Via BRAT (Beta Reviewer's Auto-update Tool)
 1. Install the **BRAT** community plugin in Obsidian.
 2. In BRAT settings, choose **Add Beta plugin**.
-3. Paste: `https://github.com/balca/obsidian-pdf-digital-signature`
+3. Paste: `https://github.com/Benhaman9/obsidian-pdf-digital-signature`
 4. Click **Add Plugin** and enable it.
 
 ### Method 3: Manual Installation
-1. Download `main.js`, `manifest.json`, and `styles.css` from the [Latest Release](https://github.com/balca/obsidian-pdf-digital-signature/releases).
+1. Download `main.js`, `manifest.json`, and `styles.css` from the [Latest Release](https://github.com/Benhaman9/obsidian-pdf-digital-signature/releases).
 2. Create a folder named `obsidian-pdf-digital-signature` in your vault's `.obsidian/plugins/` directory.
 3. Copy the 3 downloaded files into that folder.
 4. Reload Obsidian and enable the plugin under **Community plugins**.
@@ -99,4 +99,4 @@ If you own an accredited digital signature (such as a commercial X.509 certifica
 
 This project is licensed under the [MIT License](LICENSE).
 
-Made with ❤️ by [Benjamín Alcalde G.](https://github.com/balca)
+Made with ❤️ by [Benjamín Alcalde G.](https://github.com/Benhaman9)
