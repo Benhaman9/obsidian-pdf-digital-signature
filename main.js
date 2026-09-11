@@ -49743,15 +49743,16 @@ var PdfDigitalSignaturePlugin = class extends import_obsidian3.Plugin {
   }
   hookPdfModal() {
     const originalModalOpen = import_obsidian3.Modal.prototype.open;
-    const plugin = this;
-    import_obsidian3.Modal.prototype.open = function() {
-      const res = originalModalOpen.call(this);
-      try {
-        plugin.inspectAndEnhanceModal(this);
-      } catch {
-      }
-      return res;
-    };
+    import_obsidian3.Modal.prototype.open = /* @__PURE__ */ ((plugin) => {
+      return function() {
+        const res = originalModalOpen.call(this);
+        try {
+          plugin.inspectAndEnhanceModal(this);
+        } catch {
+        }
+        return res;
+      };
+    })(this);
     this.register(() => {
       import_obsidian3.Modal.prototype.open = originalModalOpen;
     });

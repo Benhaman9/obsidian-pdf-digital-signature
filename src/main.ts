@@ -157,17 +157,18 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
 
   hookPdfModal(): void {
     const originalModalOpen = Modal.prototype.open;
-    const plugin = this;
 
-    Modal.prototype.open = function (this: Modal) {
-      const res = originalModalOpen.call(this);
-      try {
-        plugin.inspectAndEnhanceModal(this);
-      } catch {
-        // Ignorar errores de inspección
-      }
-      return res;
-    };
+    Modal.prototype.open = ((plugin: PdfDigitalSignaturePlugin) => {
+      return function (this: Modal) {
+        const res = originalModalOpen.call(this);
+        try {
+          plugin.inspectAndEnhanceModal(this);
+        } catch {
+          // Ignorar errores de inspección
+        }
+        return res;
+      };
+    })(this);
 
     this.register(() => {
       Modal.prototype.open = originalModalOpen;
