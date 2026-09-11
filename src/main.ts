@@ -4,6 +4,7 @@ import {
   Plugin,
   Setting,
   FileSystemAdapter,
+  setCssStyles,
 } from "obsidian";
 import * as path from "path";
 import * as fs from "fs";
@@ -175,9 +176,11 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
     const settingContainer = modal.contentEl.createDiv({
       cls: "firma-pdf-modal-toggle-container",
     });
-    settingContainer.style.marginTop = "14px";
-    settingContainer.style.paddingTop = "10px";
-    settingContainer.style.borderTop = "1px solid var(--background-modifier-border)";
+    setCssStyles(settingContainer, {
+      marginTop: "14px",
+      paddingTop: "10px",
+      borderTop: "1px solid var(--background-modifier-border)",
+    });
 
     new Setting(settingContainer)
       .setName(t("modal_toggle_title"))
@@ -241,7 +244,7 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
       delayMs
     );
 
-    setTimeout(async () => {
+    window.setTimeout(async () => {
       const signingNotice = new Notice(
         t("notice_signing_in_progress", { name: baseName }),
         0

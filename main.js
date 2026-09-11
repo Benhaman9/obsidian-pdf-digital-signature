@@ -49496,7 +49496,7 @@ var PdfSignatureSettingTab = class extends import_obsidian.PluginSettingTab {
   display() {
     const { containerEl } = this;
     containerEl.empty();
-    containerEl.createEl("h2", { text: t("settings_title") });
+    new import_obsidian.Setting(containerEl).setName(t("settings_title")).setHeading();
     containerEl.createEl("p", {
       cls: "setting-item-description",
       text: t("settings_desc")
@@ -49520,7 +49520,7 @@ var PdfSignatureSettingTab = class extends import_obsidian.PluginSettingTab {
       })
     );
     new import_obsidian.Setting(containerEl).setName(t("settings_delay_name")).setDesc(t("settings_delay_desc")).addSlider(
-      (slider) => slider.setLimits(1, 15, 1).setValue(this.plugin.settings.delaySeconds).setDynamicTooltip().onChange(async (val) => {
+      (slider) => slider.setLimits(1, 15, 1).setValue(this.plugin.settings.delaySeconds).onChange(async (val) => {
         this.plugin.settings.delaySeconds = val;
         await this.plugin.saveSettings();
       })
@@ -49531,7 +49531,7 @@ var PdfSignatureSettingTab = class extends import_obsidian.PluginSettingTab {
         await this.plugin.saveSettings();
       })
     );
-    containerEl.createEl("h3", { text: t("settings_cert_section_title") });
+    new import_obsidian.Setting(containerEl).setName(t("settings_cert_section_title")).setHeading();
     this.renderCertificateStatus(containerEl);
     new import_obsidian.Setting(containerEl).setName(t("settings_cert_path_name")).setDesc(t("settings_cert_path_desc")).addText(
       (text) => text.setPlaceholder("Scripts/certificado_benjamin.pfx").setValue(this.plugin.settings.certPath).onChange(async (val) => {
@@ -49578,27 +49578,35 @@ var PdfSignatureSettingTab = class extends import_obsidian.PluginSettingTab {
     const certPath = this.plugin.resolveAbsolutePath(this.plugin.settings.certPath);
     const info = getCertificateInfo(certPath, this.plugin.settings.certPassword);
     const statusEl = containerEl.createDiv({ cls: "pdf-sig-cert-status" });
-    statusEl.style.padding = "10px 14px";
-    statusEl.style.marginBottom = "14px";
-    statusEl.style.borderRadius = "8px";
-    statusEl.style.fontSize = "var(--font-ui-smaller)";
+    (0, import_obsidian.setCssStyles)(statusEl, {
+      padding: "10px 14px",
+      marginBottom: "14px",
+      borderRadius: "8px",
+      fontSize: "var(--font-ui-smaller)"
+    });
     if (!info.exists) {
-      statusEl.style.backgroundColor = "var(--background-secondary)";
-      statusEl.style.border = "1px solid var(--background-modifier-border)";
+      (0, import_obsidian.setCssStyles)(statusEl, {
+        backgroundColor: "var(--background-secondary)",
+        border: "1px solid var(--background-modifier-border)"
+      });
       statusEl.setText(t("settings_cert_status_not_found"));
     } else if (info.isExpired) {
-      statusEl.style.backgroundColor = "rgba(235, 87, 87, 0.15)";
-      statusEl.style.border = "1px solid rgba(235, 87, 87, 0.4)";
-      statusEl.style.color = "var(--text-error)";
+      (0, import_obsidian.setCssStyles)(statusEl, {
+        backgroundColor: "rgba(235, 87, 87, 0.15)",
+        border: "1px solid rgba(235, 87, 87, 0.4)",
+        color: "var(--text-error)"
+      });
       statusEl.setText(
         t("settings_cert_status_expired", {
           date: info.notAfter?.toLocaleDateString() || "N/A"
         })
       );
     } else if (info.isExpiringSoon) {
-      statusEl.style.backgroundColor = "rgba(242, 201, 76, 0.15)";
-      statusEl.style.border = "1px solid rgba(242, 201, 76, 0.4)";
-      statusEl.style.color = "var(--text-warning)";
+      (0, import_obsidian.setCssStyles)(statusEl, {
+        backgroundColor: "rgba(242, 201, 76, 0.15)",
+        border: "1px solid rgba(242, 201, 76, 0.4)",
+        color: "var(--text-warning)"
+      });
       statusEl.setText(
         t("settings_cert_status_expiring", {
           days: info.daysRemaining || 0,
@@ -49606,9 +49614,11 @@ var PdfSignatureSettingTab = class extends import_obsidian.PluginSettingTab {
         })
       );
     } else if (info.valid) {
-      statusEl.style.backgroundColor = "rgba(39, 174, 96, 0.12)";
-      statusEl.style.border = "1px solid rgba(39, 174, 96, 0.35)";
-      statusEl.style.color = "var(--text-success)";
+      (0, import_obsidian.setCssStyles)(statusEl, {
+        backgroundColor: "rgba(39, 174, 96, 0.12)",
+        border: "1px solid rgba(39, 174, 96, 0.35)",
+        color: "var(--text-success)"
+      });
       statusEl.setText(
         t("settings_cert_status_valid", {
           days: info.daysRemaining || 0,
@@ -49616,8 +49626,10 @@ var PdfSignatureSettingTab = class extends import_obsidian.PluginSettingTab {
         })
       );
     } else {
-      statusEl.style.backgroundColor = "rgba(235, 87, 87, 0.15)";
-      statusEl.style.border = "1px solid rgba(235, 87, 87, 0.4)";
+      (0, import_obsidian.setCssStyles)(statusEl, {
+        backgroundColor: "rgba(235, 87, 87, 0.15)",
+        border: "1px solid rgba(235, 87, 87, 0.4)"
+      });
       statusEl.setText(`\u26A0\uFE0F Error: ${info.error || "Certificado no v\xE1lido o contrase\xF1a incorrecta"}`);
     }
   }
@@ -49740,9 +49752,11 @@ var PdfDigitalSignaturePlugin = class extends import_obsidian2.Plugin {
     const settingContainer = modal.contentEl.createDiv({
       cls: "firma-pdf-modal-toggle-container"
     });
-    settingContainer.style.marginTop = "14px";
-    settingContainer.style.paddingTop = "10px";
-    settingContainer.style.borderTop = "1px solid var(--background-modifier-border)";
+    (0, import_obsidian2.setCssStyles)(settingContainer, {
+      marginTop: "14px",
+      paddingTop: "10px",
+      borderTop: "1px solid var(--background-modifier-border)"
+    });
     new import_obsidian2.Setting(settingContainer).setName(t("modal_toggle_title")).setDesc(t("modal_toggle_desc")).addToggle((toggle) => {
       toggle.setValue(self2.settings.firmarPdf);
       toggle.onChange(async (val) => {
@@ -49786,7 +49800,7 @@ var PdfDigitalSignaturePlugin = class extends import_obsidian2.Plugin {
       t("notice_saved_countdown", { name: baseName, delay: delaySec }),
       delayMs
     );
-    setTimeout(async () => {
+    window.setTimeout(async () => {
       const signingNotice = new import_obsidian2.Notice(
         t("notice_signing_in_progress", { name: baseName }),
         0

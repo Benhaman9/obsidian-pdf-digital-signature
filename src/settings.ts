@@ -1,4 +1,4 @@
-import { App, Notice, PluginSettingTab, Setting } from "obsidian";
+import { App, Notice, PluginSettingTab, Setting, setCssStyles } from "obsidian";
 import type PdfDigitalSignaturePlugin from "./main";
 import { t } from "./i18n";
 import { getCertificateInfo } from "./signer";
@@ -40,7 +40,7 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
 
-    containerEl.createEl("h2", { text: t("settings_title") });
+    new Setting(containerEl).setName(t("settings_title")).setHeading();
     containerEl.createEl("p", {
       cls: "setting-item-description",
       text: t("settings_desc"),
@@ -94,7 +94,6 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
         slider
           .setLimits(1, 15, 1)
           .setValue(this.plugin.settings.delaySeconds)
-          .setDynamicTooltip()
           .onChange(async (val) => {
             this.plugin.settings.delaySeconds = val;
             await this.plugin.saveSettings();
@@ -114,7 +113,7 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
           })
       );
 
-    containerEl.createEl("h3", { text: t("settings_cert_section_title") });
+    new Setting(containerEl).setName(t("settings_cert_section_title")).setHeading();
 
     // Estado del certificado con semáforo y días restantes
     this.renderCertificateStatus(containerEl);
@@ -199,28 +198,36 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
     const info = getCertificateInfo(certPath, this.plugin.settings.certPassword);
 
     const statusEl = containerEl.createDiv({ cls: "pdf-sig-cert-status" });
-    statusEl.style.padding = "10px 14px";
-    statusEl.style.marginBottom = "14px";
-    statusEl.style.borderRadius = "8px";
-    statusEl.style.fontSize = "var(--font-ui-smaller)";
+    setCssStyles(statusEl, {
+      padding: "10px 14px",
+      marginBottom: "14px",
+      borderRadius: "8px",
+      fontSize: "var(--font-ui-smaller)",
+    });
 
     if (!info.exists) {
-      statusEl.style.backgroundColor = "var(--background-secondary)";
-      statusEl.style.border = "1px solid var(--background-modifier-border)";
+      setCssStyles(statusEl, {
+        backgroundColor: "var(--background-secondary)",
+        border: "1px solid var(--background-modifier-border)",
+      });
       statusEl.setText(t("settings_cert_status_not_found"));
     } else if (info.isExpired) {
-      statusEl.style.backgroundColor = "rgba(235, 87, 87, 0.15)";
-      statusEl.style.border = "1px solid rgba(235, 87, 87, 0.4)";
-      statusEl.style.color = "var(--text-error)";
+      setCssStyles(statusEl, {
+        backgroundColor: "rgba(235, 87, 87, 0.15)",
+        border: "1px solid rgba(235, 87, 87, 0.4)",
+        color: "var(--text-error)",
+      });
       statusEl.setText(
         t("settings_cert_status_expired", {
           date: info.notAfter?.toLocaleDateString() || "N/A",
         })
       );
     } else if (info.isExpiringSoon) {
-      statusEl.style.backgroundColor = "rgba(242, 201, 76, 0.15)";
-      statusEl.style.border = "1px solid rgba(242, 201, 76, 0.4)";
-      statusEl.style.color = "var(--text-warning)";
+      setCssStyles(statusEl, {
+        backgroundColor: "rgba(242, 201, 76, 0.15)",
+        border: "1px solid rgba(242, 201, 76, 0.4)",
+        color: "var(--text-warning)",
+      });
       statusEl.setText(
         t("settings_cert_status_expiring", {
           days: info.daysRemaining || 0,
@@ -228,9 +235,11 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
         })
       );
     } else if (info.valid) {
-      statusEl.style.backgroundColor = "rgba(39, 174, 96, 0.12)";
-      statusEl.style.border = "1px solid rgba(39, 174, 96, 0.35)";
-      statusEl.style.color = "var(--text-success)";
+      setCssStyles(statusEl, {
+        backgroundColor: "rgba(39, 174, 96, 0.12)",
+        border: "1px solid rgba(39, 174, 96, 0.35)",
+        color: "var(--text-success)",
+      });
       statusEl.setText(
         t("settings_cert_status_valid", {
           days: info.daysRemaining || 0,
@@ -238,8 +247,10 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
         })
       );
     } else {
-      statusEl.style.backgroundColor = "rgba(235, 87, 87, 0.15)";
-      statusEl.style.border = "1px solid rgba(235, 87, 87, 0.4)";
+      setCssStyles(statusEl, {
+        backgroundColor: "rgba(235, 87, 87, 0.15)",
+        border: "1px solid rgba(235, 87, 87, 0.4)",
+      });
       statusEl.setText(`⚠️ Error: ${info.error || "Certificado no válido o contraseña incorrecta"}`);
     }
   }
