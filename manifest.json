@@ -1,7 +1,7 @@
 {
   "id": "pdf-digital-signature",
   "name": "PDF Digital Signature",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "minAppVersion": "1.8.7",
   "description": "Zero-dependency cryptographic digital signing (PAdES/PKCS#7) and custom running footer stamping for exported PDFs.",
   "author": "Benjamín Alcalde G.",
