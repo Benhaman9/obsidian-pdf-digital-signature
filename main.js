@@ -49444,9 +49444,9 @@ async function signPdfBuffer(pdfBuffer, p12Buffer, password, metadata) {
   });
   (0, import_placeholder_pdf_lib.pdflibAddPlaceholder)({
     pdfDoc,
-    reason: metadata.reason || "Documento personal / universitario",
+    reason: metadata.reason || "Personal document",
     contactInfo: metadata.contactInfo || "",
-    name: metadata.signerName || "Benjam\xEDn Alcalde G.",
+    name: metadata.signerName || "Default",
     location: metadata.location || "Chile",
     signatureLength: 8192
   });
@@ -49494,9 +49494,9 @@ var DEFAULT_SETTINGS = {
   nombreFirmante: "Benjam\xEDn Alcalde G.",
   mostrarNumeroPagina: true,
   delaySeconds: 5,
-  certPath: "Scripts/certificado_benjamin.pfx",
+  certPath: "Scripts/default_certificate.pfx",
   certPassword: "1234",
-  motivo: "Documento personal / universitario",
+  motivo: "Personal document",
   ubicacion: "Chile",
   openAfterSigning: true
 };
@@ -49537,8 +49537,8 @@ var PdfSignatureSettingTab = class extends import_obsidian2.PluginSettingTab {
       })
     );
     new import_obsidian2.Setting(containerEl).setName(t("settings_signer_name_name")).setDesc(t("settings_signer_name_desc")).addText(
-      (text) => text.setPlaceholder("Benjam\xEDn Alcalde G.").setValue(this.plugin.settings.nombreFirmante).onChange(async (val) => {
-        this.plugin.settings.nombreFirmante = val.trim() || "Benjam\xEDn Alcalde G.";
+      (text) => text.setPlaceholder("Default").setValue(this.plugin.settings.nombreFirmante).onChange(async (val) => {
+        this.plugin.settings.nombreFirmante = val.trim() || "Default";
         await this.plugin.saveSettings();
       })
     );
@@ -49563,7 +49563,7 @@ var PdfSignatureSettingTab = class extends import_obsidian2.PluginSettingTab {
     new import_obsidian2.Setting(containerEl).setName(t("settings_cert_section_title")).setHeading();
     this.renderCertificateStatus(containerEl);
     new import_obsidian2.Setting(containerEl).setName(t("settings_cert_path_name")).setDesc(t("settings_cert_path_desc")).addText(
-      (text) => text.setPlaceholder("Scripts/certificado_benjamin.pfx").setValue(this.plugin.settings.certPath).onChange(async (val) => {
+      (text) => text.setPlaceholder("Scripts/default_certificate.pfx").setValue(this.plugin.settings.certPath).onChange(async (val) => {
         this.plugin.settings.certPath = val.trim();
         await this.plugin.saveSettings();
         this.display();

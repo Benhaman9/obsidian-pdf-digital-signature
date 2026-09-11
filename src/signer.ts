@@ -234,9 +234,9 @@ export async function signPdfBuffer(
 
   pdflibAddPlaceholder({
     pdfDoc,
-    reason: metadata.reason || "Documento personal / universitario",
+    reason: metadata.reason || "Personal document",
     contactInfo: metadata.contactInfo || "",
-    name: metadata.signerName || "Benjamín Alcalde G.",
+    name: metadata.signerName || "Default",
     location: metadata.location || "Chile",
     signatureLength: 8192,
   });

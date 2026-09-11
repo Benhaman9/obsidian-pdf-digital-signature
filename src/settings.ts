@@ -32,9 +32,9 @@ export const DEFAULT_SETTINGS: PdfSignatureSettings = {
   nombreFirmante: "Benjamín Alcalde G.",
   mostrarNumeroPagina: true,
   delaySeconds: 5,
-  certPath: "Scripts/certificado_benjamin.pfx",
+  certPath: "Scripts/default_certificate.pfx",
   certPassword: "1234",
-  motivo: "Documento personal / universitario",
+  motivo: "Personal document",
   ubicacion: "Chile",
   openAfterSigning: true,
 };
@@ -94,10 +94,10 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
       .setDesc(t("settings_signer_name_desc"))
       .addText((text) =>
         text
-          .setPlaceholder("Benjamín Alcalde G.")
+          .setPlaceholder("Default")
           .setValue(this.plugin.settings.nombreFirmante)
           .onChange(async (val) => {
-            this.plugin.settings.nombreFirmante = val.trim() || "Benjamín Alcalde G.";
+            this.plugin.settings.nombreFirmante = val.trim() || "Default";
             await this.plugin.saveSettings();
           })
       );
@@ -153,7 +153,7 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
       .setDesc(t("settings_cert_path_desc"))
       .addText((text) =>
         text
-          .setPlaceholder("Scripts/certificado_benjamin.pfx")
+          .setPlaceholder("Scripts/default_certificate.pfx")
           .setValue(this.plugin.settings.certPath)
           .onChange(async (val) => {
             this.plugin.settings.certPath = val.trim();
