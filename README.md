@@ -1,9 +1,15 @@
 # PDF Digital Signature for Obsidian
 
+> **Languages / Idiomas / Lingue:**  
+> 🇬🇧 **English** | 🇪🇸 [Español](README.es.md) | 🇧🇷 [Português](README.pt.md) | 🇮🇹 [Italiano](README.it.md)
+
+---
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Obsidian Plugin](https://img.shields.io/badge/Obsidian-Plugin-purple.svg)](https://obsidian.md)
 [![Zero Dependencies](https://img.shields.io/badge/Dependencies-Zero%20(Pure%20JS)-brightgreen.svg)]()
 [![Platform: Desktop](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)]()
+[![Languages](https://img.shields.io/badge/Languages-EN%20%7C%20ES%20%7C%20PT%20%7C%20IT-orange.svg)]()
 
 **PDF Digital Signature** is a lightweight, **zero-dependency** plugin for [Obsidian](https://obsidian.md) that seamlessly integrates cryptographic digital signatures (PAdES / PKCS#7 / X.509) and custom running footers into your exported PDF documents.
 
@@ -38,7 +44,7 @@ When opened in standard PDF viewers like **Adobe Acrobat Reader**, documents are
 
 1. Open any note in Obsidian and trigger the native **Export to PDF** dialog (`Ctrl + P` / `Cmd + P` ➔ *Export to PDF*).
 2. You will see a new toggle at the bottom:  
-   **"Firmar con certificado digital"** *(Sign with digital certificate)*.
+   **"Sign with digital certificate"** *(translated to your Obsidian language)*.
 3. Click **Export to PDF** and select your destination.
 4. The plugin automatically:
    - Prints the note with your name on the footer of every page.
@@ -71,40 +77,21 @@ When opened in standard PDF viewers like **Adobe Acrobat Reader**, documents are
 
 ## ⚙️ Configuration
 
-In Obsidian's **Settings** ➔ **Firma Digital PDF**:
+In Obsidian's **Settings** ➔ **PDF Digital Signature**:
 
 | Setting | Description | Default |
 | :--- | :--- | :--- |
-| **Activar firma por defecto** | Whether the signing toggle is pre-checked in the Export dialog. | `true` |
-| **Nombre en el pie de página** | The text displayed at the bottom-left of every page. | `Benjamín Alcalde G.` |
-| **Mostrar número de página** | Displays `page / total` on the bottom-right. | `true` |
-| **Demora antes de firmar** | Seconds to wait before applying the signature. | `5` seconds |
-| **Abrir PDF tras firmar** | Automatically opens your default PDF viewer once signed. | `true` |
-| **Ruta del certificado digital** | Relative or absolute path to your `.pfx` or `.p12` file. | `Scripts/certificado_benjamin.pfx` |
-| **Contraseña del certificado** | Password for decrypting your certificate. | `1234` |
-| **Motivo / Ubicación** | Signature metadata displayed in Adobe Acrobat. | Personal / Chile |
+| **Enable signing by default** | Whether the signing toggle is pre-checked in the Export dialog. | `true` |
+| **Signer name (Running footer)** | The text displayed at the bottom-left of every page. | `Benjamín Alcalde G.` |
+| **Display page number** | Displays `page / total` on the bottom-right. | `true` |
+| **Delay before signing** | Seconds to wait before applying the signature. | `5` seconds |
+| **Open PDF after signing** | Automatically opens your default PDF viewer once signed. | `true` |
+| **Certificate file path** | Relative or absolute path to your `.pfx` or `.p12` file. | `Scripts/certificado_benjamin.pfx` |
+| **Certificate password** | Password used to decrypt your certificate. | `1234` |
+| **Reason / Location** | Signature metadata displayed in Adobe Acrobat. | Personal / Chile |
 
 ### Using an Official Certificate
-If you own an accredited digital signature (such as a Firma Electrónica Simple or Avanzada in `.p12` or `.pfx` format), simply place it in your vault or enter its absolute path and password in the settings.
-
----
-
-## 🧑‍💻 Development
-
-```bash
-# Clone the repository
-git clone https://github.com/balca/obsidian-pdf-digital-signature.git
-cd obsidian-pdf-digital-signature
-
-# Install dependencies
-npm install
-
-# Build production bundle
-npm run build
-
-# Start dev watcher
-npm run dev
-```
+If you own an accredited digital signature (such as a commercial X.509 certificate in `.p12` or `.pfx` format), simply place it in your vault or enter its absolute path and password in the settings.
 
 ---
 
