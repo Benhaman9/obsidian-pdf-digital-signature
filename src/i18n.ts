@@ -1,4 +1,4 @@
-import { moment } from "obsidian";
+import { getLanguage as getObsidianLanguage } from "obsidian";
 
 export type TranslationKey =
   | "plugin_loaded"
@@ -232,7 +232,7 @@ const locales: Record<string, Record<TranslationKey, string>> = {
 };
 
 export function getLanguage(): string {
-  const obsidianLang = (window.localStorage.getItem("language") || "en").toLowerCase();
+  const obsidianLang = (getObsidianLanguage() || "en").toLowerCase();
   if (obsidianLang.startsWith("es")) return "es";
   if (obsidianLang.startsWith("pt")) return "pt";
   if (obsidianLang.startsWith("it")) return "it";

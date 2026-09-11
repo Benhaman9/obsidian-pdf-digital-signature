@@ -4,8 +4,8 @@ import {
   Plugin,
   Setting,
   FileSystemAdapter,
-  setCssStyles,
 } from "obsidian";
+import * as obsidian from "obsidian";
 import * as path from "path";
 import * as fs from "fs";
 import {
@@ -19,6 +19,30 @@ import {
   signPdfFile,
 } from "./signer";
 import { t } from "./i18n";
+
+// Helper para setCssStyles seguro contra versiones de tipos antiguas
+const applyStyles = (el: HTMLElement, styles: Record<string, string>): void => {
+  const setStyles = (obsidian as { setCssStyles?: (e: HTMLElement, s: Record<string, string>) => void }).setCssStyles;
+  if (typeof setStyles === "function") {
+    setStyles(el, styles);
+  } else {
+    Object.assign(el.style, styles);
+  }
+};
+
+interface ElectronModule {
+  shell?: { openPath: (path: string) => Promise<string> };
+  remote?: { dialog: { showOpenDialog: (opts: unknown) => Promise<{ canceled: boolean; filePaths: string[] }> } };
+}
+
+function getElectron(): ElectronModule | null {
+  try {
+    const win = window as unknown as { require?: (mod: string) => ElectronModule };
+    return win.require ? win.require("electron") : null;
+  } catch {
+    return null;
+  }
+}
 
 export default class PdfDigitalSignaturePlugin extends Plugin {
   settings: PdfSignatureSettings = DEFAULT_SETTINGS;
@@ -58,12 +82,10 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
 
     // 5. Verificar estado de caducidad del certificado al iniciar Obsidian
     this.checkCertificateExpirationAlert();
-
-    console.log(t("plugin_loaded"));
   }
 
   onunload(): void {
-    console.log("PDF Digital Signature Plugin unloaded.");
+    // Limpieza al descargar el plugin
   }
 
   async loadSettings(): Promise<void> {
@@ -79,7 +101,7 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
     if (adapter instanceof FileSystemAdapter) {
       return adapter.getBasePath();
     }
-    return (adapter as any).basePath || "";
+    return (adapter as unknown as { basePath?: string }).basePath || "";
   }
 
   resolveAbsolutePath(relOrAbsPath: string): string {
@@ -103,7 +125,6 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
         15000
       );
     } else if (info.isExpiringSoon) {
-      // Avisar si quedan 30 días o menos
       new Notice(
         t("notice_cert_expiring_soon", {
           days: info.daysRemaining || 0,
@@ -135,15 +156,15 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
   }
 
   hookPdfModal(): void {
-    const self = this;
     const originalModalOpen = Modal.prototype.open;
+    const plugin = this;
 
-    Modal.prototype.open = function (this: any) {
-      const res = originalModalOpen.apply(this, arguments);
+    Modal.prototype.open = function (this: Modal) {
+      const res = originalModalOpen.call(this);
       try {
-        self.inspectAndEnhanceModal(this);
-      } catch (err) {
-        console.error("Error al inspeccionar modal para firma PDF:", err);
+        plugin.inspectAndEnhanceModal(this);
+      } catch {
+        // Ignorar errores de inspección
       }
       return res;
     };
@@ -153,30 +174,34 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
     });
   }
 
-  inspectAndEnhanceModal(modal: any): void {
+  inspectAndEnhanceModal(modal: unknown): void {
+    const targetModal = modal as {
+      file?: unknown;
+      modalEl?: HTMLElement;
+      printToPdf?: (opts: Record<string, unknown>) => Promise<unknown>;
+      _firmaPdfEnhanced?: boolean;
+      contentEl: HTMLElement;
+    };
+
     if (
-      !modal ||
-      !modal.file ||
-      !modal.modalEl ||
-      !modal.modalEl.classList.contains("mod-narrow") ||
-      typeof modal.printToPdf !== "function"
+      !targetModal ||
+      !targetModal.file ||
+      !targetModal.modalEl ||
+      !targetModal.modalEl.classList.contains("mod-narrow") ||
+      typeof targetModal.printToPdf !== "function"
     ) {
       return;
     }
 
-    if (modal._firmaPdfEnhanced) return;
-    modal._firmaPdfEnhanced = true;
+    if (targetModal._firmaPdfEnhanced) return;
+    targetModal._firmaPdfEnhanced = true;
 
-    const self = this;
-
-    // Si el certificado está por caducar o caducó, recordar al usuario también al exportar
     this.checkCertificateExpirationAlert();
 
-    // 1. Insertar el control visual en el modal
-    const settingContainer = modal.contentEl.createDiv({
+    const settingContainer = targetModal.contentEl.createDiv({
       cls: "firma-pdf-modal-toggle-container",
     });
-    setCssStyles(settingContainer, {
+    applyStyles(settingContainer, {
       marginTop: "14px",
       paddingTop: "10px",
       borderTop: "1px solid var(--background-modifier-border)",
@@ -186,30 +211,29 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
       .setName(t("modal_toggle_title"))
       .setDesc(t("modal_toggle_desc"))
       .addToggle((toggle) => {
-        toggle.setValue(self.settings.firmarPdf);
+        toggle.setValue(this.settings.firmarPdf);
         toggle.onChange(async (val) => {
-          self.settings.firmarPdf = val;
-          await self.saveSettings();
+          this.settings.firmarPdf = val;
+          await this.saveSettings();
         });
       });
 
-    // 2. Interceptar el método printToPdf del modal
-    const originalPrintToPdf = modal.printToPdf;
+    const originalPrintToPdf = targetModal.printToPdf;
 
-    modal.printToPdf = async function (options: any) {
-      const shouldSign = self.settings.firmarPdf;
+    targetModal.printToPdf = async (options: Record<string, unknown>) => {
+      const shouldSign = this.settings.firmarPdf;
 
       if (shouldSign && options) {
         options.displayHeaderFooter = true;
         options.headerTemplate = "<div></div>";
 
-        const pageNumHtml = self.settings.mostrarNumeroPagina
+        const pageNumHtml = this.settings.mostrarNumeroPagina
           ? `<span style="font-size: 8pt; color: #777;"><span class="pageNumber"></span> / <span class="totalPages"></span></span>`
           : "";
 
         options.footerTemplate = `
           <div style="font-size: 8.5pt; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; width: 100%; padding: 0 15mm; display: flex; justify-content: space-between; align-items: center; color: #333; -webkit-print-color-adjust: exact;">
-            <span style="font-weight: 600; letter-spacing: 0.1px;">${self.settings.nombreFirmante}</span>
+            <span style="font-weight: 600; letter-spacing: 0.1px;">${this.settings.nombreFirmante}</span>
             ${pageNumHtml}
           </div>
         `;
@@ -219,15 +243,15 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
           if (options.margins) delete options.margins;
         }
 
-        if (self.settings.openAfterSigning) {
+        if (this.settings.openAfterSigning) {
           options.open = false;
         }
       }
 
-      const result = await originalPrintToPdf.call(this, options);
+      const result = await originalPrintToPdf.call(targetModal, options);
 
-      if (shouldSign && options && options.filepath) {
-        self.scheduleSigning(options.filepath);
+      if (shouldSign && options && typeof options.filepath === "string") {
+        this.scheduleSigning(options.filepath);
       }
 
       return result;
@@ -235,7 +259,7 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
   }
 
   scheduleSigning(filepath: string): void {
-    const delaySec = Math.max(1, parseInt(this.settings.delaySeconds as any, 10) || 5);
+    const delaySec = Math.max(1, parseInt(String(this.settings.delaySeconds), 10) || 5);
     const delayMs = delaySec * 1000;
     const baseName = path.basename(filepath);
 
@@ -244,42 +268,42 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
       delayMs
     );
 
-    window.setTimeout(async () => {
-      const signingNotice = new Notice(
-        t("notice_signing_in_progress", { name: baseName }),
-        0
-      );
-
-      try {
-        await this.executeDigitalSignature(filepath);
-        signingNotice.hide();
-
-        new Notice(
-          t("notice_signing_success", { name: baseName }),
-          6000
+    window.setTimeout(() => {
+      void (async () => {
+        const signingNotice = new Notice(
+          t("notice_signing_in_progress", { name: baseName }),
+          0
         );
 
-        if (this.settings.openAfterSigning) {
-          try {
-            const { shell } = require("electron");
-            shell.openPath(filepath);
-          } catch (openErr) {
-            console.warn("No se pudo abrir el visor de PDF:", openErr);
+        try {
+          await this.executeDigitalSignature(filepath);
+          signingNotice.hide();
+
+          new Notice(
+            t("notice_signing_success", { name: baseName }),
+            6000
+          );
+
+          if (this.settings.openAfterSigning) {
+            const electron = getElectron();
+            if (electron?.shell) {
+              await electron.shell.openPath(filepath);
+            }
           }
+        } catch (err) {
+          signingNotice.hide();
+          const msg = err instanceof Error ? err.message : String(err);
+          new Notice(
+            t("notice_signing_error", { name: baseName, error: msg }),
+            12000
+          );
         }
-      } catch (err: any) {
-        signingNotice.hide();
-        console.error("Error al firmar PDF:", err);
-        new Notice(
-          t("notice_signing_error", { name: baseName, error: err.message || err }),
-          12000
-        );
-      }
+      })();
     }, delayMs);
   }
 
   async executeDigitalSignature(filepath: string): Promise<void> {
-    let certPath = this.resolveAbsolutePath(this.settings.certPath);
+    const certPath = this.resolveAbsolutePath(this.settings.certPath);
 
     if (!fs.existsSync(certPath)) {
       await this.generateCertificate();
@@ -294,26 +318,25 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
 
   promptSignExistingPdf(): void {
     try {
-      const { remote } = require("electron");
-      const dialog = remote ? remote.dialog : null;
+      const electron = getElectron();
+      const dialog = electron?.remote ? electron.remote.dialog : null;
       if (!dialog) {
         new Notice("No access to system file dialog.");
         return;
       }
-      dialog
+      void dialog
         .showOpenDialog({
           title: t("cmd_sign_existing"),
           filters: [{ name: "PDF Files", extensions: ["pdf"] }],
           properties: ["openFile"],
         })
-        .then((res: any) => {
+        .then((res) => {
           if (!res.canceled && res.filePaths.length > 0) {
             const pdfFile = res.filePaths[0];
             this.scheduleSigning(pdfFile);
           }
         });
-    } catch (err) {
-      console.error(err);
+    } catch {
       new Notice("Error opening file dialog.");
     }
   }
