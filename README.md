@@ -19,6 +19,10 @@ When opened in standard PDF viewers like **Adobe Acrobat Reader**, documents are
   Stamps your name (or custom text) on the bottom-left and running page numbers (`page / total`) on the bottom-right across all pages.
 - ⚡ **100% Portable & Zero Dependencies:**  
   Built entirely in pure TypeScript/JavaScript (`node-forge` + `pdf-lib` + `@signpdf`). No Python, no OpenSSL, no terminal commands required.
+- 🌐 **Multi-Language Support (i18n):**  
+  Full native translations in **English (`en`)**, **Spanish (`es`)**, **Portuguese (`pt`)**, and **Italian (`it`)**, automatically matching your Obsidian display language.
+- ⏳ **Expiration Warnings & 1-Click Renewal:**  
+  Monitors certificate validity and shows proactive alerts when your certificate has **30 days or less remaining**, with an instant renewal button.
 - 🎛️ **Native Integration:**  
   Hooks directly into Obsidian's built-in **"Export to PDF"** dialog with a toggle that remembers your preferences.
 - ⏱️ **Automated Post-Processing:**  

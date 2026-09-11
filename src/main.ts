@@ -12,7 +12,12 @@ import {
   PdfSignatureSettings,
   PdfSignatureSettingTab,
 } from "./settings";
-import { createSelfSignedCertificate, signPdfFile } from "./signer";
+import {
+  createSelfSignedCertificate,
+  getCertificateInfo,
+  signPdfFile,
+} from "./signer";
+import { t } from "./i18n";
 
 export default class PdfDigitalSignaturePlugin extends Plugin {
   settings: PdfSignatureSettings = DEFAULT_SETTINGS;
@@ -29,12 +34,14 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
     // 3. Añadir comando para alternar activación de firma por defecto
     this.addCommand({
       id: "toggle-pdf-signature-default",
-      name: "Alternar firma digital por defecto al exportar a PDF",
+      name: t("cmd_toggle_default"),
       callback: async () => {
         this.settings.firmarPdf = !this.settings.firmarPdf;
         await this.saveSettings();
         new Notice(
-          `Firma digital PDF: ${this.settings.firmarPdf ? "Activada" : "Desactivada"}`
+          this.settings.firmarPdf
+            ? t("notice_signature_toggled_on")
+            : t("notice_signature_toggled_off")
         );
       },
     });
@@ -42,17 +49,20 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
     // 4. Añadir comando para firmar un PDF existente
     this.addCommand({
       id: "sign-existing-pdf-file",
-      name: "Firmar digitalmente un PDF existente...",
+      name: t("cmd_sign_existing"),
       callback: () => {
         this.promptSignExistingPdf();
       },
     });
 
-    console.log("PDF Digital Signature Plugin (Zero-Dependencies) cargado.");
+    // 5. Verificar estado de caducidad del certificado al iniciar Obsidian
+    this.checkCertificateExpirationAlert();
+
+    console.log(t("plugin_loaded"));
   }
 
   onunload(): void {
-    console.log("PDF Digital Signature Plugin descargado.");
+    console.log("PDF Digital Signature Plugin unloaded.");
   }
 
   async loadSettings(): Promise<void> {
@@ -76,6 +86,31 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
       return relOrAbsPath;
     }
     return path.join(this.getVaultBasePath(), relOrAbsPath);
+  }
+
+  checkCertificateExpirationAlert(): void {
+    const certPath = this.resolveAbsolutePath(this.settings.certPath);
+    const info = getCertificateInfo(certPath, this.settings.certPassword);
+
+    if (!info.exists || !info.valid) return;
+
+    if (info.isExpired) {
+      new Notice(
+        t("notice_cert_expired", {
+          date: info.notAfter?.toLocaleDateString() || "N/A",
+        }),
+        15000
+      );
+    } else if (info.isExpiringSoon) {
+      // Avisar si quedan 30 días o menos
+      new Notice(
+        t("notice_cert_expiring_soon", {
+          days: info.daysRemaining || 0,
+          date: info.notAfter?.toLocaleDateString() || "N/A",
+        }),
+        12000
+      );
+    }
   }
 
   async generateCertificate(): Promise<string> {
@@ -112,7 +147,6 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
       return res;
     };
 
-    // Restaurar el prototipo original al descargar el plugin
     this.register(() => {
       Modal.prototype.open = originalModalOpen;
     });
@@ -134,6 +168,9 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
 
     const self = this;
 
+    // Si el certificado está por caducar o caducó, recordar al usuario también al exportar
+    this.checkCertificateExpirationAlert();
+
     // 1. Insertar el control visual en el modal
     const settingContainer = modal.contentEl.createDiv({
       cls: "firma-pdf-modal-toggle-container",
@@ -143,8 +180,8 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
     settingContainer.style.borderTop = "1px solid var(--background-modifier-border)";
 
     new Setting(settingContainer)
-      .setName("Firmar con certificado digital")
-      .setDesc(`Pie de página: "${self.settings.nombreFirmante}" a la izq. y firma criptográfica al exportar.`)
+      .setName(t("modal_toggle_title"))
+      .setDesc(t("modal_toggle_desc"))
       .addToggle((toggle) => {
         toggle.setValue(self.settings.firmarPdf);
         toggle.onChange(async (val) => {
@@ -200,13 +237,13 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
     const baseName = path.basename(filepath);
 
     new Notice(
-      `⏳ PDF guardado: ${baseName}\nSe firmará digitalmente en ${delaySec} segundos...`,
+      t("notice_saved_countdown", { name: baseName, delay: delaySec }),
       delayMs
     );
 
     setTimeout(async () => {
       const signingNotice = new Notice(
-        `🔏 Firmando digitalmente con certificado:\n${baseName}...`,
+        t("notice_signing_in_progress", { name: baseName }),
         0
       );
 
@@ -215,7 +252,7 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
         signingNotice.hide();
 
         new Notice(
-          `✅ PDF firmado digitalmente con éxito:\n${baseName}`,
+          t("notice_signing_success", { name: baseName }),
           6000
         );
 
@@ -231,7 +268,7 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
         signingNotice.hide();
         console.error("Error al firmar PDF:", err);
         new Notice(
-          `❌ Error al firmar digitalmente ${baseName}:\n${err.message || err}`,
+          t("notice_signing_error", { name: baseName, error: err.message || err }),
           12000
         );
       }
@@ -241,7 +278,6 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
   async executeDigitalSignature(filepath: string): Promise<void> {
     let certPath = this.resolveAbsolutePath(this.settings.certPath);
 
-    // Si el certificado no existe aún, generarlo automáticamente en JavaScript puro
     if (!fs.existsSync(certPath)) {
       await this.generateCertificate();
     }
@@ -258,13 +294,13 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
       const { remote } = require("electron");
       const dialog = remote ? remote.dialog : null;
       if (!dialog) {
-        new Notice("No se tiene acceso al diálogo de archivos.");
+        new Notice("No access to system file dialog.");
         return;
       }
       dialog
         .showOpenDialog({
-          title: "Seleccionar PDF a firmar digitalmente",
-          filters: [{ name: "Archivos PDF", extensions: ["pdf"] }],
+          title: t("cmd_sign_existing"),
+          filters: [{ name: "PDF Files", extensions: ["pdf"] }],
           properties: ["openFile"],
         })
         .then((res: any) => {
@@ -275,7 +311,7 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
         });
     } catch (err) {
       console.error(err);
-      new Notice("Error al abrir diálogo de selección.");
+      new Notice("Error opening file dialog.");
     }
   }
 }

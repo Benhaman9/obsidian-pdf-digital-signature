@@ -1,7 +1,7 @@
 import { App, Notice, PluginSettingTab, Setting } from "obsidian";
 import type PdfDigitalSignaturePlugin from "./main";
-import * as path from "path";
-import * as fs from "fs";
+import { t } from "./i18n";
+import { getCertificateInfo } from "./signer";
 
 export interface PdfSignatureSettings {
   firmarPdf: boolean;
@@ -13,6 +13,7 @@ export interface PdfSignatureSettings {
   motivo: string;
   ubicacion: string;
   openAfterSigning: boolean;
+  lastExpiryAlertTimestamp?: number;
 }
 
 export const DEFAULT_SETTINGS: PdfSignatureSettings = {
@@ -39,16 +40,16 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
 
-    containerEl.createEl("h2", { text: "Firma Digital PDF — Ajustes" });
+    containerEl.createEl("h2", { text: t("settings_title") });
     containerEl.createEl("p", {
       cls: "setting-item-description",
-      text: "Configuración del membrete de pie de página y del certificado digital criptográfico (PAdES / PKCS#7 / X.509).",
+      text: t("settings_desc"),
     });
 
     // 1. Activar por defecto
     new Setting(containerEl)
-      .setName("Activar firma por defecto al exportar")
-      .setDesc("Si está activo, la casilla 'Firmar con certificado digital' vendrá marcada en el diálogo de exportación.")
+      .setName(t("settings_default_toggle_name"))
+      .setDesc(t("settings_default_toggle_desc"))
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.firmarPdf)
@@ -60,8 +61,8 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
 
     // 2. Nombre del firmante
     new Setting(containerEl)
-      .setName("Nombre en el pie de página")
-      .setDesc("Texto que aparecerá en el pie de página a la izquierda de todas las hojas.")
+      .setName(t("settings_signer_name_name"))
+      .setDesc(t("settings_signer_name_desc"))
       .addText((text) =>
         text
           .setPlaceholder("Benjamín Alcalde G.")
@@ -74,8 +75,8 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
 
     // 3. Mostrar número de página
     new Setting(containerEl)
-      .setName("Mostrar número de página")
-      .setDesc("Muestra 'página / total' a la derecha en el pie de página.")
+      .setName(t("settings_page_number_name"))
+      .setDesc(t("settings_page_number_desc"))
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.mostrarNumeroPagina)
@@ -87,8 +88,8 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
 
     // 4. Demora antes de firmar
     new Setting(containerEl)
-      .setName("Demora antes de firmar (segundos)")
-      .setDesc("Tiempo de espera tras el guardado del archivo antes de ejecutar el proceso criptográfico.")
+      .setName(t("settings_delay_name"))
+      .setDesc(t("settings_delay_desc"))
       .addSlider((slider) =>
         slider
           .setLimits(1, 15, 1)
@@ -102,8 +103,8 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
 
     // 5. Abrir visor tras firmar
     new Setting(containerEl)
-      .setName("Abrir PDF tras firmar")
-      .setDesc("Abre el archivo PDF automáticamente en tu lector predeterminado una vez firmado.")
+      .setName(t("settings_open_after_name"))
+      .setDesc(t("settings_open_after_desc"))
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.openAfterSigning)
@@ -113,12 +114,15 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
           })
       );
 
-    containerEl.createEl("h3", { text: "Certificado Digital (.pfx / .p12)" });
+    containerEl.createEl("h3", { text: t("settings_cert_section_title") });
+
+    // Estado del certificado con semáforo y días restantes
+    this.renderCertificateStatus(containerEl);
 
     // 6. Ruta del certificado
     new Setting(containerEl)
-      .setName("Ruta del certificado digital")
-      .setDesc("Ruta relativa a la bóveda o ruta absoluta a tu archivo de certificado .pfx o .p12.")
+      .setName(t("settings_cert_path_name"))
+      .setDesc(t("settings_cert_path_desc"))
       .addText((text) =>
         text
           .setPlaceholder("Scripts/certificado_benjamin.pfx")
@@ -126,13 +130,14 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
           .onChange(async (val) => {
             this.plugin.settings.certPath = val.trim();
             await this.plugin.saveSettings();
+            this.display(); // refrescar estado
           })
       );
 
     // 7. Contraseña del certificado
     new Setting(containerEl)
-      .setName("Contraseña del certificado")
-      .setDesc("Contraseña para descifrar la clave privada del archivo .pfx.")
+      .setName(t("settings_cert_password_name"))
+      .setDesc(t("settings_cert_password_desc"))
       .addText((text) => {
         text.inputEl.type = "password";
         text
@@ -145,8 +150,8 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
 
     // 8. Motivo de la firma
     new Setting(containerEl)
-      .setName("Motivo de la firma (Reason)")
-      .setDesc("Metadato que figurará en el panel de firma de Adobe Acrobat / Foxit.")
+      .setName(t("settings_reason_name"))
+      .setDesc(t("settings_reason_desc"))
       .addText((text) =>
         text
           .setValue(this.plugin.settings.motivo)
@@ -158,8 +163,8 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
 
     // 9. Ubicación
     new Setting(containerEl)
-      .setName("Lugar / Ubicación (Location)")
-      .setDesc("Ubicación geográfica del firmante (ej. Chile).")
+      .setName(t("settings_location_name"))
+      .setDesc(t("settings_location_desc"))
       .addText((text) =>
         text
           .setValue(this.plugin.settings.ubicacion)
@@ -171,20 +176,71 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
 
     // 10. Botones de acción directa en JS puro
     new Setting(containerEl)
-      .setName("Generar o actualizar certificado (.pfx)")
-      .setDesc("Crea un certificado digital autofirmado X.509 en la ruta indicada con la contraseña actual, directamente en JavaScript.")
+      .setName(t("settings_btn_generate"))
+      .setDesc(t("settings_btn_generate_desc"))
       .addButton((btn) =>
-        btn.setButtonText("Generar Certificado").setCta().onClick(async () => {
+        btn.setButtonText(t("settings_btn_generate")).setCta().onClick(async () => {
           btn.setDisabled(true);
           try {
             await this.plugin.generateCertificate();
-            new Notice("✅ Certificado generado con éxito en " + this.plugin.settings.certPath);
+            new Notice(t("notice_cert_generated", { path: this.plugin.settings.certPath }));
+            this.display(); // actualizar estado del certificado en pantalla
           } catch (err: any) {
-            new Notice("❌ Error generando certificado: " + (err.message || err));
+            new Notice(t("notice_cert_gen_error", { error: err.message || err }));
           } finally {
             btn.setDisabled(false);
           }
         })
       );
+  }
+
+  renderCertificateStatus(containerEl: HTMLElement): void {
+    const certPath = this.plugin.resolveAbsolutePath(this.plugin.settings.certPath);
+    const info = getCertificateInfo(certPath, this.plugin.settings.certPassword);
+
+    const statusEl = containerEl.createDiv({ cls: "pdf-sig-cert-status" });
+    statusEl.style.padding = "10px 14px";
+    statusEl.style.marginBottom = "14px";
+    statusEl.style.borderRadius = "8px";
+    statusEl.style.fontSize = "var(--font-ui-smaller)";
+
+    if (!info.exists) {
+      statusEl.style.backgroundColor = "var(--background-secondary)";
+      statusEl.style.border = "1px solid var(--background-modifier-border)";
+      statusEl.setText(t("settings_cert_status_not_found"));
+    } else if (info.isExpired) {
+      statusEl.style.backgroundColor = "rgba(235, 87, 87, 0.15)";
+      statusEl.style.border = "1px solid rgba(235, 87, 87, 0.4)";
+      statusEl.style.color = "var(--text-error)";
+      statusEl.setText(
+        t("settings_cert_status_expired", {
+          date: info.notAfter?.toLocaleDateString() || "N/A",
+        })
+      );
+    } else if (info.isExpiringSoon) {
+      statusEl.style.backgroundColor = "rgba(242, 201, 76, 0.15)";
+      statusEl.style.border = "1px solid rgba(242, 201, 76, 0.4)";
+      statusEl.style.color = "var(--text-warning)";
+      statusEl.setText(
+        t("settings_cert_status_expiring", {
+          days: info.daysRemaining || 0,
+          date: info.notAfter?.toLocaleDateString() || "N/A",
+        })
+      );
+    } else if (info.valid) {
+      statusEl.style.backgroundColor = "rgba(39, 174, 96, 0.12)";
+      statusEl.style.border = "1px solid rgba(39, 174, 96, 0.35)";
+      statusEl.style.color = "var(--text-success)";
+      statusEl.setText(
+        t("settings_cert_status_valid", {
+          days: info.daysRemaining || 0,
+          date: info.notAfter?.toLocaleDateString() || "N/A",
+        })
+      );
+    } else {
+      statusEl.style.backgroundColor = "rgba(235, 87, 87, 0.15)";
+      statusEl.style.border = "1px solid rgba(235, 87, 87, 0.4)";
+      statusEl.setText(`⚠️ Error: ${info.error || "Certificado no válido o contraseña incorrecta"}`);
+    }
   }
 }

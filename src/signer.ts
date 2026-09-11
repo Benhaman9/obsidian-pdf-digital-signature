@@ -4,7 +4,12 @@ import { pdflibAddPlaceholder } from "@signpdf/placeholder-pdf-lib";
 import { SignPdf } from "@signpdf/signpdf";
 import { P12Signer } from "@signpdf/signer-p12";
 import * as fs from "fs";
-import * as path from "path";
+
+// Helper para compatibilidad CJS / ESM con node-forge
+function getForge() {
+  const f = (forge as any).default || forge;
+  return f;
+}
 
 export interface SignatureMetadata {
   signerName: string;
@@ -13,8 +18,88 @@ export interface SignatureMetadata {
   contactInfo?: string;
 }
 
+export interface CertificateInfo {
+  exists: boolean;
+  valid: boolean;
+  commonName?: string;
+  notBefore?: Date;
+  notAfter?: Date;
+  daysRemaining?: number;
+  isExpiringSoon?: boolean; // <= 30 días
+  isExpired?: boolean;
+  error?: string;
+}
+
 /**
- * Generates a self-signed X.509 certificate in PKCS#12 (.pfx / .p12) format in pure JavaScript.
+ * Inspecciona un certificado PKCS#12 (.pfx / .p12) y extrae vigencia y expiración.
+ */
+export function getCertificateInfo(certPath: string, password = ""): CertificateInfo {
+  if (!fs.existsSync(certPath)) {
+    return { exists: false, valid: false };
+  }
+
+  try {
+    const f = getForge();
+    const p12Der = fs.readFileSync(certPath).toString("binary");
+    const p12Asn1 = f.asn1.fromDer(p12Der);
+    
+    // Intentar abrir con strict false y luego true
+    let p12: any;
+    try {
+      p12 = f.pkcs12.pkcs12FromAsn1(p12Asn1, false, password || "");
+    } catch {
+      p12 = f.pkcs12.pkcs12FromAsn1(p12Asn1, password || "");
+    }
+
+    let cert: any = null;
+    for (const safeContent of p12.safeContents) {
+      for (const safeBag of safeContent.safeBags) {
+        if (safeBag.cert) {
+          cert = safeBag.cert;
+          break;
+        }
+      }
+      if (cert) break;
+    }
+
+    if (!cert) {
+      return { exists: true, valid: false, error: "No certificate found inside PFX" };
+    }
+
+    const notBefore = cert.validity.notBefore;
+    const notAfter = cert.validity.notAfter;
+    const now = new Date();
+
+    const diffMs = notAfter.getTime() - now.getTime();
+    const daysRemaining = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    const commonNameAttr = cert.subject.getField("CN");
+    const commonName = commonNameAttr ? String(commonNameAttr.value) : undefined;
+
+    const isExpired = daysRemaining < 0;
+    const isExpiringSoon = daysRemaining >= 0 && daysRemaining <= 30;
+
+    return {
+      exists: true,
+      valid: true,
+      commonName,
+      notBefore,
+      notAfter,
+      daysRemaining,
+      isExpiringSoon,
+      isExpired,
+    };
+  } catch (err: any) {
+    return {
+      exists: true,
+      valid: false,
+      error: err.message || "Invalid password or corrupted certificate file",
+    };
+  }
+}
+
+/**
+ * Genera un certificado digital autofirmado X.509 en formato PKCS#12 (.pfx / .p12) en JS puro.
  */
 export function createSelfSignedCertificate(
   signerName: string,
@@ -23,12 +108,13 @@ export function createSelfSignedCertificate(
   country = "CL",
   validityYears = 3
 ): Buffer {
-  const pki = forge.pki;
+  const f = getForge();
+  const pki = f.pki;
   const keys = pki.rsa.generateKeyPair(2048);
   const cert = pki.createCertificate();
 
   cert.publicKey = keys.publicKey;
-  cert.serialNumber = "01" + forge.util.bytesToHex(forge.random.getBytesSync(15));
+  cert.serialNumber = "01" + f.util.bytesToHex(f.random.getBytesSync(15));
 
   const notBefore = new Date();
   notBefore.setDate(notBefore.getDate() - 1);
@@ -63,20 +149,20 @@ export function createSelfSignedCertificate(
     },
   ]);
 
-  cert.sign(keys.privateKey, forge.md.sha256.create());
+  cert.sign(keys.privateKey, f.md.sha256.create());
 
-  const p12Asn1 = forge.pkcs12.toPkcs12Asn1(keys.privateKey, cert, password, {
+  const p12Asn1 = f.pkcs12.toPkcs12Asn1(keys.privateKey, cert, password, {
     generateLocalKeyId: true,
     friendlyName: signerName,
     algorithm: "3des",
   });
 
-  const p12Der = forge.asn1.toDer(p12Asn1).getBytes();
+  const p12Der = f.asn1.toDer(p12Asn1).getBytes();
   return Buffer.from(p12Der, "binary");
 }
 
 /**
- * Digitally signs a PDF Buffer with an X.509 PKCS#12 (.pfx) certificate using pure JavaScript.
+ * Firma digitalmente un Buffer de PDF con un certificado X.509 PKCS#12 (.pfx) en JS puro.
  */
 export async function signPdfBuffer(
   pdfBuffer: Buffer,
@@ -115,7 +201,7 @@ export async function signPdfBuffer(
 }
 
 /**
- * Digitally signs a PDF file on disk in-place.
+ * Firma digitalmente un archivo PDF en disco in-place.
  */
 export async function signPdfFile(
   filePath: string,
@@ -141,7 +227,6 @@ export async function signPdfFile(
   try {
     await fs.promises.rename(tempPath, filePath);
   } catch {
-    // En Windows a veces rename sobre archivo existente requiere unlink previo
     await fs.promises.unlink(filePath);
     await fs.promises.rename(tempPath, filePath);
   }
