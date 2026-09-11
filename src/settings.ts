@@ -1,7 +1,18 @@
-import { App, Notice, PluginSettingTab, Setting, setCssStyles } from "obsidian";
+import { App, Notice, PluginSettingTab, Setting } from "obsidian";
+import * as obsidian from "obsidian";
 import type PdfDigitalSignaturePlugin from "./main";
 import { t } from "./i18n";
 import { getCertificateInfo } from "./signer";
+
+// Helper para setCssStyles seguro contra versiones antiguas de tipos
+const applyStyles = (el: HTMLElement, styles: Record<string, string>): void => {
+  const setStyles = (obsidian as { setCssStyles?: (e: HTMLElement, s: Record<string, string>) => void }).setCssStyles;
+  if (typeof setStyles === "function") {
+    setStyles(el, styles);
+  } else {
+    Object.assign(el.style, styles);
+  }
+};
 
 export interface PdfSignatureSettings {
   firmarPdf: boolean;
@@ -34,6 +45,24 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
   constructor(app: App, plugin: PdfDigitalSignaturePlugin) {
     super(app, plugin);
     this.plugin = plugin;
+  }
+
+  // @ts-ignore
+  getSettingDefinitions(): unknown[] {
+    return [
+      {
+        id: "firmarPdf",
+        name: t("settings_default_toggle_name"),
+        description: t("settings_default_toggle_desc"),
+        type: "toggle",
+      },
+      {
+        id: "nombreFirmante",
+        name: t("settings_signer_name_name"),
+        description: t("settings_signer_name_desc"),
+        type: "text",
+      },
+    ];
   }
 
   display(): void {
@@ -184,8 +213,9 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
             await this.plugin.generateCertificate();
             new Notice(t("notice_cert_generated", { path: this.plugin.settings.certPath }));
             this.display(); // actualizar estado del certificado en pantalla
-          } catch (err: any) {
-            new Notice(t("notice_cert_gen_error", { error: err.message || err }));
+          } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : String(err);
+            new Notice(t("notice_cert_gen_error", { error: msg }));
           } finally {
             btn.setDisabled(false);
           }
@@ -198,7 +228,7 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
     const info = getCertificateInfo(certPath, this.plugin.settings.certPassword);
 
     const statusEl = containerEl.createDiv({ cls: "pdf-sig-cert-status" });
-    setCssStyles(statusEl, {
+    applyStyles(statusEl, {
       padding: "10px 14px",
       marginBottom: "14px",
       borderRadius: "8px",
@@ -206,13 +236,13 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
     });
 
     if (!info.exists) {
-      setCssStyles(statusEl, {
+      applyStyles(statusEl, {
         backgroundColor: "var(--background-secondary)",
         border: "1px solid var(--background-modifier-border)",
       });
       statusEl.setText(t("settings_cert_status_not_found"));
     } else if (info.isExpired) {
-      setCssStyles(statusEl, {
+      applyStyles(statusEl, {
         backgroundColor: "rgba(235, 87, 87, 0.15)",
         border: "1px solid rgba(235, 87, 87, 0.4)",
         color: "var(--text-error)",
@@ -223,7 +253,7 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
         })
       );
     } else if (info.isExpiringSoon) {
-      setCssStyles(statusEl, {
+      applyStyles(statusEl, {
         backgroundColor: "rgba(242, 201, 76, 0.15)",
         border: "1px solid rgba(242, 201, 76, 0.4)",
         color: "var(--text-warning)",
@@ -235,7 +265,7 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
         })
       );
     } else if (info.valid) {
-      setCssStyles(statusEl, {
+      applyStyles(statusEl, {
         backgroundColor: "rgba(39, 174, 96, 0.12)",
         border: "1px solid rgba(39, 174, 96, 0.35)",
         color: "var(--text-success)",
@@ -247,7 +277,7 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
         })
       );
     } else {
-      setCssStyles(statusEl, {
+      applyStyles(statusEl, {
         backgroundColor: "rgba(235, 87, 87, 0.15)",
         border: "1px solid rgba(235, 87, 87, 0.4)",
       });

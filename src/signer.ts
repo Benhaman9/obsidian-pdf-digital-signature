@@ -5,10 +5,64 @@ import { SignPdf } from "@signpdf/signpdf";
 import { P12Signer } from "@signpdf/signer-p12";
 import * as fs from "fs";
 
-// Helper para compatibilidad CJS / ESM con node-forge
-function getForge() {
-  const f = (forge as any).default || forge;
-  return f;
+// Definiciones de tipos para node-forge para eliminar totalmente las advertencias de 'any'
+interface ForgeCert {
+  validity: {
+    notBefore: Date;
+    notAfter: Date;
+  };
+  subject: {
+    getField(name: string): { value?: string } | null;
+  };
+}
+
+interface ForgeSafeBag {
+  cert?: ForgeCert;
+}
+
+interface ForgeSafeContent {
+  safeBags: ForgeSafeBag[];
+}
+
+interface ForgePkcs12 {
+  safeContents: ForgeSafeContent[];
+}
+
+interface ForgeModule {
+  asn1: {
+    fromDer(bytes: string): unknown;
+    toDer(asn1: unknown): { getBytes(): string };
+  };
+  pkcs12: {
+    pkcs12FromAsn1(asn1: unknown, strict?: boolean | string, password?: string): ForgePkcs12;
+    toPkcs12Asn1(key: unknown, cert: unknown, password?: string, options?: Record<string, unknown>): unknown;
+  };
+  pki: {
+    rsa: { generateKeyPair(bits: number): { publicKey: unknown; privateKey: unknown } };
+    createCertificate(): {
+      publicKey: unknown;
+      serialNumber: string;
+      validity: { notBefore: Date; notAfter: Date };
+      setSubject(attrs: Array<{ name: string; value: string }>): void;
+      setIssuer(attrs: Array<{ name: string; value: string }>): void;
+      setExtensions(exts: Array<Record<string, unknown>>): void;
+      sign(key: unknown, md: unknown): void;
+    };
+  };
+  md: {
+    sha256: { create(): unknown };
+  };
+  random: {
+    getBytesSync(count: number): string;
+  };
+  util: {
+    bytesToHex(bytes: string): string;
+  };
+}
+
+function getForge(): ForgeModule {
+  const forgeObject = forge as unknown as { default?: ForgeModule };
+  return forgeObject.default || (forge as unknown as ForgeModule);
 }
 
 export interface SignatureMetadata {
@@ -43,15 +97,14 @@ export function getCertificateInfo(certPath: string, password = ""): Certificate
     const p12Der = fs.readFileSync(certPath).toString("binary");
     const p12Asn1 = f.asn1.fromDer(p12Der);
     
-    // Intentar abrir con strict false y luego true
-    let p12: any;
+    let p12: ForgePkcs12;
     try {
       p12 = f.pkcs12.pkcs12FromAsn1(p12Asn1, false, password || "");
     } catch {
       p12 = f.pkcs12.pkcs12FromAsn1(p12Asn1, password || "");
     }
 
-    let cert: any = null;
+    let cert: ForgeCert | null = null;
     for (const safeContent of p12.safeContents) {
       for (const safeBag of safeContent.safeBags) {
         if (safeBag.cert) {
@@ -74,7 +127,7 @@ export function getCertificateInfo(certPath: string, password = ""): Certificate
     const daysRemaining = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
     const commonNameAttr = cert.subject.getField("CN");
-    const commonName = commonNameAttr ? String(commonNameAttr.value) : undefined;
+    const commonName = commonNameAttr && commonNameAttr.value ? String(commonNameAttr.value) : undefined;
 
     const isExpired = daysRemaining < 0;
     const isExpiringSoon = daysRemaining >= 0 && daysRemaining <= 30;
@@ -89,11 +142,12 @@ export function getCertificateInfo(certPath: string, password = ""): Certificate
       isExpiringSoon,
       isExpired,
     };
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : "Invalid password or corrupted certificate file";
     return {
       exists: true,
       valid: false,
-      error: err.message || "Invalid password or corrupted certificate file",
+      error: errorMsg,
     };
   }
 }

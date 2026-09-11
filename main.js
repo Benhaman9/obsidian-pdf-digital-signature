@@ -49114,12 +49114,13 @@ __export(main_exports, {
 });
 module.exports = __toCommonJS(main_exports);
 var import_obsidian3 = require("obsidian");
-var obsidian = __toESM(require("obsidian"));
+var obsidian2 = __toESM(require("obsidian"));
 var path = __toESM(require("path"));
 var fs2 = __toESM(require("fs"));
 
 // src/settings.ts
 var import_obsidian2 = require("obsidian");
+var obsidian = __toESM(require("obsidian"));
 
 // src/i18n.ts
 var import_obsidian = require("obsidian");
@@ -49332,8 +49333,8 @@ var import_signpdf = __toESM(require_signpdf());
 var import_signer_p12 = __toESM(require_P12Signer());
 var fs = __toESM(require("fs"));
 function getForge() {
-  const f = forge.default || forge;
-  return f;
+  const forgeObject = forge;
+  return forgeObject.default || forge;
 }
 function getCertificateInfo(certPath, password = "") {
   if (!fs.existsSync(certPath)) {
@@ -49368,7 +49369,7 @@ function getCertificateInfo(certPath, password = "") {
     const diffMs = notAfter.getTime() - now.getTime();
     const daysRemaining = Math.floor(diffMs / (1e3 * 60 * 60 * 24));
     const commonNameAttr = cert.subject.getField("CN");
-    const commonName = commonNameAttr ? String(commonNameAttr.value) : void 0;
+    const commonName = commonNameAttr && commonNameAttr.value ? String(commonNameAttr.value) : void 0;
     const isExpired = daysRemaining < 0;
     const isExpiringSoon = daysRemaining >= 0 && daysRemaining <= 30;
     return {
@@ -49382,10 +49383,11 @@ function getCertificateInfo(certPath, password = "") {
       isExpired
     };
   } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : "Invalid password or corrupted certificate file";
     return {
       exists: true,
       valid: false,
-      error: err.message || "Invalid password or corrupted certificate file"
+      error: errorMsg
     };
   }
 }
@@ -49479,6 +49481,14 @@ async function signPdfFile(filePath, certPath, password, metadata) {
 }
 
 // src/settings.ts
+var applyStyles = (el, styles) => {
+  const setStyles = obsidian.setCssStyles;
+  if (typeof setStyles === "function") {
+    setStyles(el, styles);
+  } else {
+    Object.assign(el.style, styles);
+  }
+};
 var DEFAULT_SETTINGS = {
   firmarPdf: true,
   nombreFirmante: "Benjam\xEDn Alcalde G.",
@@ -49494,6 +49504,23 @@ var PdfSignatureSettingTab = class extends import_obsidian2.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
     this.plugin = plugin;
+  }
+  // @ts-ignore
+  getSettingDefinitions() {
+    return [
+      {
+        id: "firmarPdf",
+        name: t("settings_default_toggle_name"),
+        description: t("settings_default_toggle_desc"),
+        type: "toggle"
+      },
+      {
+        id: "nombreFirmante",
+        name: t("settings_signer_name_name"),
+        description: t("settings_signer_name_desc"),
+        type: "text"
+      }
+    ];
   }
   display() {
     const { containerEl } = this;
@@ -49569,7 +49596,8 @@ var PdfSignatureSettingTab = class extends import_obsidian2.PluginSettingTab {
           new import_obsidian2.Notice(t("notice_cert_generated", { path: this.plugin.settings.certPath }));
           this.display();
         } catch (err) {
-          new import_obsidian2.Notice(t("notice_cert_gen_error", { error: err.message || err }));
+          const msg = err instanceof Error ? err.message : String(err);
+          new import_obsidian2.Notice(t("notice_cert_gen_error", { error: msg }));
         } finally {
           btn.setDisabled(false);
         }
@@ -49580,20 +49608,20 @@ var PdfSignatureSettingTab = class extends import_obsidian2.PluginSettingTab {
     const certPath = this.plugin.resolveAbsolutePath(this.plugin.settings.certPath);
     const info = getCertificateInfo(certPath, this.plugin.settings.certPassword);
     const statusEl = containerEl.createDiv({ cls: "pdf-sig-cert-status" });
-    (0, import_obsidian2.setCssStyles)(statusEl, {
+    applyStyles(statusEl, {
       padding: "10px 14px",
       marginBottom: "14px",
       borderRadius: "8px",
       fontSize: "var(--font-ui-smaller)"
     });
     if (!info.exists) {
-      (0, import_obsidian2.setCssStyles)(statusEl, {
+      applyStyles(statusEl, {
         backgroundColor: "var(--background-secondary)",
         border: "1px solid var(--background-modifier-border)"
       });
       statusEl.setText(t("settings_cert_status_not_found"));
     } else if (info.isExpired) {
-      (0, import_obsidian2.setCssStyles)(statusEl, {
+      applyStyles(statusEl, {
         backgroundColor: "rgba(235, 87, 87, 0.15)",
         border: "1px solid rgba(235, 87, 87, 0.4)",
         color: "var(--text-error)"
@@ -49604,7 +49632,7 @@ var PdfSignatureSettingTab = class extends import_obsidian2.PluginSettingTab {
         })
       );
     } else if (info.isExpiringSoon) {
-      (0, import_obsidian2.setCssStyles)(statusEl, {
+      applyStyles(statusEl, {
         backgroundColor: "rgba(242, 201, 76, 0.15)",
         border: "1px solid rgba(242, 201, 76, 0.4)",
         color: "var(--text-warning)"
@@ -49616,7 +49644,7 @@ var PdfSignatureSettingTab = class extends import_obsidian2.PluginSettingTab {
         })
       );
     } else if (info.valid) {
-      (0, import_obsidian2.setCssStyles)(statusEl, {
+      applyStyles(statusEl, {
         backgroundColor: "rgba(39, 174, 96, 0.12)",
         border: "1px solid rgba(39, 174, 96, 0.35)",
         color: "var(--text-success)"
@@ -49628,7 +49656,7 @@ var PdfSignatureSettingTab = class extends import_obsidian2.PluginSettingTab {
         })
       );
     } else {
-      (0, import_obsidian2.setCssStyles)(statusEl, {
+      applyStyles(statusEl, {
         backgroundColor: "rgba(235, 87, 87, 0.15)",
         border: "1px solid rgba(235, 87, 87, 0.4)"
       });
@@ -49638,8 +49666,8 @@ var PdfSignatureSettingTab = class extends import_obsidian2.PluginSettingTab {
 };
 
 // src/main.ts
-var applyStyles = (el, styles) => {
-  const setStyles = obsidian.setCssStyles;
+var applyStyles2 = (el, styles) => {
+  const setStyles = obsidian2.setCssStyles;
   if (typeof setStyles === "function") {
     setStyles(el, styles);
   } else {
@@ -49768,7 +49796,7 @@ var PdfDigitalSignaturePlugin = class extends import_obsidian3.Plugin {
     const settingContainer = targetModal.contentEl.createDiv({
       cls: "firma-pdf-modal-toggle-container"
     });
-    applyStyles(settingContainer, {
+    applyStyles2(settingContainer, {
       marginTop: "14px",
       paddingTop: "10px",
       borderTop: "1px solid var(--background-modifier-border)"
