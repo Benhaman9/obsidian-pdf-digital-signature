@@ -49491,36 +49491,19 @@ var applyStyles = (el, styles) => {
 };
 var DEFAULT_SETTINGS = {
   firmarPdf: true,
-  nombreFirmante: "Benjam\xEDn Alcalde G.",
+  nombreFirmante: "Nombre del Firmante",
   mostrarNumeroPagina: true,
   delaySeconds: 5,
-  certPath: "Scripts/default_certificate.pfx",
+  certPath: "Scripts/certificado.pfx",
   certPassword: "1234",
-  motivo: "Personal document",
-  ubicacion: "Chile",
+  motivo: "Firma Digital",
+  ubicacion: "Ciudad, Pa\xEDs",
   openAfterSigning: true
 };
 var PdfSignatureSettingTab = class extends import_obsidian2.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
     this.plugin = plugin;
-  }
-  // @ts-ignore
-  getSettingDefinitions() {
-    return [
-      {
-        id: "firmarPdf",
-        name: t("settings_default_toggle_name"),
-        description: t("settings_default_toggle_desc"),
-        type: "toggle"
-      },
-      {
-        id: "nombreFirmante",
-        name: t("settings_signer_name_name"),
-        description: t("settings_signer_name_desc"),
-        type: "text"
-      }
-    ];
   }
   display() {
     const { containerEl } = this;

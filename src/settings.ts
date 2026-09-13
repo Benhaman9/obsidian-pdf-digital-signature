@@ -29,13 +29,13 @@ export interface PdfSignatureSettings {
 
 export const DEFAULT_SETTINGS: PdfSignatureSettings = {
   firmarPdf: true,
-  nombreFirmante: "Benjamín Alcalde G.",
+  nombreFirmante: "Nombre del Firmante",
   mostrarNumeroPagina: true,
   delaySeconds: 5,
-  certPath: "Scripts/default_certificate.pfx",
+  certPath: "Scripts/certificado.pfx",
   certPassword: "1234",
-  motivo: "Personal document",
-  ubicacion: "Chile",
+  motivo: "Firma Digital",
+  ubicacion: "Ciudad, País",
   openAfterSigning: true,
 };
 
@@ -45,24 +45,6 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
   constructor(app: App, plugin: PdfDigitalSignaturePlugin) {
     super(app, plugin);
     this.plugin = plugin;
-  }
-
-  // @ts-ignore
-  getSettingDefinitions(): unknown[] {
-    return [
-      {
-        id: "firmarPdf",
-        name: t("settings_default_toggle_name"),
-        description: t("settings_default_toggle_desc"),
-        type: "toggle",
-      },
-      {
-        id: "nombreFirmante",
-        name: t("settings_signer_name_name"),
-        description: t("settings_signer_name_desc"),
-        type: "text",
-      },
-    ];
   }
 
   display(): void {
