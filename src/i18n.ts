@@ -4,6 +4,13 @@ export type TranslationKey =
   | "plugin_loaded"
   | "modal_toggle_title"
   | "modal_toggle_desc"
+  | "modal_options_title"
+  | "modal_crypto_name"
+  | "modal_crypto_desc"
+  | "modal_signer_name"
+  | "modal_signer_desc"
+  | "modal_page_number_name"
+  | "modal_page_number_desc"
   | "cmd_toggle_default"
   | "cmd_sign_existing"
   | "notice_saved_countdown"
@@ -20,6 +27,8 @@ export type TranslationKey =
   | "settings_desc"
   | "settings_default_toggle_name"
   | "settings_default_toggle_desc"
+  | "settings_signer_toggle_name"
+  | "settings_signer_toggle_desc"
   | "settings_signer_name_name"
   | "settings_signer_name_desc"
   | "settings_page_number_name"
@@ -48,6 +57,13 @@ const en: Record<TranslationKey, string> = {
   plugin_loaded: "PDF Digital Signature loaded.",
   modal_toggle_title: "Sign with digital certificate",
   modal_toggle_desc: 'Add running footer on the left and sign cryptographically (PAdES / PKCS#7).',
+  modal_options_title: "Options for this PDF",
+  modal_crypto_name: "Cryptographically sign the PDF",
+  modal_crypto_desc: "Apply a PAdES / PKCS#7 digital signature with your certificate.",
+  modal_signer_name: "Show signer name",
+  modal_signer_desc: "Place it in the bottom-left corner of every page.",
+  modal_page_number_name: "Show page number",
+  modal_page_number_desc: "Place it in the bottom-right corner as current page / total pages.",
   cmd_toggle_default: "Toggle default PDF digital signing",
   cmd_sign_existing: "Digitally sign an existing PDF...",
   notice_saved_countdown: "⏳ PDF saved: {name}\nSigning digitally in {delay} seconds...",
@@ -62,8 +78,10 @@ const en: Record<TranslationKey, string> = {
   notice_signature_toggled_off: "PDF digital signature: Disabled",
   settings_title: "PDF Digital Signature — Settings",
   settings_desc: "Configure the automatic running footer and cryptographic digital certificates (PAdES / PKCS#7 / X.509).",
-  settings_default_toggle_name: "Enable signing by default on export",
-  settings_default_toggle_desc: "When enabled, 'Sign with digital certificate' will be pre-checked in the export modal.",
+  settings_default_toggle_name: "Cryptographically sign by default",
+  settings_default_toggle_desc: "Apply a PAdES / PKCS#7 signature on export, independently from the footer content.",
+  settings_signer_toggle_name: "Show signer name by default",
+  settings_signer_toggle_desc: "Place the signer name in the bottom-left corner of exported PDFs.",
   settings_signer_name_name: "Signer name (Running footer)",
   settings_signer_name_desc: "Name displayed at the bottom-left of every page.",
   settings_page_number_name: "Display page number",
@@ -93,6 +111,13 @@ const es: Record<TranslationKey, string> = {
   plugin_loaded: "Plugin Firma Digital PDF cargado.",
   modal_toggle_title: "Firmar con certificado digital",
   modal_toggle_desc: 'Pie de página con tu nombre a la izq. y firma criptográfica (PAdES / PKCS#7).',
+  modal_options_title: "Opciones para este PDF",
+  modal_crypto_name: "Firmar criptográficamente el PDF",
+  modal_crypto_desc: "Aplica una firma digital PAdES / PKCS#7 con tu certificado.",
+  modal_signer_name: "Mostrar nombre del firmante",
+  modal_signer_desc: "Lo coloca en la esquina inferior izquierda de cada página.",
+  modal_page_number_name: "Mostrar número de página",
+  modal_page_number_desc: "Lo coloca en la esquina inferior derecha con el formato N/T.",
   cmd_toggle_default: "Alternar firma digital por defecto al exportar a PDF",
   cmd_sign_existing: "Firmar digitalmente un PDF existente...",
   notice_saved_countdown: "⏳ PDF guardado: {name}\nSe firmará digitalmente en {delay} segundos...",
@@ -107,8 +132,10 @@ const es: Record<TranslationKey, string> = {
   notice_signature_toggled_off: "Firma digital PDF: Desactivada",
   settings_title: "Firma Digital PDF — Ajustes",
   settings_desc: "Configuración del membrete de pie de página y del certificado digital criptográfico (PAdES / PKCS#7 / X.509).",
-  settings_default_toggle_name: "Activar firma por defecto al exportar",
-  settings_default_toggle_desc: "Si está activo, la opción vendrá marcada por defecto en el diálogo 'Exportar a PDF'.",
+  settings_default_toggle_name: "Firmar criptográficamente por defecto",
+  settings_default_toggle_desc: "Aplica una firma digital PAdES / PKCS#7 al exportar; es independiente de los textos del pie de página.",
+  settings_signer_toggle_name: "Mostrar nombre del firmante por defecto",
+  settings_signer_toggle_desc: "Coloca el nombre en la esquina inferior izquierda de los PDFs exportados.",
   settings_signer_name_name: "Nombre en el pie de página",
   settings_signer_name_desc: "Texto que aparecerá en el pie de página a la izquierda de todas las hojas.",
   settings_page_number_name: "Mostrar número de página",
@@ -138,6 +165,13 @@ const pt: Record<TranslationKey, string> = {
   plugin_loaded: "Plugin Assinatura Digital de PDF carregado.",
   modal_toggle_title: "Assinar com certificado digital",
   modal_toggle_desc: 'Adiciona rodapé com seu nome à esquerda e assinatura criptográfica (PAdES / PKCS#7).',
+  modal_options_title: "Opções para este PDF",
+  modal_crypto_name: "Assinar criptograficamente o PDF",
+  modal_crypto_desc: "Aplica uma assinatura digital PAdES / PKCS#7 com seu certificado.",
+  modal_signer_name: "Mostrar nome do signatário",
+  modal_signer_desc: "Coloca o nome no canto inferior esquerdo de cada página.",
+  modal_page_number_name: "Mostrar número da página",
+  modal_page_number_desc: "Coloca-o no canto inferior direito como página atual / total.",
   cmd_toggle_default: "Alternar assinatura digital padrão na exportação para PDF",
   cmd_sign_existing: "Assinar digitalmente um PDF existente...",
   notice_saved_countdown: "⏳ PDF salvo: {name}\nAssinando digitalmente em {delay} segundos...",
@@ -152,8 +186,10 @@ const pt: Record<TranslationKey, string> = {
   notice_signature_toggled_off: "Assinatura digital de PDF: Desativada",
   settings_title: "Assinatura Digital de PDF — Configurações",
   settings_desc: "Configure o rodapé automático e o certificado digital criptográfico (PAdES / PKCS#7 / X.509).",
-  settings_default_toggle_name: "Ativar assinatura por padrão ao exportar",
-  settings_default_toggle_desc: "Quando ativado, a opção virá marcada por padrão na janela 'Exportar para PDF'.",
+  settings_default_toggle_name: "Assinar criptograficamente por padrão",
+  settings_default_toggle_desc: "Aplica uma assinatura PAdES / PKCS#7 na exportação, independentemente do rodapé.",
+  settings_signer_toggle_name: "Mostrar nome do signatário por padrão",
+  settings_signer_toggle_desc: "Coloca o nome do signatário no canto inferior esquerdo dos PDFs exportados.",
   settings_signer_name_name: "Nome no rodapé",
   settings_signer_name_desc: "Texto exibido no rodapé à esquerda em todas as páginas.",
   settings_page_number_name: "Exibir número da página",
@@ -183,6 +219,13 @@ const it: Record<TranslationKey, string> = {
   plugin_loaded: "Plugin Firma Digitale PDF caricato.",
   modal_toggle_title: "Firma con certificato digitale",
   modal_toggle_desc: 'Aggiunge piè di pagina a sinistra e firma crittografica (PAdES / PKCS#7).',
+  modal_options_title: "Opzioni per questo PDF",
+  modal_crypto_name: "Firma crittograficamente il PDF",
+  modal_crypto_desc: "Applica una firma digitale PAdES / PKCS#7 con il tuo certificato.",
+  modal_signer_name: "Mostra il nome del firmatario",
+  modal_signer_desc: "Lo inserisce nell'angolo inferiore sinistro di ogni pagina.",
+  modal_page_number_name: "Mostra il numero di pagina",
+  modal_page_number_desc: "Lo inserisce nell'angolo inferiore destro come pagina corrente / totale.",
   cmd_toggle_default: "Attiva/disattiva firma digitale predefinita nell'esportazione PDF",
   cmd_sign_existing: "Firma digitalmente un PDF esistente...",
   notice_saved_countdown: "⏳ PDF salvato: {name}\nFirma digitale in corso tra {delay} secondi...",
@@ -197,8 +240,10 @@ const it: Record<TranslationKey, string> = {
   notice_signature_toggled_off: "Firma digitale PDF: Disattivata",
   settings_title: "Firma Digitale PDF — Impostazioni",
   settings_desc: "Configura il piè di pagina continuo e il certificato digitale crittografico (PAdES / PKCS#7 / X.509).",
-  settings_default_toggle_name: "Attiva firma come predefinita all'esportazione",
-  settings_default_toggle_desc: "Se attivo, l'opzione sarà selezionata per impostazione predefinita nella finestra 'Esporta in PDF'.",
+  settings_default_toggle_name: "Firma crittograficamente per impostazione predefinita",
+  settings_default_toggle_desc: "Applica una firma PAdES / PKCS#7 durante l'esportazione, indipendentemente dal piè di pagina.",
+  settings_signer_toggle_name: "Mostra il nome del firmatario per impostazione predefinita",
+  settings_signer_toggle_desc: "Inserisce il nome del firmatario nell'angolo inferiore sinistro dei PDF esportati.",
   settings_signer_name_name: "Nome nel piè di pagina",
   settings_signer_name_desc: "Testo visualizzato in basso a sinistra su tutte le pagine.",
   settings_page_number_name: "Mostra numero di pagina",

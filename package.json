@@ -1,6 +1,6 @@
 {
   "name": "obsidian-pdf-digital-signature",
-  "version": "1.0.0",
+  "version": "1.0.9",
   "description": "Zero-dependency digital cryptographic signature (PAdES/PKCS#7) and custom footer stamping for exported PDFs in Obsidian.",
   "main": "main.js",
   "scripts": {

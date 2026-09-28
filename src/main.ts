@@ -61,10 +61,10 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
       id: "toggle-pdf-signature-default",
       name: t("cmd_toggle_default"),
       callback: async () => {
-        this.settings.firmarPdf = !this.settings.firmarPdf;
+        this.settings.firmarCriptograficamente = !this.settings.firmarCriptograficamente;
         await this.saveSettings();
         new Notice(
-          this.settings.firmarPdf
+          this.settings.firmarCriptograficamente
             ? t("notice_signature_toggled_on")
             : t("notice_signature_toggled_off")
         );
@@ -81,7 +81,9 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
     });
 
     // 5. Verificar estado de caducidad del certificado al iniciar Obsidian
-    this.checkCertificateExpirationAlert();
+    if (this.settings.firmarCriptograficamente) {
+      this.checkCertificateExpirationAlert();
+    }
   }
 
   onunload(): void {
@@ -89,7 +91,17 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
   }
 
   async loadSettings(): Promise<void> {
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    const savedSettings = ((await this.loadData()) || {}) as Partial<PdfSignatureSettings>;
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, savedSettings);
+
+    if (!Object.prototype.hasOwnProperty.call(savedSettings, "firmarCriptograficamente")) {
+      const legacyEnabled = Boolean(savedSettings.firmarPdf ?? DEFAULT_SETTINGS.firmarPdf);
+      this.settings.firmarCriptograficamente = legacyEnabled;
+      this.settings.mostrarNombreFirmante = legacyEnabled;
+      this.settings.mostrarNumeroPagina =
+        legacyEnabled && Boolean(savedSettings.mostrarNumeroPagina ?? DEFAULT_SETTINGS.mostrarNumeroPagina);
+      await this.saveSettings();
+    }
   }
 
   async saveSettings(): Promise<void> {
@@ -197,7 +209,9 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
     if (targetModal._firmaPdfEnhanced) return;
     targetModal._firmaPdfEnhanced = true;
 
-    this.checkCertificateExpirationAlert();
+    if (this.settings.firmarCriptograficamente) {
+      this.checkCertificateExpirationAlert();
+    }
 
     const settingContainer = targetModal.contentEl.createDiv({
       cls: "firma-pdf-modal-toggle-container",
@@ -208,13 +222,37 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
       borderTop: "1px solid var(--background-modifier-border)",
     });
 
+    settingContainer.createEl("h3", { text: t("modal_options_title") });
+
     new Setting(settingContainer)
-      .setName(t("modal_toggle_title"))
-      .setDesc(t("modal_toggle_desc"))
+      .setName(t("modal_crypto_name"))
+      .setDesc(t("modal_crypto_desc"))
       .addToggle((toggle) => {
-        toggle.setValue(this.settings.firmarPdf);
+        toggle.setValue(this.settings.firmarCriptograficamente);
         toggle.onChange(async (val) => {
-          this.settings.firmarPdf = val;
+          this.settings.firmarCriptograficamente = val;
+          await this.saveSettings();
+        });
+      });
+
+    new Setting(settingContainer)
+      .setName(t("modal_signer_name"))
+      .setDesc(t("modal_signer_desc"))
+      .addToggle((toggle) => {
+        toggle.setValue(this.settings.mostrarNombreFirmante);
+        toggle.onChange(async (val) => {
+          this.settings.mostrarNombreFirmante = val;
+          await this.saveSettings();
+        });
+      });
+
+    new Setting(settingContainer)
+      .setName(t("modal_page_number_name"))
+      .setDesc(t("modal_page_number_desc"))
+      .addToggle((toggle) => {
+        toggle.setValue(this.settings.mostrarNumeroPagina);
+        toggle.onChange(async (val) => {
+          this.settings.mostrarNumeroPagina = val;
           await this.saveSettings();
         });
       });
@@ -222,19 +260,23 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
     const originalPrintToPdf = targetModal.printToPdf;
 
     targetModal.printToPdf = async (options: Record<string, unknown>) => {
-      const shouldSign = this.settings.firmarPdf;
+      const shouldSignCryptographically = this.settings.firmarCriptograficamente;
+      const shouldAddFooter = this.settings.mostrarNombreFirmante || this.settings.mostrarNumeroPagina;
 
-      if (shouldSign && options) {
+      if (shouldAddFooter && options) {
         options.displayHeaderFooter = true;
         options.headerTemplate = "<div></div>";
 
         const pageNumHtml = this.settings.mostrarNumeroPagina
-          ? `<span style="font-size: 8pt; color: #777;"><span class="pageNumber"></span> / <span class="totalPages"></span></span>`
+          ? `<span style="margin-left: auto;"><span class="pageNumber"></span> / <span class="totalPages"></span></span>`
+          : "";
+        const signerNameHtml = this.settings.mostrarNombreFirmante
+          ? `<span>${this.settings.nombreFirmante}</span>`
           : "";
 
         options.footerTemplate = `
-          <div style="font-size: 8.5pt; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; width: 100%; padding: 0 15mm; display: flex; justify-content: space-between; align-items: center; color: #333; -webkit-print-color-adjust: exact;">
-            <span style="font-weight: 600; letter-spacing: 0.1px;">${this.settings.nombreFirmante}</span>
+          <div style="font-size: 7pt; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; width: 100%; padding: 0 15mm; display: flex; align-items: center; color: #999; -webkit-print-color-adjust: exact;">
+            ${signerNameHtml}
             ${pageNumHtml}
           </div>
         `;
@@ -244,14 +286,15 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
           if (options.margins) delete options.margins;
         }
 
-        if (this.settings.openAfterSigning) {
-          options.open = false;
-        }
+      }
+
+      if (shouldSignCryptographically && options && this.settings.openAfterSigning) {
+        options.open = false;
       }
 
       const result = await originalPrintToPdf.call(targetModal, options);
 
-      if (shouldSign && options && typeof options.filepath === "string") {
+      if (shouldSignCryptographically && options && typeof options.filepath === "string") {
         this.scheduleSigning(options.filepath);
       }
 

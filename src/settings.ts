@@ -15,7 +15,10 @@ const applyStyles = (el: HTMLElement, styles: Record<string, string>): void => {
 };
 
 export interface PdfSignatureSettings {
+  /** Legacy combined toggle, retained only to migrate pre-1.0.9 settings. */
   firmarPdf: boolean;
+  firmarCriptograficamente: boolean;
+  mostrarNombreFirmante: boolean;
   nombreFirmante: string;
   mostrarNumeroPagina: boolean;
   delaySeconds: number;
@@ -29,6 +32,8 @@ export interface PdfSignatureSettings {
 
 export const DEFAULT_SETTINGS: PdfSignatureSettings = {
   firmarPdf: true,
+  firmarCriptograficamente: true,
+  mostrarNombreFirmante: true,
   nombreFirmante: "Nombre del Firmante",
   mostrarNumeroPagina: true,
   delaySeconds: 5,
@@ -63,14 +68,27 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
       .setDesc(t("settings_default_toggle_desc"))
       .addToggle((toggle) =>
         toggle
-          .setValue(this.plugin.settings.firmarPdf)
+          .setValue(this.plugin.settings.firmarCriptograficamente)
           .onChange(async (val) => {
-            this.plugin.settings.firmarPdf = val;
+            this.plugin.settings.firmarCriptograficamente = val;
             await this.plugin.saveSettings();
           })
       );
 
-    // 2. Nombre del firmante
+    // 2. Mostrar nombre del firmante
+    new Setting(containerEl)
+      .setName(t("settings_signer_toggle_name"))
+      .setDesc(t("settings_signer_toggle_desc"))
+      .addToggle((toggle) =>
+        toggle
+          .setValue(this.plugin.settings.mostrarNombreFirmante)
+          .onChange(async (val) => {
+            this.plugin.settings.mostrarNombreFirmante = val;
+            await this.plugin.saveSettings();
+          })
+      );
+
+    // 3. Nombre del firmante
     new Setting(containerEl)
       .setName(t("settings_signer_name_name"))
       .setDesc(t("settings_signer_name_desc"))
@@ -84,7 +102,7 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
           })
       );
 
-    // 3. Mostrar número de página
+    // 4. Mostrar número de página
     new Setting(containerEl)
       .setName(t("settings_page_number_name"))
       .setDesc(t("settings_page_number_desc"))
@@ -97,7 +115,7 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
           })
       );
 
-    // 4. Demora antes de firmar
+    // 5. Demora antes de firmar
     new Setting(containerEl)
       .setName(t("settings_delay_name"))
       .setDesc(t("settings_delay_desc"))
@@ -111,7 +129,7 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
           })
       );
 
-    // 5. Abrir visor tras firmar
+    // 6. Abrir visor tras firmar
     new Setting(containerEl)
       .setName(t("settings_open_after_name"))
       .setDesc(t("settings_open_after_desc"))
@@ -129,7 +147,7 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
     // Estado del certificado con semáforo y días restantes
     this.renderCertificateStatus(containerEl);
 
-    // 6. Ruta del certificado
+    // 7. Ruta del certificado
     new Setting(containerEl)
       .setName(t("settings_cert_path_name"))
       .setDesc(t("settings_cert_path_desc"))
@@ -144,7 +162,7 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
           })
       );
 
-    // 7. Contraseña del certificado
+    // 8. Contraseña del certificado
     new Setting(containerEl)
       .setName(t("settings_cert_password_name"))
       .setDesc(t("settings_cert_password_desc"))
@@ -158,7 +176,7 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
           });
       });
 
-    // 8. Motivo de la firma
+    // 9. Motivo de la firma
     new Setting(containerEl)
       .setName(t("settings_reason_name"))
       .setDesc(t("settings_reason_desc"))
@@ -171,7 +189,7 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
           })
       );
 
-    // 9. Ubicación
+    // 10. Ubicación
     new Setting(containerEl)
       .setName(t("settings_location_name"))
       .setDesc(t("settings_location_desc"))
@@ -184,7 +202,7 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
           })
       );
 
-    // 10. Botones de acción directa en JS puro
+    // 11. Botones de acción directa en JS puro
     new Setting(containerEl)
       .setName(t("settings_btn_generate"))
       .setDesc(t("settings_btn_generate_desc"))

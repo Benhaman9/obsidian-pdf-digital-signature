@@ -23,6 +23,8 @@ Quando abertos em visualizadores padrão como o **Adobe Acrobat Reader**, os doc
   Utiliza certificados digitais padrão X.509 (`.pfx` / `.p12`). Garante a integridade inviolável do documento.
 - 📄 **Rodapé Contínuo em Todas as Páginas:**  
   Insere seu nome (ou texto personalizado) no canto inferior esquerdo e o número da página (`página / total`) à direita em cada folha.
+- 🎛️ **Controles Independentes por Exportação:**
+  Escolha separadamente a assinatura criptográfica, o nome do signatário e a numeração de páginas. As escolhas ficam salvas como padrões.
 - ⚡ **100% Portátil e Sem Dependências Externas:**  
   Desenvolvido em TypeScript/JavaScript puro (`node-forge` + `pdf-lib` + `@signpdf`). Não requer Python, pip nem comandos de terminal.
 - 🌐 **Suporte Multilíngue Nativo (i18n):**  
@@ -43,7 +45,7 @@ Quando abertos em visualizadores padrão como o **Adobe Acrobat Reader**, os doc
 ## 🚀 Como Funciona
 
 1. Abra qualquer nota no Obsidian e pressione `Ctrl + P` (ou `Cmd + P`) ➔ **Exportar para PDF**.
-2. Marque a opção: **«Assinar com certificado digital»**.
+2. Escolha qualquer combinação das três opções: assinatura criptográfica, nome do signatário e numeração.
 3. Clique em **Exportar para PDF** e escolha onde salvar o arquivo.
 4. O plugin automaticamente:
    - Exporta o documento com seu nome no rodapé de todas as páginas.

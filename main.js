@@ -49128,6 +49128,13 @@ var en = {
   plugin_loaded: "PDF Digital Signature loaded.",
   modal_toggle_title: "Sign with digital certificate",
   modal_toggle_desc: "Add running footer on the left and sign cryptographically (PAdES / PKCS#7).",
+  modal_options_title: "Options for this PDF",
+  modal_crypto_name: "Cryptographically sign the PDF",
+  modal_crypto_desc: "Apply a PAdES / PKCS#7 digital signature with your certificate.",
+  modal_signer_name: "Show signer name",
+  modal_signer_desc: "Place it in the bottom-left corner of every page.",
+  modal_page_number_name: "Show page number",
+  modal_page_number_desc: "Place it in the bottom-right corner as current page / total pages.",
   cmd_toggle_default: "Toggle default PDF digital signing",
   cmd_sign_existing: "Digitally sign an existing PDF...",
   notice_saved_countdown: "\u23F3 PDF saved: {name}\nSigning digitally in {delay} seconds...",
@@ -49142,8 +49149,10 @@ var en = {
   notice_signature_toggled_off: "PDF digital signature: Disabled",
   settings_title: "PDF Digital Signature \u2014 Settings",
   settings_desc: "Configure the automatic running footer and cryptographic digital certificates (PAdES / PKCS#7 / X.509).",
-  settings_default_toggle_name: "Enable signing by default on export",
-  settings_default_toggle_desc: "When enabled, 'Sign with digital certificate' will be pre-checked in the export modal.",
+  settings_default_toggle_name: "Cryptographically sign by default",
+  settings_default_toggle_desc: "Apply a PAdES / PKCS#7 signature on export, independently from the footer content.",
+  settings_signer_toggle_name: "Show signer name by default",
+  settings_signer_toggle_desc: "Place the signer name in the bottom-left corner of exported PDFs.",
   settings_signer_name_name: "Signer name (Running footer)",
   settings_signer_name_desc: "Name displayed at the bottom-left of every page.",
   settings_page_number_name: "Display page number",
@@ -49172,6 +49181,13 @@ var es = {
   plugin_loaded: "Plugin Firma Digital PDF cargado.",
   modal_toggle_title: "Firmar con certificado digital",
   modal_toggle_desc: "Pie de p\xE1gina con tu nombre a la izq. y firma criptogr\xE1fica (PAdES / PKCS#7).",
+  modal_options_title: "Opciones para este PDF",
+  modal_crypto_name: "Firmar criptogr\xE1ficamente el PDF",
+  modal_crypto_desc: "Aplica una firma digital PAdES / PKCS#7 con tu certificado.",
+  modal_signer_name: "Mostrar nombre del firmante",
+  modal_signer_desc: "Lo coloca en la esquina inferior izquierda de cada p\xE1gina.",
+  modal_page_number_name: "Mostrar n\xFAmero de p\xE1gina",
+  modal_page_number_desc: "Lo coloca en la esquina inferior derecha con el formato N/T.",
   cmd_toggle_default: "Alternar firma digital por defecto al exportar a PDF",
   cmd_sign_existing: "Firmar digitalmente un PDF existente...",
   notice_saved_countdown: "\u23F3 PDF guardado: {name}\nSe firmar\xE1 digitalmente en {delay} segundos...",
@@ -49186,8 +49202,10 @@ var es = {
   notice_signature_toggled_off: "Firma digital PDF: Desactivada",
   settings_title: "Firma Digital PDF \u2014 Ajustes",
   settings_desc: "Configuraci\xF3n del membrete de pie de p\xE1gina y del certificado digital criptogr\xE1fico (PAdES / PKCS#7 / X.509).",
-  settings_default_toggle_name: "Activar firma por defecto al exportar",
-  settings_default_toggle_desc: "Si est\xE1 activo, la opci\xF3n vendr\xE1 marcada por defecto en el di\xE1logo 'Exportar a PDF'.",
+  settings_default_toggle_name: "Firmar criptogr\xE1ficamente por defecto",
+  settings_default_toggle_desc: "Aplica una firma digital PAdES / PKCS#7 al exportar; es independiente de los textos del pie de p\xE1gina.",
+  settings_signer_toggle_name: "Mostrar nombre del firmante por defecto",
+  settings_signer_toggle_desc: "Coloca el nombre en la esquina inferior izquierda de los PDFs exportados.",
   settings_signer_name_name: "Nombre en el pie de p\xE1gina",
   settings_signer_name_desc: "Texto que aparecer\xE1 en el pie de p\xE1gina a la izquierda de todas las hojas.",
   settings_page_number_name: "Mostrar n\xFAmero de p\xE1gina",
@@ -49216,6 +49234,13 @@ var pt = {
   plugin_loaded: "Plugin Assinatura Digital de PDF carregado.",
   modal_toggle_title: "Assinar com certificado digital",
   modal_toggle_desc: "Adiciona rodap\xE9 com seu nome \xE0 esquerda e assinatura criptogr\xE1fica (PAdES / PKCS#7).",
+  modal_options_title: "Op\xE7\xF5es para este PDF",
+  modal_crypto_name: "Assinar criptograficamente o PDF",
+  modal_crypto_desc: "Aplica uma assinatura digital PAdES / PKCS#7 com seu certificado.",
+  modal_signer_name: "Mostrar nome do signat\xE1rio",
+  modal_signer_desc: "Coloca o nome no canto inferior esquerdo de cada p\xE1gina.",
+  modal_page_number_name: "Mostrar n\xFAmero da p\xE1gina",
+  modal_page_number_desc: "Coloca-o no canto inferior direito como p\xE1gina atual / total.",
   cmd_toggle_default: "Alternar assinatura digital padr\xE3o na exporta\xE7\xE3o para PDF",
   cmd_sign_existing: "Assinar digitalmente um PDF existente...",
   notice_saved_countdown: "\u23F3 PDF salvo: {name}\nAssinando digitalmente em {delay} segundos...",
@@ -49230,8 +49255,10 @@ var pt = {
   notice_signature_toggled_off: "Assinatura digital de PDF: Desativada",
   settings_title: "Assinatura Digital de PDF \u2014 Configura\xE7\xF5es",
   settings_desc: "Configure o rodap\xE9 autom\xE1tico e o certificado digital criptogr\xE1fico (PAdES / PKCS#7 / X.509).",
-  settings_default_toggle_name: "Ativar assinatura por padr\xE3o ao exportar",
-  settings_default_toggle_desc: "Quando ativado, a op\xE7\xE3o vir\xE1 marcada por padr\xE3o na janela 'Exportar para PDF'.",
+  settings_default_toggle_name: "Assinar criptograficamente por padr\xE3o",
+  settings_default_toggle_desc: "Aplica uma assinatura PAdES / PKCS#7 na exporta\xE7\xE3o, independentemente do rodap\xE9.",
+  settings_signer_toggle_name: "Mostrar nome do signat\xE1rio por padr\xE3o",
+  settings_signer_toggle_desc: "Coloca o nome do signat\xE1rio no canto inferior esquerdo dos PDFs exportados.",
   settings_signer_name_name: "Nome no rodap\xE9",
   settings_signer_name_desc: "Texto exibido no rodap\xE9 \xE0 esquerda em todas as p\xE1ginas.",
   settings_page_number_name: "Exibir n\xFAmero da p\xE1gina",
@@ -49260,6 +49287,13 @@ var it = {
   plugin_loaded: "Plugin Firma Digitale PDF caricato.",
   modal_toggle_title: "Firma con certificato digitale",
   modal_toggle_desc: "Aggiunge pi\xE8 di pagina a sinistra e firma crittografica (PAdES / PKCS#7).",
+  modal_options_title: "Opzioni per questo PDF",
+  modal_crypto_name: "Firma crittograficamente il PDF",
+  modal_crypto_desc: "Applica una firma digitale PAdES / PKCS#7 con il tuo certificato.",
+  modal_signer_name: "Mostra il nome del firmatario",
+  modal_signer_desc: "Lo inserisce nell'angolo inferiore sinistro di ogni pagina.",
+  modal_page_number_name: "Mostra il numero di pagina",
+  modal_page_number_desc: "Lo inserisce nell'angolo inferiore destro come pagina corrente / totale.",
   cmd_toggle_default: "Attiva/disattiva firma digitale predefinita nell'esportazione PDF",
   cmd_sign_existing: "Firma digitalmente un PDF esistente...",
   notice_saved_countdown: "\u23F3 PDF salvato: {name}\nFirma digitale in corso tra {delay} secondi...",
@@ -49274,8 +49308,10 @@ var it = {
   notice_signature_toggled_off: "Firma digitale PDF: Disattivata",
   settings_title: "Firma Digitale PDF \u2014 Impostazioni",
   settings_desc: "Configura il pi\xE8 di pagina continuo e il certificato digitale crittografico (PAdES / PKCS#7 / X.509).",
-  settings_default_toggle_name: "Attiva firma come predefinita all'esportazione",
-  settings_default_toggle_desc: "Se attivo, l'opzione sar\xE0 selezionata per impostazione predefinita nella finestra 'Esporta in PDF'.",
+  settings_default_toggle_name: "Firma crittograficamente per impostazione predefinita",
+  settings_default_toggle_desc: "Applica una firma PAdES / PKCS#7 durante l'esportazione, indipendentemente dal pi\xE8 di pagina.",
+  settings_signer_toggle_name: "Mostra il nome del firmatario per impostazione predefinita",
+  settings_signer_toggle_desc: "Inserisce il nome del firmatario nell'angolo inferiore sinistro dei PDF esportati.",
   settings_signer_name_name: "Nome nel pi\xE8 di pagina",
   settings_signer_name_desc: "Testo visualizzato in basso a sinistra su tutte le pagine.",
   settings_page_number_name: "Mostra numero di pagina",
@@ -49491,6 +49527,8 @@ var applyStyles = (el, styles) => {
 };
 var DEFAULT_SETTINGS = {
   firmarPdf: true,
+  firmarCriptograficamente: true,
+  mostrarNombreFirmante: true,
   nombreFirmante: "Nombre del Firmante",
   mostrarNumeroPagina: true,
   delaySeconds: 5,
@@ -49514,8 +49552,14 @@ var PdfSignatureSettingTab = class extends import_obsidian2.PluginSettingTab {
       text: t("settings_desc")
     });
     new import_obsidian2.Setting(containerEl).setName(t("settings_default_toggle_name")).setDesc(t("settings_default_toggle_desc")).addToggle(
-      (toggle) => toggle.setValue(this.plugin.settings.firmarPdf).onChange(async (val) => {
-        this.plugin.settings.firmarPdf = val;
+      (toggle) => toggle.setValue(this.plugin.settings.firmarCriptograficamente).onChange(async (val) => {
+        this.plugin.settings.firmarCriptograficamente = val;
+        await this.plugin.saveSettings();
+      })
+    );
+    new import_obsidian2.Setting(containerEl).setName(t("settings_signer_toggle_name")).setDesc(t("settings_signer_toggle_desc")).addToggle(
+      (toggle) => toggle.setValue(this.plugin.settings.mostrarNombreFirmante).onChange(async (val) => {
+        this.plugin.settings.mostrarNombreFirmante = val;
         await this.plugin.saveSettings();
       })
     );
@@ -49678,10 +49722,10 @@ var PdfDigitalSignaturePlugin = class extends import_obsidian3.Plugin {
       id: "toggle-pdf-signature-default",
       name: t("cmd_toggle_default"),
       callback: async () => {
-        this.settings.firmarPdf = !this.settings.firmarPdf;
+        this.settings.firmarCriptograficamente = !this.settings.firmarCriptograficamente;
         await this.saveSettings();
         new import_obsidian3.Notice(
-          this.settings.firmarPdf ? t("notice_signature_toggled_on") : t("notice_signature_toggled_off")
+          this.settings.firmarCriptograficamente ? t("notice_signature_toggled_on") : t("notice_signature_toggled_off")
         );
       }
     });
@@ -49692,12 +49736,22 @@ var PdfDigitalSignaturePlugin = class extends import_obsidian3.Plugin {
         this.promptSignExistingPdf();
       }
     });
-    this.checkCertificateExpirationAlert();
+    if (this.settings.firmarCriptograficamente) {
+      this.checkCertificateExpirationAlert();
+    }
   }
   onunload() {
   }
   async loadSettings() {
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    const savedSettings = await this.loadData() || {};
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, savedSettings);
+    if (!Object.prototype.hasOwnProperty.call(savedSettings, "firmarCriptograficamente")) {
+      const legacyEnabled = Boolean(savedSettings.firmarPdf ?? DEFAULT_SETTINGS.firmarPdf);
+      this.settings.firmarCriptograficamente = legacyEnabled;
+      this.settings.mostrarNombreFirmante = legacyEnabled;
+      this.settings.mostrarNumeroPagina = legacyEnabled && Boolean(savedSettings.mostrarNumeroPagina ?? DEFAULT_SETTINGS.mostrarNumeroPagina);
+      await this.saveSettings();
+    }
   }
   async saveSettings() {
     await this.saveData(this.settings);
@@ -49775,7 +49829,9 @@ var PdfDigitalSignaturePlugin = class extends import_obsidian3.Plugin {
     }
     if (targetModal._firmaPdfEnhanced) return;
     targetModal._firmaPdfEnhanced = true;
-    this.checkCertificateExpirationAlert();
+    if (this.settings.firmarCriptograficamente) {
+      this.checkCertificateExpirationAlert();
+    }
     const settingContainer = targetModal.contentEl.createDiv({
       cls: "firma-pdf-modal-toggle-container"
     });
@@ -49784,23 +49840,40 @@ var PdfDigitalSignaturePlugin = class extends import_obsidian3.Plugin {
       paddingTop: "10px",
       borderTop: "1px solid var(--background-modifier-border)"
     });
-    new import_obsidian3.Setting(settingContainer).setName(t("modal_toggle_title")).setDesc(t("modal_toggle_desc")).addToggle((toggle) => {
-      toggle.setValue(this.settings.firmarPdf);
+    settingContainer.createEl("h3", { text: t("modal_options_title") });
+    new import_obsidian3.Setting(settingContainer).setName(t("modal_crypto_name")).setDesc(t("modal_crypto_desc")).addToggle((toggle) => {
+      toggle.setValue(this.settings.firmarCriptograficamente);
       toggle.onChange(async (val) => {
-        this.settings.firmarPdf = val;
+        this.settings.firmarCriptograficamente = val;
+        await this.saveSettings();
+      });
+    });
+    new import_obsidian3.Setting(settingContainer).setName(t("modal_signer_name")).setDesc(t("modal_signer_desc")).addToggle((toggle) => {
+      toggle.setValue(this.settings.mostrarNombreFirmante);
+      toggle.onChange(async (val) => {
+        this.settings.mostrarNombreFirmante = val;
+        await this.saveSettings();
+      });
+    });
+    new import_obsidian3.Setting(settingContainer).setName(t("modal_page_number_name")).setDesc(t("modal_page_number_desc")).addToggle((toggle) => {
+      toggle.setValue(this.settings.mostrarNumeroPagina);
+      toggle.onChange(async (val) => {
+        this.settings.mostrarNumeroPagina = val;
         await this.saveSettings();
       });
     });
     const originalPrintToPdf = targetModal.printToPdf;
     targetModal.printToPdf = async (options) => {
-      const shouldSign = this.settings.firmarPdf;
-      if (shouldSign && options) {
+      const shouldSignCryptographically = this.settings.firmarCriptograficamente;
+      const shouldAddFooter = this.settings.mostrarNombreFirmante || this.settings.mostrarNumeroPagina;
+      if (shouldAddFooter && options) {
         options.displayHeaderFooter = true;
         options.headerTemplate = "<div></div>";
-        const pageNumHtml = this.settings.mostrarNumeroPagina ? `<span style="font-size: 8pt; color: #777;"><span class="pageNumber"></span> / <span class="totalPages"></span></span>` : "";
+        const pageNumHtml = this.settings.mostrarNumeroPagina ? `<span style="margin-left: auto;"><span class="pageNumber"></span> / <span class="totalPages"></span></span>` : "";
+        const signerNameHtml = this.settings.mostrarNombreFirmante ? `<span>${this.settings.nombreFirmante}</span>` : "";
         options.footerTemplate = `
-          <div style="font-size: 8.5pt; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; width: 100%; padding: 0 15mm; display: flex; justify-content: space-between; align-items: center; color: #333; -webkit-print-color-adjust: exact;">
-            <span style="font-weight: 600; letter-spacing: 0.1px;">${this.settings.nombreFirmante}</span>
+          <div style="font-size: 7pt; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; width: 100%; padding: 0 15mm; display: flex; align-items: center; color: #999; -webkit-print-color-adjust: exact;">
+            ${signerNameHtml}
             ${pageNumHtml}
           </div>
         `;
@@ -49808,12 +49881,12 @@ var PdfDigitalSignaturePlugin = class extends import_obsidian3.Plugin {
           options.marginsType = 0;
           if (options.margins) delete options.margins;
         }
-        if (this.settings.openAfterSigning) {
-          options.open = false;
-        }
+      }
+      if (shouldSignCryptographically && options && this.settings.openAfterSigning) {
+        options.open = false;
       }
       const result = await originalPrintToPdf.call(targetModal, options);
-      if (shouldSign && options && typeof options.filepath === "string") {
+      if (shouldSignCryptographically && options && typeof options.filepath === "string") {
         this.scheduleSigning(options.filepath);
       }
       return result;

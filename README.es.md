@@ -23,6 +23,8 @@ Al abrir los documentos en visores estándar como **Adobe Acrobat Reader**, esto
   Utiliza certificados digitales estándar X.509 (`.pfx` / `.p12`). Sella matemáticamente el PDF evitando modificaciones no autorizadas.
 - 📄 **Pie de Página en Todas las Páginas:**  
   Estampa tu nombre (o texto personalizado) en la esquina inferior izquierda y la numeración (`página / total`) a la derecha en cada hoja.
+- 🎛️ **Controles Independientes por Exportación:**
+  Elige por separado la firma criptográfica, el nombre del firmante y la numeración de páginas. Tus elecciones quedan guardadas como valores predeterminados.
 - ⚡ **100% Portable y Sin Dependencias Externas:**  
   Desarrollado en TypeScript/JavaScript puro (`node-forge` + `pdf-lib` + `@signpdf`). No requiere Python, pip, OpenSSL ni comandos en la terminal.
 - 🌐 **Soporte Multiidioma Nativo (i18n):**  
@@ -43,8 +45,7 @@ Al abrir los documentos en visores estándar como **Adobe Acrobat Reader**, esto
 ## 🚀 ¿Cómo Funciona?
 
 1. Abre cualquier nota en Obsidian y pulsa `Ctrl + P` (o `Cmd + P`) ➔ **Exportar a PDF**.
-2. Verás el nuevo interruptor al final de la lista:  
-   **«Firmar con certificado digital»**.
+2. Elige cualquier combinación de las tres opciones añadidas: firma criptográfica, nombre del firmante y numeración.
 3. Pulsa **Exportar a PDF** y elige dónde guardar el archivo.
 4. El plugin automáticamente:
    - Exporta la nota estampando tu nombre al pie de cada página.
@@ -81,14 +82,15 @@ En Obsidian: **Ajustes** ➔ **Firma Digital PDF**:
 
 | Ajuste | Descripción | Por defecto |
 | :--- | :--- | :--- |
-| **Activar firma por defecto** | Define si la opción viene premarcada al abrir la ventana de exportación. | `true` |
-| **Nombre en el pie de página** | Texto que aparecerá a la izquierda en todas las hojas. | `Benjamín Alcalde G.` |
+| **Firmar criptográficamente por defecto** | Aplica la firma PAdES / PKCS#7 independientemente del contenido del pie. | `true` |
+| **Mostrar nombre por defecto** | Define si aparece el nombre del firmante abajo a la izquierda. | `true` |
+| **Nombre en el pie de página** | Texto utilizado cuando está activada la opción de mostrar el nombre. | `Nombre del Firmante` |
 | **Mostrar número de página** | Muestra el indicador `página / total` a la derecha. | `true` |
 | **Demora antes de firmar** | Segundos de espera tras el guardado antes de aplicar la firma. | `5` segundos |
 | **Abrir PDF tras firmar** | Abre el visor predeterminado automáticamente al terminar. | `true` |
-| **Ruta del certificado digital** | Ruta relativa a la bóveda o absoluta a tu archivo `.pfx` o `.p12`. | `Scripts/certificado_benjamin.pfx` |
+| **Ruta del certificado digital** | Ruta relativa a la bóveda o absoluta a tu archivo `.pfx` o `.p12`. | `Scripts/certificado.pfx` |
 | **Contraseña del certificado** | Contraseña para descifrar la clave privada. | `1234` |
-| **Motivo / Ubicación** | Metadatos que figuran en el panel de firma de Adobe Acrobat. | Personal / Chile |
+| **Motivo / Ubicación** | Metadatos que figuran en el panel de firma de Adobe Acrobat. | Valores genéricos |
 
 ### Uso con Certificados Oficiales
 Si cuentas con una Firma Electrónica oficial (Firma Electrónica Simple o Avanzada en formato `.pfx` o `.p12`), solo debes ingresar su ruta y contraseña en los ajustes.

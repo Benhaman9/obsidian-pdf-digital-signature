@@ -23,6 +23,8 @@ When opened in standard PDF viewers like **Adobe Acrobat Reader**, documents are
   Uses standard X.509 digital certificates (`.pfx` / `.p12`). Ensures full cryptographic document integrity and non-repudiation.
 - 📄 **Running Footers on Every Page:**  
   Stamps your name (or custom text) on the bottom-left and running page numbers (`page / total`) on the bottom-right across all pages.
+- 🎛️ **Independent Export Controls:**
+  Choose cryptographic signing, signer name, and page numbering separately for each PDF. Your choices are remembered as defaults.
 - ⚡ **100% Portable & Zero Dependencies:**  
   Built entirely in pure TypeScript/JavaScript (`node-forge` + `pdf-lib` + `@signpdf`). No Python, no OpenSSL, no terminal commands required.
 - 🌐 **Multi-Language Support (i18n):**  
@@ -43,8 +45,7 @@ When opened in standard PDF viewers like **Adobe Acrobat Reader**, documents are
 ## 🚀 How It Works
 
 1. Open any note in Obsidian and trigger the native **Export to PDF** dialog (`Ctrl + P` / `Cmd + P` ➔ *Export to PDF*).
-2. You will see a new toggle at the bottom:  
-   **"Sign with digital certificate"** *(translated to your Obsidian language)*.
+2. Choose any combination of the three added options: cryptographic signing, signer name, and page numbering.
 3. Click **Export to PDF** and select your destination.
 4. The plugin automatically:
    - Prints the note with your name on the footer of every page.
@@ -81,14 +82,15 @@ In Obsidian's **Settings** ➔ **PDF Digital Signature**:
 
 | Setting | Description | Default |
 | :--- | :--- | :--- |
-| **Enable signing by default** | Whether the signing toggle is pre-checked in the Export dialog. | `true` |
-| **Signer name (Running footer)** | The text displayed at the bottom-left of every page. | `Benjamín Alcalde G.` |
+| **Cryptographically sign by default** | Applies the PAdES / PKCS#7 signature independently from footer content. | `true` |
+| **Show signer name by default** | Whether the signer name appears at the bottom-left. | `true` |
+| **Signer name (Running footer)** | The text displayed when the signer-name option is enabled. | `Name of Signer` |
 | **Display page number** | Displays `page / total` on the bottom-right. | `true` |
 | **Delay before signing** | Seconds to wait before applying the signature. | `5` seconds |
 | **Open PDF after signing** | Automatically opens your default PDF viewer once signed. | `true` |
-| **Certificate file path** | Relative or absolute path to your `.pfx` or `.p12` file. | `Scripts/certificado_benjamin.pfx` |
+| **Certificate file path** | Relative or absolute path to your `.pfx` or `.p12` file. | `Scripts/certificado.pfx` |
 | **Certificate password** | Password used to decrypt your certificate. | `1234` |
-| **Reason / Location** | Signature metadata displayed in Adobe Acrobat. | Personal / Chile |
+| **Reason / Location** | Signature metadata displayed in Adobe Acrobat. | Generic placeholders |
 
 ### Using an Official Certificate
 If you own an accredited digital signature (such as a commercial X.509 certificate in `.p12` or `.pfx` format), simply place it in your vault or enter its absolute path and password in the settings.

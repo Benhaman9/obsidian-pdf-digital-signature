@@ -23,6 +23,8 @@ All'apertura in lettori standard come **Adobe Acrobat Reader**, i file vengono r
   Utilizza certificati digitali standard X.509 (`.pfx` / `.p12`). Garantisce l'integrità del documento contro modifiche non autorizzate.
 - 📄 **Piè di Pagina Continuo su Tutte le Pagine:**  
   Appone il tuo nome (o testo personalizzato) in basso a sinistra e la numerazione (`pagina / totale`) a destra su ogni foglio.
+- 🎛️ **Controlli Indipendenti per Esportazione:**
+  Scegli separatamente la firma crittografica, il nome del firmatario e la numerazione delle pagine. Le scelte vengono salvate come predefinite.
 - ⚡ **100% Portatile e Senza Dipendenze Esterne:**  
   Sviluppato interamente in TypeScript/JavaScript puro (`node-forge` + `pdf-lib` + `@signpdf`). Non richiede Python, pip o comandi da terminale.
 - 🌐 **Supporto Multilingue Nativo (i18n):**  
@@ -43,7 +45,7 @@ All'apertura in lettori standard come **Adobe Acrobat Reader**, i file vengono r
 ## 🚀 Come Funziona
 
 1. Apri una nota in Obsidian e premi `Ctrl + P` (o `Cmd + P`) ➔ **Esporta in PDF**.
-2. Spunta l'opzione: **«Firma con certificato digitale»**.
+2. Scegli qualsiasi combinazione delle tre opzioni: firma crittografica, nome del firmatario e numerazione.
 3. Clicca su **Esporta in PDF** e scegli dove salvare il file.
 4. Il plugin automaticamente:
    - Esporta la nota con il tuo nome nel piè di pagina di ogni pagina.
