@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "node esbuild.config.mjs",
     "build": "node esbuild.config.mjs production",
-    "test": "node --test tests/regression.cjs tests/bundle-smoke.cjs"
+    "test": "node --test tests/regression.cjs tests/bundle-smoke.cjs",
+    "test:integration": "node --test tests/export-integration.cjs"
   },
   "keywords": [
     "obsidian",
