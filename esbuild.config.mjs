@@ -1,6 +1,5 @@
 import esbuild from "esbuild";
 import process from "process";
-import fs from "fs";
 
 const prod = process.argv[2] === "production";
 
@@ -33,7 +32,7 @@ const context = await esbuild.context({
 
 if (prod) {
   await context.rebuild();
-  process.exit(0);
+  await context.dispose();
 } else {
   await context.watch();
 }

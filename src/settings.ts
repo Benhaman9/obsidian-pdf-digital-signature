@@ -1,7 +1,7 @@
 import { App, Notice, PluginSettingTab, Setting } from "obsidian";
 import * as obsidian from "obsidian";
 import type PdfDigitalSignaturePlugin from "./main";
-import { t } from "./i18n";
+import { t, getLanguage } from "./i18n";
 import { getCertificateInfo } from "./signer";
 
 // Helper para setCssStyles seguro contra versiones antiguas de tipos
@@ -38,7 +38,7 @@ export const DEFAULT_SETTINGS: PdfSignatureSettings = {
   mostrarNumeroPagina: true,
   delaySeconds: 5,
   certPath: "Scripts/certificado.pfx",
-  certPassword: "1234",
+  certPassword: "",
   motivo: "Firma Digital",
   ubicacion: "Ciudad, País",
   openAfterSigning: true,
@@ -46,6 +46,7 @@ export const DEFAULT_SETTINGS: PdfSignatureSettings = {
 
 export class PdfSignatureSettingTab extends PluginSettingTab {
   plugin: PdfDigitalSignaturePlugin;
+  private certificateStatusEl?: HTMLElement;
 
   constructor(app: App, plugin: PdfDigitalSignaturePlugin) {
     super(app, plugin);
@@ -94,10 +95,10 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
       .setDesc(t("settings_signer_name_desc"))
       .addText((text) =>
         text
-          .setPlaceholder("Default")
+          .setPlaceholder(t("default_signer_name"))
           .setValue(this.plugin.settings.nombreFirmante)
           .onChange(async (val) => {
-            this.plugin.settings.nombreFirmante = val.trim() || "Default";
+            this.plugin.settings.nombreFirmante = val.trim();
             await this.plugin.saveSettings();
           })
       );
@@ -158,7 +159,7 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
           .onChange(async (val) => {
             this.plugin.settings.certPath = val.trim();
             await this.plugin.saveSettings();
-            this.display(); // refrescar estado
+            this.renderCertificateStatus(containerEl);
           })
       );
 
@@ -173,6 +174,7 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
           .onChange(async (val) => {
             this.plugin.settings.certPassword = val;
             await this.plugin.saveSettings();
+            this.renderCertificateStatus(containerEl);
           });
       });
 
@@ -224,10 +226,14 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
   }
 
   renderCertificateStatus(containerEl: HTMLElement): void {
-    const certPath = this.plugin.resolveAbsolutePath(this.plugin.settings.certPath);
+    const certPath = this.plugin.settings.certPath.trim()
+      ? this.plugin.resolveAbsolutePath(this.plugin.settings.certPath) : "";
     const info = getCertificateInfo(certPath, this.plugin.settings.certPassword);
 
-    const statusEl = containerEl.createDiv({ cls: "pdf-sig-cert-status" });
+    const statusEl = this.certificateStatusEl?.parentElement === containerEl
+      ? this.certificateStatusEl : containerEl.createDiv({ cls: "pdf-sig-cert-status" });
+    this.certificateStatusEl = statusEl;
+    statusEl.removeAttribute("style");
     applyStyles(statusEl, {
       padding: "10px 14px",
       marginBottom: "14px",
@@ -249,7 +255,7 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
       });
       statusEl.setText(
         t("settings_cert_status_expired", {
-          date: info.notAfter?.toLocaleDateString() || "N/A",
+          date: info.notAfter?.toLocaleDateString(getLanguage()) || "N/A",
         })
       );
     } else if (info.isExpiringSoon) {
@@ -261,7 +267,7 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
       statusEl.setText(
         t("settings_cert_status_expiring", {
           days: info.daysRemaining || 0,
-          date: info.notAfter?.toLocaleDateString() || "N/A",
+          date: info.notAfter?.toLocaleDateString(getLanguage()) || "N/A",
         })
       );
     } else if (info.valid) {
@@ -273,7 +279,7 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
       statusEl.setText(
         t("settings_cert_status_valid", {
           days: info.daysRemaining || 0,
-          date: info.notAfter?.toLocaleDateString() || "N/A",
+          date: info.notAfter?.toLocaleDateString(getLanguage()) || "N/A",
         })
       );
     } else {
@@ -281,7 +287,7 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
         backgroundColor: "rgba(235, 87, 87, 0.15)",
         border: "1px solid rgba(235, 87, 87, 0.4)",
       });
-      statusEl.setText(`⚠️ Error: ${info.error || "Certificado no válido o contraseña incorrecta"}`);
+      statusEl.setText(t("settings_cert_status_invalid", { error: info.error || t("error_invalid_cert") }));
     }
   }
 }

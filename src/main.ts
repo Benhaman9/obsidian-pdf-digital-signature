@@ -4,10 +4,13 @@ import {
   Plugin,
   Setting,
   FileSystemAdapter,
+  SuggestModal,
+  TFile,
 } from "obsidian";
 import * as obsidian from "obsidian";
 import * as path from "path";
 import * as fs from "fs";
+import { randomUUID } from "crypto";
 import {
   DEFAULT_SETTINGS,
   PdfSignatureSettings,
@@ -18,7 +21,7 @@ import {
   getCertificateInfo,
   signPdfFile,
 } from "./signer";
-import { t } from "./i18n";
+import { t, getLanguage } from "./i18n";
 
 // Helper para setCssStyles seguro contra versiones de tipos antiguas
 const applyStyles = (el: HTMLElement, styles: Record<string, string>): void => {
@@ -46,6 +49,7 @@ function getElectron(): ElectronModule | null {
 
 export default class PdfDigitalSignaturePlugin extends Plugin {
   settings: PdfSignatureSettings = DEFAULT_SETTINGS;
+  private pendingSigning = new Set<string>();
 
   async onload(): Promise<void> {
     await this.loadSettings();
@@ -92,7 +96,10 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
 
   async loadSettings(): Promise<void> {
     const savedSettings = ((await this.loadData()) || {}) as Partial<PdfSignatureSettings>;
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, savedSettings);
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, {
+      nombreFirmante: t("default_signer_name"), motivo: t("default_reason"), ubicacion: t("default_location"),
+      certPassword: randomUUID(),
+    }, savedSettings);
 
     if (!Object.prototype.hasOwnProperty.call(savedSettings, "firmarCriptograficamente")) {
       const legacyEnabled = Boolean(savedSettings.firmarPdf ?? DEFAULT_SETTINGS.firmarPdf);
@@ -100,8 +107,9 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
       this.settings.mostrarNombreFirmante = legacyEnabled;
       this.settings.mostrarNumeroPagina =
         legacyEnabled && Boolean(savedSettings.mostrarNumeroPagina ?? DEFAULT_SETTINGS.mostrarNumeroPagina);
-      await this.saveSettings();
     }
+    if (!Object.prototype.hasOwnProperty.call(savedSettings, "firmarCriptograficamente") ||
+        !Object.prototype.hasOwnProperty.call(savedSettings, "certPassword")) await this.saveSettings();
   }
 
   async saveSettings(): Promise<void> {
@@ -117,6 +125,7 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
   }
 
   resolveAbsolutePath(relOrAbsPath: string): string {
+    if (!relOrAbsPath.trim()) throw new Error(t("error_empty_cert_path"));
     if (path.isAbsolute(relOrAbsPath)) {
       return relOrAbsPath;
     }
@@ -127,12 +136,12 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
     const certPath = this.resolveAbsolutePath(this.settings.certPath);
     const info = getCertificateInfo(certPath, this.settings.certPassword);
 
-    if (!info.exists || !info.valid) return;
+    if (!info.exists || (!info.valid && !info.isExpired)) return;
 
     if (info.isExpired) {
       new Notice(
         t("notice_cert_expired", {
-          date: info.notAfter?.toLocaleDateString() || "N/A",
+          date: info.notAfter?.toLocaleDateString(getLanguage()) || "N/A",
         }),
         15000
       );
@@ -140,7 +149,7 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
       new Notice(
         t("notice_cert_expiring_soon", {
           days: info.daysRemaining || 0,
-          date: info.notAfter?.toLocaleDateString() || "N/A",
+          date: info.notAfter?.toLocaleDateString(getLanguage()) || "N/A",
         }),
         12000
       );
@@ -157,33 +166,43 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
 
     const p12Buffer = createSelfSignedCertificate(
       this.settings.nombreFirmante,
-      this.settings.certPassword,
-      "Personal / Universidad",
-      "CL",
-      3
+      this.settings.certPassword
     );
 
-    await fs.promises.writeFile(certPath, p12Buffer);
+    // Preserve the previous private key when renewing a certificate.
+    if (fs.existsSync(certPath)) {
+      await fs.promises.copyFile(certPath, `${certPath}.${randomUUID()}.bak`, fs.constants.COPYFILE_EXCL);
+    }
+    const tempPath = `${certPath}.${randomUUID()}.tmp`;
+    try {
+      await fs.promises.writeFile(tempPath, p12Buffer, { flag: "wx", mode: 0o600 });
+      await fs.promises.rename(tempPath, certPath);
+    } finally {
+      await fs.promises.rm(tempPath, { force: true });
+    }
     return certPath;
   }
 
   hookPdfModal(): void {
     const originalModalOpen = Modal.prototype.open;
+    let active = true;
 
-    Modal.prototype.open = ((plugin: PdfDigitalSignaturePlugin) => {
+    const enhancedOpen = ((plugin: PdfDigitalSignaturePlugin) => {
       return function (this: Modal) {
         const res = originalModalOpen.call(this);
         try {
-          plugin.inspectAndEnhanceModal(this);
+          if (active) plugin.inspectAndEnhanceModal(this);
         } catch {
           // Ignorar errores de inspección
         }
         return res;
       };
     })(this);
+    Modal.prototype.open = enhancedOpen;
 
     this.register(() => {
-      Modal.prototype.open = originalModalOpen;
+      active = false;
+      if (Modal.prototype.open === enhancedOpen) Modal.prototype.open = originalModalOpen;
     });
   }
 
@@ -260,6 +279,7 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
     const originalPrintToPdf = targetModal.printToPdf;
 
     targetModal.printToPdf = async (options: Record<string, unknown>) => {
+      const exportSettings = { ...this.settings };
       const shouldSignCryptographically = this.settings.firmarCriptograficamente;
       const shouldAddFooter = this.settings.mostrarNombreFirmante || this.settings.mostrarNumeroPagina;
 
@@ -271,7 +291,9 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
           ? `<span style="margin-left: auto;"><span class="pageNumber"></span> / <span class="totalPages"></span></span>`
           : "";
         const signerNameHtml = this.settings.mostrarNombreFirmante
-          ? `<span>${this.settings.nombreFirmante}</span>`
+          ? `<span>${this.settings.nombreFirmante.replace(/[&<>"']/g, (char) => ({
+              "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+            }[char]!))}</span>`
           : "";
 
         options.footerTemplate = `
@@ -295,15 +317,27 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
       const result = await originalPrintToPdf.call(targetModal, options);
 
       if (shouldSignCryptographically && options && typeof options.filepath === "string") {
-        this.scheduleSigning(options.filepath);
+        this.scheduleSigning(options.filepath, exportSettings);
       }
 
       return result;
     };
+    this.register(() => {
+      targetModal.printToPdf = originalPrintToPdf;
+      targetModal._firmaPdfEnhanced = false;
+      settingContainer.remove();
+    });
   }
 
-  scheduleSigning(filepath: string): void {
-    const delaySec = Math.max(1, parseInt(String(this.settings.delaySeconds), 10) || 5);
+  scheduleSigning(filepath: string, settings = this.settings): void {
+    const jobPath = path.resolve(filepath);
+    if (this.pendingSigning.has(jobPath)) {
+      new Notice(t("notice_already_pending"));
+      return;
+    }
+    this.pendingSigning.add(jobPath);
+    const jobSettings = { ...settings };
+    const delaySec = Math.min(15, Math.max(1, parseInt(String(jobSettings.delaySeconds), 10) || 5));
     const delayMs = delaySec * 1000;
     const baseName = path.basename(filepath);
 
@@ -312,7 +346,7 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
       delayMs
     );
 
-    window.setTimeout(() => {
+    this.registerInterval(window.setTimeout(() => {
       void (async () => {
         const signingNotice = new Notice(
           t("notice_signing_in_progress", { name: baseName }),
@@ -320,7 +354,7 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
         );
 
         try {
-          await this.executeDigitalSignature(filepath);
+          await this.executeDigitalSignature(filepath, jobSettings);
           signingNotice.hide();
 
           new Notice(
@@ -328,10 +362,15 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
             6000
           );
 
-          if (this.settings.openAfterSigning) {
+          if (jobSettings.openAfterSigning) {
             const electron = getElectron();
             if (electron?.shell) {
-              await electron.shell.openPath(filepath);
+              try {
+                const error = await electron.shell.openPath(filepath);
+                if (error) new Notice(t("notice_open_error", { error }));
+              } catch (error) {
+                new Notice(t("notice_open_error", { error: error instanceof Error ? error.message : String(error) }));
+              }
             }
           }
         } catch (err) {
@@ -341,47 +380,71 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
             t("notice_signing_error", { name: baseName, error: msg }),
             12000
           );
+        } finally {
+          this.pendingSigning.delete(jobPath);
         }
       })();
-    }, delayMs);
+    }, delayMs));
   }
 
-  async executeDigitalSignature(filepath: string): Promise<void> {
-    const certPath = this.resolveAbsolutePath(this.settings.certPath);
+  async executeDigitalSignature(filepath: string, settings = this.settings): Promise<void> {
+    const certPath = this.resolveAbsolutePath(settings.certPath);
 
     if (!fs.existsSync(certPath)) {
-      await this.generateCertificate();
+      const buffer = createSelfSignedCertificate(settings.nombreFirmante, settings.certPassword);
+      await fs.promises.mkdir(path.dirname(certPath), { recursive: true });
+      try {
+        await fs.promises.writeFile(certPath, buffer, { flag: "wx", mode: 0o600 });
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+      }
     }
 
-    await signPdfFile(filepath, certPath, this.settings.certPassword, {
-      signerName: this.settings.nombreFirmante,
-      reason: this.settings.motivo,
-      location: this.settings.ubicacion,
+    await signPdfFile(filepath, certPath, settings.certPassword, {
+      signerName: settings.nombreFirmante,
+      reason: settings.motivo,
+      location: settings.ubicacion,
     });
   }
 
-  promptSignExistingPdf(): void {
+  async promptSignExistingPdf(): Promise<void> {
     try {
       const electron = getElectron();
       const dialog = electron?.remote ? electron.remote.dialog : null;
       if (!dialog) {
-        new Notice("No access to system file dialog.");
+        new ExistingPdfModal(this).open();
         return;
       }
-      void dialog
-        .showOpenDialog({
-          title: t("cmd_sign_existing"),
-          filters: [{ name: "PDF Files", extensions: ["pdf"] }],
-          properties: ["openFile"],
-        })
-        .then((res) => {
-          if (!res.canceled && res.filePaths.length > 0) {
-            const pdfFile = res.filePaths[0];
-            this.scheduleSigning(pdfFile);
-          }
-        });
-    } catch {
-      new Notice("Error opening file dialog.");
+      const res = await dialog.showOpenDialog({
+        title: t("cmd_sign_existing"),
+        filters: [{ name: t("dialog_pdf_files"), extensions: ["pdf"] }],
+        properties: ["openFile"],
+      });
+      if (!res.canceled && res.filePaths.length > 0) {
+        this.scheduleSigning(res.filePaths[0]);
+      }
+    } catch (error) {
+      new Notice(t("notice_dialog_error", { error: error instanceof Error ? error.message : String(error) }));
     }
+  }
+}
+
+class ExistingPdfModal extends SuggestModal<TFile> {
+  constructor(private plugin: PdfDigitalSignaturePlugin) {
+    super(plugin.app);
+    this.setPlaceholder(t("cmd_sign_existing"));
+  }
+
+  getSuggestions(query: string): TFile[] {
+    return this.plugin.app.vault.getFiles().filter((file) =>
+      file.extension.toLowerCase() === "pdf" && file.path.toLowerCase().includes(query.toLowerCase()));
+  }
+
+  renderSuggestion(file: TFile, el: HTMLElement): void {
+    el.setText(file.path);
+  }
+
+  onChooseSuggestion(file: TFile): void {
+    this.plugin.scheduleSigning(this.plugin.resolveAbsolutePath(file.path));
   }
 }

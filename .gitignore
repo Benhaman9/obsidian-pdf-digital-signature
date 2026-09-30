@@ -20,3 +20,7 @@ npm-debug.log*
 Thumbs.db
 .vscode/
 .idea/
+
+# Private certificate renewal backups
+*.pfx.*.bak
+*.p12.*.bak

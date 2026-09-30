@@ -1,64 +1,13 @@
 import * as forge from "node-forge";
-import { PDFDocument } from "pdf-lib";
+import { PDFDocument, PDFSignature, PDFName, PDFDict } from "pdf-lib";
 import { pdflibAddPlaceholder } from "@signpdf/placeholder-pdf-lib";
 import { SignPdf } from "@signpdf/signpdf";
 import { P12Signer } from "@signpdf/signer-p12";
 import * as fs from "fs";
+import { randomUUID } from "crypto";
+import { t } from "./i18n";
 
-// Definiciones de tipos para node-forge para eliminar totalmente las advertencias de 'any'
-interface ForgeCert {
-  validity: {
-    notBefore: Date;
-    notAfter: Date;
-  };
-  subject: {
-    getField(name: string): { value?: string } | null;
-  };
-}
-
-interface ForgeSafeBag {
-  cert?: ForgeCert;
-}
-
-interface ForgeSafeContent {
-  safeBags: ForgeSafeBag[];
-}
-
-interface ForgePkcs12 {
-  safeContents: ForgeSafeContent[];
-}
-
-interface ForgeModule {
-  asn1: {
-    fromDer(bytes: string): unknown;
-    toDer(asn1: unknown): { getBytes(): string };
-  };
-  pkcs12: {
-    pkcs12FromAsn1(asn1: unknown, strict?: boolean | string, password?: string): ForgePkcs12;
-    toPkcs12Asn1(key: unknown, cert: unknown, password?: string, options?: Record<string, unknown>): unknown;
-  };
-  pki: {
-    rsa: { generateKeyPair(bits: number): { publicKey: unknown; privateKey: unknown } };
-    createCertificate(): {
-      publicKey: unknown;
-      serialNumber: string;
-      validity: { notBefore: Date; notAfter: Date };
-      setSubject(attrs: Array<{ name: string; value: string }>): void;
-      setIssuer(attrs: Array<{ name: string; value: string }>): void;
-      setExtensions(exts: Array<Record<string, unknown>>): void;
-      sign(key: unknown, md: unknown): void;
-    };
-  };
-  md: {
-    sha256: { create(): unknown };
-  };
-  random: {
-    getBytesSync(count: number): string;
-  };
-  util: {
-    bytesToHex(bytes: string): string;
-  };
-}
+type ForgeModule = typeof forge;
 
 function getForge(): ForgeModule {
   const forgeObject = forge as unknown as { default?: ForgeModule };
@@ -97,26 +46,17 @@ export function getCertificateInfo(certPath: string, password = ""): Certificate
     const p12Der = fs.readFileSync(certPath).toString("binary");
     const p12Asn1 = f.asn1.fromDer(p12Der);
     
-    let p12: ForgePkcs12;
-    try {
-      p12 = f.pkcs12.pkcs12FromAsn1(p12Asn1, false, password || "");
-    } catch {
-      p12 = f.pkcs12.pkcs12FromAsn1(p12Asn1, password || "");
-    }
-
-    let cert: ForgeCert | null = null;
-    for (const safeContent of p12.safeContents) {
-      for (const safeBag of safeContent.safeBags) {
-        if (safeBag.cert) {
-          cert = safeBag.cert;
-          break;
-        }
-      }
-      if (cert) break;
-    }
+    const p12 = f.pkcs12.pkcs12FromAsn1(p12Asn1, false, password);
+    // Match the same private key used by P12Signer, rather than the first CA in the chain.
+    const bags = p12.safeContents.flatMap((content) => content.safeBags);
+    const key = bags.find((bag) => bag.type === f.pki.oids.pkcs8ShroudedKeyBag && bag.key)?.key;
+    const cert = key && bags.find((bag) => {
+      const publicKey = bag.cert?.publicKey as forge.pki.rsa.PublicKey | undefined;
+      return publicKey?.n && publicKey.e && key.n.compareTo(publicKey.n) === 0 && key.e.compareTo(publicKey.e) === 0;
+    })?.cert;
 
     if (!cert) {
-      return { exists: true, valid: false, error: "No certificate found inside PFX" };
+      return { exists: true, valid: false, error: t("error_no_signing_cert") };
     }
 
     const notBefore = cert.validity.notBefore;
@@ -124,17 +64,19 @@ export function getCertificateInfo(certPath: string, password = ""): Certificate
     const now = new Date();
 
     const diffMs = notAfter.getTime() - now.getTime();
-    const daysRemaining = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const daysRemaining = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
 
     const commonNameAttr = cert.subject.getField("CN");
     const commonName = commonNameAttr && commonNameAttr.value ? String(commonNameAttr.value) : undefined;
 
-    const isExpired = daysRemaining < 0;
-    const isExpiringSoon = daysRemaining >= 0 && daysRemaining <= 30;
+    const isExpired = diffMs <= 0;
+    const isNotYetValid = now < notBefore;
+    const isExpiringSoon = !isExpired && !isNotYetValid && diffMs <= 30 * 24 * 60 * 60 * 1000;
 
     return {
       exists: true,
-      valid: true,
+      valid: !isExpired && !isNotYetValid,
+      error: isNotYetValid ? t("error_not_yet_valid") : undefined,
       commonName,
       notBefore,
       notAfter,
@@ -158,8 +100,8 @@ export function getCertificateInfo(certPath: string, password = ""): Certificate
 export function createSelfSignedCertificate(
   signerName: string,
   password: string,
-  organization = "Personal / Universidad",
-  country = "CL",
+  organization = "",
+  country = "",
   validityYears = 3
 ): Buffer {
   const f = getForge();
@@ -180,8 +122,8 @@ export function createSelfSignedCertificate(
 
   const attrs = [
     { name: "commonName", value: signerName },
-    { name: "organizationName", value: organization },
-    { name: "countryName", value: country },
+    ...(organization ? [{ name: "organizationName", value: organization }] : []),
+    ...(country ? [{ name: "countryName", value: country }] : []),
   ];
 
   cert.setSubject(attrs);
@@ -231,13 +173,17 @@ export async function signPdfBuffer(
   const pdfDoc = await PDFDocument.load(pdfBuffer, {
     ignoreEncryption: false,
   });
+  if (pdfDoc.getForm().getFields().some((field) =>
+    field instanceof PDFSignature && field.acroField.dict.lookupMaybe(PDFName.of("V"), PDFDict))) {
+    throw new Error(t("error_already_signed"));
+  }
 
   pdflibAddPlaceholder({
     pdfDoc,
-    reason: metadata.reason || "Personal document",
+    reason: metadata.reason ?? "",
     contactInfo: metadata.contactInfo || "",
-    name: metadata.signerName || "Default",
-    location: metadata.location || "Chile",
+    name: metadata.signerName,
+    location: metadata.location ?? "",
     signatureLength: 8192,
   });
 
@@ -264,10 +210,10 @@ export async function signPdfFile(
   metadata: SignatureMetadata
 ): Promise<void> {
   if (!fs.existsSync(filePath)) {
-    throw new Error(`El archivo PDF no existe: ${filePath}`);
+    throw new Error(t("error_pdf_missing", { path: filePath }));
   }
   if (!fs.existsSync(certPath)) {
-    throw new Error(`El certificado digital no existe: ${certPath}`);
+    throw new Error(t("error_cert_missing", { path: certPath }));
   }
 
   const pdfBuffer = await fs.promises.readFile(filePath);
@@ -275,13 +221,14 @@ export async function signPdfFile(
 
   const signedBuffer = await signPdfBuffer(pdfBuffer, p12Buffer, password, metadata);
 
-  const tempPath = filePath + ".signed.tmp";
-  await fs.promises.writeFile(tempPath, signedBuffer);
-
+  const tempPath = `${filePath}.${randomUUID()}.signed.tmp`;
   try {
+    await fs.promises.writeFile(tempPath, signedBuffer, { flag: "wx" });
+    if (!(await fs.promises.readFile(filePath)).equals(pdfBuffer)) {
+      throw new Error(t("error_pdf_changed"));
+    }
     await fs.promises.rename(tempPath, filePath);
-  } catch {
-    await fs.promises.unlink(filePath);
-    await fs.promises.rename(tempPath, filePath);
+  } finally {
+    await fs.promises.rm(tempPath, { force: true });
   }
 }
