@@ -89,6 +89,27 @@ test('generated certificate signs a PDF with a verifiable detached CMS signature
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
+test('refuses an empty password and certificates outside their validity period', async () => {
+  assert.throws(() => signer.createSelfSignedCertificate('Test', ''), /password/);
+  const pdf = await PDFDocument.create(); pdf.addPage();
+  const pdfBytes = Buffer.from(await pdf.save());
+  const original = signer.createSelfSignedCertificate('Test', 'test');
+  const p12 = forge.pkcs12.pkcs12FromAsn1(forge.asn1.fromDer(original.toString('binary')), false, 'test');
+  const bags = p12.safeContents.flatMap((content) => content.safeBags);
+  const key = bags.find((bag) => bag.key).key;
+  const cert = bags.find((bag) => bag.cert).cert;
+  const makeP12 = () => {
+    cert.sign(key, forge.md.sha256.create());
+    return Buffer.from(forge.asn1.toDer(forge.pkcs12.toPkcs12Asn1(key, cert, 'test', { algorithm: '3des' })).getBytes(), 'binary');
+  };
+  cert.validity.notAfter = new Date(Date.now() - 86400000);
+  await assert.rejects(signer.signPdfBuffer(pdfBytes, makeP12(), 'test', { signerName: 'Test' }), /expired/);
+  cert.validity.notBefore = new Date(Date.now() + 86400000);
+  cert.validity.notAfter = new Date(Date.now() + 172800000);
+  await assert.rejects(signer.signPdfBuffer(pdfBytes, makeP12(), 'test', { signerName: 'Test' }), /not yet valid/);
+  await assert.rejects(signer.signPdfBuffer(pdfBytes, original, 'wrong', { signerName: 'Test' }), /Invalid certificate/);
+});
+
 test('certificate status uses the signing leaf, checks future validity and expiry to the millisecond', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pdf-cert-test-'));
   try {

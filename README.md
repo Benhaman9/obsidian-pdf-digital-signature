@@ -105,6 +105,6 @@ Made with ❤️ by [Benjamín Alcalde G.](https://github.com/Benhaman9)
 
 ## Certificate and signature limitations
 
-A random password is generated on first load. You can change it before creating a certificate. The plugin saves it in plain text in its local settings; protect the vault and its backups. Renewal preserves the previous certificate in a `.bak` file next to it. Existing signed PDFs are rejected because this plugin rewrites the PDF rather than adding an incremental signature. The signature uses `adbe.pkcs7.detached`; full PAdES profile conformance, trusted timestamps and long-term validation are not claimed.
+A random password is generated on first load. You can change it before creating a certificate; a blank password is refused for new certificates. The plugin saves it in plain text in its local settings; protect the vault and its backups. Renewal preserves the previous certificate in a `.bak` file next to it. Expired or not-yet-valid certificates cannot be used to sign. Existing signed PDFs are rejected because this plugin rewrites the PDF rather than adding an incremental signature. The signature uses `adbe.pkcs7.detached`; full PAdES profile conformance, trusted timestamps and long-term validation are not claimed.
 
 [Adobe: certificate trust](https://helpx.adobe.com/acrobat/using/trusted-identities.html) · [Signing library](https://github.com/vbuch/node-signpdf)

@@ -78,6 +78,6 @@ Criado com ❤️ por [Benjamín Alcalde G.](https://github.com/Benhaman9)
 
 ## Limitações do certificado e da assinatura
 
-Uma senha aleatória é gerada na primeira inicialização. Você pode alterá-la antes de criar um certificado. O plugin a salva em texto simples nas configurações locais; proteja o cofre e os backups. A renovação preserva o certificado anterior em um arquivo `.bak` ao lado dele. PDFs já assinados são rejeitados, pois o plugin reescreve o documento em vez de adicionar uma assinatura incremental. Usa `adbe.pkcs7.detached`; não se declara conformidade completa com perfis PAdES, carimbos de tempo confiáveis ou validação de longo prazo.
+Uma senha aleatória é gerada na primeira inicialização. Você pode alterá-la antes de criar um certificado; senhas vazias são recusadas para certificados novos. O plugin a salva em texto simples nas configurações locais; proteja o cofre e os backups. A renovação preserva o certificado anterior em um arquivo `.bak` ao lado dele. Certificados expirados ou ainda não válidos não podem ser usados para assinar. PDFs já assinados são rejeitados, pois o plugin reescreve o documento em vez de adicionar uma assinatura incremental. Usa `adbe.pkcs7.detached`; não se declara conformidade completa com perfis PAdES, carimbos de tempo confiáveis ou validação de longo prazo.
 
 [Adobe: certificate trust](https://helpx.adobe.com/acrobat/using/trusted-identities.html) · [Signing library](https://github.com/vbuch/node-signpdf)

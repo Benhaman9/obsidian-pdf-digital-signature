@@ -33,21 +33,12 @@ export interface CertificateInfo {
   error?: string;
 }
 
-/**
- * Inspecciona un certificado PKCS#12 (.pfx / .p12) y extrae vigencia y expiración.
- */
-export function getCertificateInfo(certPath: string, password = ""): CertificateInfo {
-  if (!fs.existsSync(certPath)) {
-    return { exists: false, valid: false };
-  }
-
+function inspectCertificate(p12Buffer: Buffer, password: string): CertificateInfo {
   try {
     const f = getForge();
-    const p12Der = fs.readFileSync(certPath).toString("binary");
-    const p12Asn1 = f.asn1.fromDer(p12Der);
-    
+    const p12Asn1 = f.asn1.fromDer(p12Buffer.toString("binary"));
     const p12 = f.pkcs12.pkcs12FromAsn1(p12Asn1, false, password);
-    // Match the same private key used by P12Signer, rather than the first CA in the chain.
+    // Use the same encrypted RSA key bag that P12Signer uses for the signature.
     const bags = p12.safeContents.flatMap((content) => content.safeBags);
     const key = bags.find((bag) => bag.type === f.pki.oids.pkcs8ShroudedKeyBag && bag.key)?.key;
     const cert = key && bags.find((bag) => {
@@ -62,13 +53,10 @@ export function getCertificateInfo(certPath: string, password = ""): Certificate
     const notBefore = cert.validity.notBefore;
     const notAfter = cert.validity.notAfter;
     const now = new Date();
-
     const diffMs = notAfter.getTime() - now.getTime();
     const daysRemaining = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-
     const commonNameAttr = cert.subject.getField("CN");
     const commonName = commonNameAttr && commonNameAttr.value ? String(commonNameAttr.value) : undefined;
-
     const isExpired = diffMs <= 0;
     const isNotYetValid = now < notBefore;
     const isExpiringSoon = !isExpired && !isNotYetValid && diffMs <= 30 * 24 * 60 * 60 * 1000;
@@ -84,13 +72,23 @@ export function getCertificateInfo(certPath: string, password = ""): Certificate
       isExpiringSoon,
       isExpired,
     };
-  } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : "Invalid password or corrupted certificate file";
-    return {
-      exists: true,
-      valid: false,
-      error: errorMsg,
-    };
+  } catch {
+    return { exists: true, valid: false, error: t("error_invalid_cert") };
+  }
+}
+
+/**
+ * Inspecciona un certificado PKCS#12 (.pfx / .p12) y extrae vigencia y expiración.
+ */
+export function getCertificateInfo(certPath: string, password = ""): CertificateInfo {
+  if (!fs.existsSync(certPath)) {
+    return { exists: false, valid: false };
+  }
+
+  try {
+    return inspectCertificate(fs.readFileSync(certPath), password);
+  } catch {
+    return { exists: true, valid: false, error: t("error_invalid_cert") };
   }
 }
 
@@ -104,6 +102,7 @@ export function createSelfSignedCertificate(
   country = "",
   validityYears = 3
 ): Buffer {
+  if (!password) throw new Error(t("error_password_required"));
   const f = getForge();
   const pki = f.pki;
   const keys = pki.rsa.generateKeyPair(2048);
@@ -166,6 +165,12 @@ export async function signPdfBuffer(
   password: string,
   metadata: SignatureMetadata
 ): Promise<Buffer> {
+  const certificateInfo = inspectCertificate(p12Buffer, password);
+  if (!certificateInfo.valid) {
+    throw new Error(certificateInfo.isExpired
+      ? t("error_expired_cert")
+      : certificateInfo.error || t("error_invalid_cert"));
+  }
   const signer = new P12Signer(p12Buffer, {
     passphrase: password || "",
   });

@@ -78,6 +78,6 @@ Creato con ❤️ da [Benjamín Alcalde G.](https://github.com/Benhaman9)
 
 ## Limiti del certificato e della firma
 
-Al primo avvio viene generata una password casuale. Puoi cambiarla prima di creare un certificato. Il plugin la salva in chiaro nelle impostazioni locali; proteggi il vault e i backup. Il rinnovo conserva il certificato precedente in un file `.bak` accanto ad esso. I PDF già firmati vengono rifiutati perché il plugin riscrive il documento invece di aggiungere una firma incrementale. Usa `adbe.pkcs7.detached`; non si dichiara conformità completa ai profili PAdES, marche temporali attendibili o validazione a lungo termine.
+Al primo avvio viene generata una password casuale. Puoi cambiarla prima di creare un certificato; una password vuota non è consentita per i nuovi certificati. Il plugin la salva in chiaro nelle impostazioni locali; proteggi il vault e i backup. Il rinnovo conserva il certificato precedente in un file `.bak` accanto ad esso. I certificati scaduti o non ancora validi non possono essere usati per firmare. I PDF già firmati vengono rifiutati perché il plugin riscrive il documento invece di aggiungere una firma incrementale. Usa `adbe.pkcs7.detached`; non si dichiara conformità completa ai profili PAdES, marche temporali attendibili o validazione a lungo termine.
 
 [Adobe: certificate trust](https://helpx.adobe.com/acrobat/using/trusted-identities.html) · [Signing library](https://github.com/vbuch/node-signpdf)

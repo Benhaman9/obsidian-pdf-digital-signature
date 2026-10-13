@@ -17,6 +17,8 @@ export type TranslationKey =
   | "dialog_pdf_files"
   | "error_not_yet_valid"
   | "error_no_signing_cert"
+  | "error_expired_cert"
+  | "error_password_required"
   | "error_pdf_changed"
   | "plugin_loaded"
   | "modal_toggle_title"
@@ -88,6 +90,8 @@ const en: Record<TranslationKey, string> = {
   dialog_pdf_files: "PDF files",
   error_not_yet_valid: "The certificate is not yet valid.",
   error_no_signing_cert: "No RSA certificate matching the encrypted private key was found.",
+  error_expired_cert: "The certificate has expired. Renew it before signing.",
+  error_password_required: "Set a certificate password before creating a private key.",
 
   plugin_loaded: "PDF Digital Signature loaded.",
   modal_toggle_title: "Sign with digital certificate",
@@ -107,7 +111,7 @@ const en: Record<TranslationKey, string> = {
   notice_signing_error: "❌ Error digitally signing {name}:\n{error}",
   notice_cert_generated: "✅ Digital certificate successfully generated at:\n{path}",
   notice_cert_gen_error: "❌ Error generating certificate: {error}",
-  notice_cert_expired: "⚠️ Attention: Your digital certificate expired on {date}. New PDFs will be signed with an expired certificate. Please renew it in Settings.",
+  notice_cert_expired: "⚠️ Your digital certificate expired on {date}. Renew it in Settings before signing more PDFs.",
   notice_cert_expiring_soon: "⚠️ Reminder: Your digital certificate expires in {days} days (on {date}). Please renew it in Settings -> PDF Digital Signature.",
   notice_signature_toggled_on: "PDF digital signature: Enabled",
   notice_signature_toggled_off: "PDF digital signature: Disabled",
@@ -160,6 +164,8 @@ const es: Record<TranslationKey, string> = {
   dialog_pdf_files: "Archivos PDF",
   error_not_yet_valid: "El certificado todavía no es válido.",
   error_no_signing_cert: "No se encontró un certificado RSA que corresponda a la clave privada cifrada.",
+  error_expired_cert: "El certificado caducó. Renuévalo antes de firmar.",
+  error_password_required: "Establece una contraseña antes de crear la clave privada.",
 
   plugin_loaded: "Plugin Firma Digital PDF cargado.",
   modal_toggle_title: "Firmar con certificado digital",
@@ -179,7 +185,7 @@ const es: Record<TranslationKey, string> = {
   notice_signing_error: "❌ Error al firmar digitalmente {name}:\n{error}",
   notice_cert_generated: "✅ Certificado digital generado con éxito en:\n{path}",
   notice_cert_gen_error: "❌ Error al generar certificado: {error}",
-  notice_cert_expired: "⚠️ Atención: Tu certificado digital expiró el {date}. Los PDFs nuevos se firmarán con certificado vencido. Renuévalo en Ajustes.",
+  notice_cert_expired: "⚠️ Tu certificado digital expiró el {date}. Renuévalo en Ajustes antes de firmar más PDFs.",
   notice_cert_expiring_soon: "⚠️ Aviso: A tu certificado digital le quedan {days} días de vigencia (vence el {date}). Renuévalo en Ajustes -> Firma Digital PDF.",
   notice_signature_toggled_on: "Firma digital PDF: Activada",
   notice_signature_toggled_off: "Firma digital PDF: Desactivada",
@@ -232,6 +238,8 @@ const pt: Record<TranslationKey, string> = {
   dialog_pdf_files: "Arquivos PDF",
   error_not_yet_valid: "O certificado ainda não é válido.",
   error_no_signing_cert: "Nenhum certificado RSA correspondente à chave privada criptografada foi encontrado.",
+  error_expired_cert: "O certificado expirou. Renove-o antes de assinar.",
+  error_password_required: "Defina uma senha para o certificado antes de criar a chave privada.",
 
   plugin_loaded: "Plugin Assinatura Digital de PDF carregado.",
   modal_toggle_title: "Assinar com certificado digital",
@@ -251,7 +259,7 @@ const pt: Record<TranslationKey, string> = {
   notice_signing_error: "❌ Erro ao assinar digitalmente {name}:\n{error}",
   notice_cert_generated: "✅ Certificado digital gerado com sucesso em:\n{path}",
   notice_cert_gen_error: "❌ Erro ao gerar certificado: {error}",
-  notice_cert_expired: "⚠️ Atenção: Seu certificado digital expirou em {date}. Novos PDFs serão assinados com certificado vencido. Renove-o nas Configurações.",
+  notice_cert_expired: "⚠️ Seu certificado digital expirou em {date}. Renove-o nas Configurações antes de assinar mais PDFs.",
   notice_cert_expiring_soon: "⚠️ Aviso: Seu certificado digital expira em {days} dias (em {date}). Renove-o nas Configurações -> Assinatura Digital de PDF.",
   notice_signature_toggled_on: "Assinatura digital de PDF: Ativada",
   notice_signature_toggled_off: "Assinatura digital de PDF: Desativada",
@@ -304,6 +312,8 @@ const it: Record<TranslationKey, string> = {
   dialog_pdf_files: "File PDF",
   error_not_yet_valid: "Il certificato non è ancora valido.",
   error_no_signing_cert: "Nessun certificato RSA corrispondente alla chiave privata cifrata trovato.",
+  error_expired_cert: "Il certificato è scaduto. Rinnovalo prima di firmare.",
+  error_password_required: "Imposta una password per il certificato prima di creare la chiave privata.",
 
   plugin_loaded: "Plugin Firma Digitale PDF caricato.",
   modal_toggle_title: "Firma con certificato digitale",
@@ -323,7 +333,7 @@ const it: Record<TranslationKey, string> = {
   notice_signing_error: "❌ Errore durante la firma digitale di {name}:\n{error}",
   notice_cert_generated: "✅ Certificato digitale generato con successo in:\n{path}",
   notice_cert_gen_error: "❌ Errore durante la generazione del certificato: {error}",
-  notice_cert_expired: "⚠️ Attenzione: Il tuo certificato digitale è scaduto il {date}. I nuovi PDF verranno firmati con un certificato scaduto. Rinnovalo nelle Impostazioni.",
+  notice_cert_expired: "⚠️ Il tuo certificato digitale è scaduto il {date}. Rinnovalo nelle Impostazioni prima di firmare altri PDF.",
   notice_cert_expiring_soon: "⚠️ Avviso: Il tuo certificato digitale scade tra {days} giorni (il {date}). Rinnovalo nelle Impostazioni -> Firma Digitale PDF.",
   notice_signature_toggled_on: "Firma digitale PDF: Attivata",
   notice_signature_toggled_off: "Firma digitale PDF: Disattivata",
@@ -378,7 +388,7 @@ const fr: Record<TranslationKey, string> = {
   notice_signing_error: "❌ Erreur lors de la signature numérique de {name} :\n{error}",
   notice_cert_generated: "✅ Certificat numérique créé avec succès :\n{path}",
   notice_cert_gen_error: "❌ Erreur lors de la création du certificat : {error}",
-  notice_cert_expired: "⚠️ Votre certificat numérique a expiré le {date}. Les nouveaux PDF seront signés avec un certificat expiré. Renouvelez-le dans les paramètres.",
+  notice_cert_expired: "⚠️ Votre certificat numérique a expiré le {date}. Renouvelez-le dans les paramètres avant de signer d’autres PDF.",
   notice_cert_expiring_soon: "⚠️ Votre certificat numérique expire dans {days} jours (le {date}). Renouvelez-le dans Paramètres → PDF Digital Signature.",
   notice_signature_toggled_on: "Signature numérique des PDF : activée",
   notice_signature_toggled_off: "Signature numérique des PDF : désactivée",
@@ -427,6 +437,8 @@ const fr: Record<TranslationKey, string> = {
   dialog_pdf_files: "Fichiers PDF",
   error_not_yet_valid: "Le certificat n’est pas encore valide.",
   error_no_signing_cert: "Aucun certificat RSA correspondant à la clé privée chiffrée n’a été trouvé.",
+  error_expired_cert: "Le certificat a expiré. Renouvelez-le avant de signer.",
+  error_password_required: "Définissez un mot de passe pour le certificat avant de créer la clé privée.",
 };
 
 const locales: Record<string, Record<TranslationKey, string>> = {

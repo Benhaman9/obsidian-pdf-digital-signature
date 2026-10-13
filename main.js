@@ -49143,6 +49143,8 @@ var en = {
   dialog_pdf_files: "PDF files",
   error_not_yet_valid: "The certificate is not yet valid.",
   error_no_signing_cert: "No RSA certificate matching the encrypted private key was found.",
+  error_expired_cert: "The certificate has expired. Renew it before signing.",
+  error_password_required: "Set a certificate password before creating a private key.",
   plugin_loaded: "PDF Digital Signature loaded.",
   modal_toggle_title: "Sign with digital certificate",
   modal_toggle_desc: "Add running footer on the left and sign cryptographically (PKCS#7).",
@@ -49161,7 +49163,7 @@ var en = {
   notice_signing_error: "\u274C Error digitally signing {name}:\n{error}",
   notice_cert_generated: "\u2705 Digital certificate successfully generated at:\n{path}",
   notice_cert_gen_error: "\u274C Error generating certificate: {error}",
-  notice_cert_expired: "\u26A0\uFE0F Attention: Your digital certificate expired on {date}. New PDFs will be signed with an expired certificate. Please renew it in Settings.",
+  notice_cert_expired: "\u26A0\uFE0F Your digital certificate expired on {date}. Renew it in Settings before signing more PDFs.",
   notice_cert_expiring_soon: "\u26A0\uFE0F Reminder: Your digital certificate expires in {days} days (on {date}). Please renew it in Settings -> PDF Digital Signature.",
   notice_signature_toggled_on: "PDF digital signature: Enabled",
   notice_signature_toggled_off: "PDF digital signature: Disabled",
@@ -49213,6 +49215,8 @@ var es = {
   dialog_pdf_files: "Archivos PDF",
   error_not_yet_valid: "El certificado todav\xEDa no es v\xE1lido.",
   error_no_signing_cert: "No se encontr\xF3 un certificado RSA que corresponda a la clave privada cifrada.",
+  error_expired_cert: "El certificado caduc\xF3. Renu\xE9valo antes de firmar.",
+  error_password_required: "Establece una contrase\xF1a antes de crear la clave privada.",
   plugin_loaded: "Plugin Firma Digital PDF cargado.",
   modal_toggle_title: "Firmar con certificado digital",
   modal_toggle_desc: "Pie de p\xE1gina con tu nombre a la izq. y firma criptogr\xE1fica (PKCS#7).",
@@ -49231,7 +49235,7 @@ var es = {
   notice_signing_error: "\u274C Error al firmar digitalmente {name}:\n{error}",
   notice_cert_generated: "\u2705 Certificado digital generado con \xE9xito en:\n{path}",
   notice_cert_gen_error: "\u274C Error al generar certificado: {error}",
-  notice_cert_expired: "\u26A0\uFE0F Atenci\xF3n: Tu certificado digital expir\xF3 el {date}. Los PDFs nuevos se firmar\xE1n con certificado vencido. Renu\xE9valo en Ajustes.",
+  notice_cert_expired: "\u26A0\uFE0F Tu certificado digital expir\xF3 el {date}. Renu\xE9valo en Ajustes antes de firmar m\xE1s PDFs.",
   notice_cert_expiring_soon: "\u26A0\uFE0F Aviso: A tu certificado digital le quedan {days} d\xEDas de vigencia (vence el {date}). Renu\xE9valo en Ajustes -> Firma Digital PDF.",
   notice_signature_toggled_on: "Firma digital PDF: Activada",
   notice_signature_toggled_off: "Firma digital PDF: Desactivada",
@@ -49283,6 +49287,8 @@ var pt = {
   dialog_pdf_files: "Arquivos PDF",
   error_not_yet_valid: "O certificado ainda n\xE3o \xE9 v\xE1lido.",
   error_no_signing_cert: "Nenhum certificado RSA correspondente \xE0 chave privada criptografada foi encontrado.",
+  error_expired_cert: "O certificado expirou. Renove-o antes de assinar.",
+  error_password_required: "Defina uma senha para o certificado antes de criar a chave privada.",
   plugin_loaded: "Plugin Assinatura Digital de PDF carregado.",
   modal_toggle_title: "Assinar com certificado digital",
   modal_toggle_desc: "Adiciona rodap\xE9 com seu nome \xE0 esquerda e assinatura criptogr\xE1fica (PKCS#7).",
@@ -49301,7 +49307,7 @@ var pt = {
   notice_signing_error: "\u274C Erro ao assinar digitalmente {name}:\n{error}",
   notice_cert_generated: "\u2705 Certificado digital gerado com sucesso em:\n{path}",
   notice_cert_gen_error: "\u274C Erro ao gerar certificado: {error}",
-  notice_cert_expired: "\u26A0\uFE0F Aten\xE7\xE3o: Seu certificado digital expirou em {date}. Novos PDFs ser\xE3o assinados com certificado vencido. Renove-o nas Configura\xE7\xF5es.",
+  notice_cert_expired: "\u26A0\uFE0F Seu certificado digital expirou em {date}. Renove-o nas Configura\xE7\xF5es antes de assinar mais PDFs.",
   notice_cert_expiring_soon: "\u26A0\uFE0F Aviso: Seu certificado digital expira em {days} dias (em {date}). Renove-o nas Configura\xE7\xF5es -> Assinatura Digital de PDF.",
   notice_signature_toggled_on: "Assinatura digital de PDF: Ativada",
   notice_signature_toggled_off: "Assinatura digital de PDF: Desativada",
@@ -49353,6 +49359,8 @@ var it = {
   dialog_pdf_files: "File PDF",
   error_not_yet_valid: "Il certificato non \xE8 ancora valido.",
   error_no_signing_cert: "Nessun certificato RSA corrispondente alla chiave privata cifrata trovato.",
+  error_expired_cert: "Il certificato \xE8 scaduto. Rinnovalo prima di firmare.",
+  error_password_required: "Imposta una password per il certificato prima di creare la chiave privata.",
   plugin_loaded: "Plugin Firma Digitale PDF caricato.",
   modal_toggle_title: "Firma con certificato digitale",
   modal_toggle_desc: "Aggiunge pi\xE8 di pagina a sinistra e firma crittografica (PKCS#7).",
@@ -49371,7 +49379,7 @@ var it = {
   notice_signing_error: "\u274C Errore durante la firma digitale di {name}:\n{error}",
   notice_cert_generated: "\u2705 Certificato digitale generato con successo in:\n{path}",
   notice_cert_gen_error: "\u274C Errore durante la generazione del certificato: {error}",
-  notice_cert_expired: "\u26A0\uFE0F Attenzione: Il tuo certificato digitale \xE8 scaduto il {date}. I nuovi PDF verranno firmati con un certificato scaduto. Rinnovalo nelle Impostazioni.",
+  notice_cert_expired: "\u26A0\uFE0F Il tuo certificato digitale \xE8 scaduto il {date}. Rinnovalo nelle Impostazioni prima di firmare altri PDF.",
   notice_cert_expiring_soon: "\u26A0\uFE0F Avviso: Il tuo certificato digitale scade tra {days} giorni (il {date}). Rinnovalo nelle Impostazioni -> Firma Digitale PDF.",
   notice_signature_toggled_on: "Firma digitale PDF: Attivata",
   notice_signature_toggled_off: "Firma digitale PDF: Disattivata",
@@ -49425,7 +49433,7 @@ var fr = {
   notice_signing_error: "\u274C Erreur lors de la signature num\xE9rique de {name} :\n{error}",
   notice_cert_generated: "\u2705 Certificat num\xE9rique cr\xE9\xE9 avec succ\xE8s :\n{path}",
   notice_cert_gen_error: "\u274C Erreur lors de la cr\xE9ation du certificat : {error}",
-  notice_cert_expired: "\u26A0\uFE0F Votre certificat num\xE9rique a expir\xE9 le {date}. Les nouveaux PDF seront sign\xE9s avec un certificat expir\xE9. Renouvelez-le dans les param\xE8tres.",
+  notice_cert_expired: "\u26A0\uFE0F Votre certificat num\xE9rique a expir\xE9 le {date}. Renouvelez-le dans les param\xE8tres avant de signer d\u2019autres PDF.",
   notice_cert_expiring_soon: "\u26A0\uFE0F Votre certificat num\xE9rique expire dans {days} jours (le {date}). Renouvelez-le dans Param\xE8tres \u2192 PDF Digital Signature.",
   notice_signature_toggled_on: "Signature num\xE9rique des PDF : activ\xE9e",
   notice_signature_toggled_off: "Signature num\xE9rique des PDF : d\xE9sactiv\xE9e",
@@ -49473,7 +49481,9 @@ var fr = {
   notice_dialog_error: "Erreur lors de l\u2019ouverture du s\xE9lecteur de fichiers : {error}",
   dialog_pdf_files: "Fichiers PDF",
   error_not_yet_valid: "Le certificat n\u2019est pas encore valide.",
-  error_no_signing_cert: "Aucun certificat RSA correspondant \xE0 la cl\xE9 priv\xE9e chiffr\xE9e n\u2019a \xE9t\xE9 trouv\xE9."
+  error_no_signing_cert: "Aucun certificat RSA correspondant \xE0 la cl\xE9 priv\xE9e chiffr\xE9e n\u2019a \xE9t\xE9 trouv\xE9.",
+  error_expired_cert: "Le certificat a expir\xE9. Renouvelez-le avant de signer.",
+  error_password_required: "D\xE9finissez un mot de passe pour le certificat avant de cr\xE9er la cl\xE9 priv\xE9e."
 };
 var locales = {
   fr,
@@ -49514,14 +49524,10 @@ function getForge() {
   const forgeObject = forge;
   return forgeObject.default || forge;
 }
-function getCertificateInfo(certPath, password = "") {
-  if (!fs.existsSync(certPath)) {
-    return { exists: false, valid: false };
-  }
+function inspectCertificate(p12Buffer, password) {
   try {
     const f = getForge();
-    const p12Der = fs.readFileSync(certPath).toString("binary");
-    const p12Asn1 = f.asn1.fromDer(p12Der);
+    const p12Asn1 = f.asn1.fromDer(p12Buffer.toString("binary"));
     const p12 = f.pkcs12.pkcs12FromAsn1(p12Asn1, false, password);
     const bags = p12.safeContents.flatMap((content) => content.safeBags);
     const key = bags.find((bag) => bag.type === f.pki.oids.pkcs8ShroudedKeyBag && bag.key)?.key;
@@ -49553,16 +49559,22 @@ function getCertificateInfo(certPath, password = "") {
       isExpiringSoon,
       isExpired
     };
-  } catch (err) {
-    const errorMsg = err instanceof Error ? err.message : "Invalid password or corrupted certificate file";
-    return {
-      exists: true,
-      valid: false,
-      error: errorMsg
-    };
+  } catch {
+    return { exists: true, valid: false, error: t("error_invalid_cert") };
+  }
+}
+function getCertificateInfo(certPath, password = "") {
+  if (!fs.existsSync(certPath)) {
+    return { exists: false, valid: false };
+  }
+  try {
+    return inspectCertificate(fs.readFileSync(certPath), password);
+  } catch {
+    return { exists: true, valid: false, error: t("error_invalid_cert") };
   }
 }
 function createSelfSignedCertificate(signerName, password, organization = "", country = "", validityYears = 3) {
+  if (!password) throw new Error(t("error_password_required"));
   const f = getForge();
   const pki = f.pki;
   const keys = pki.rsa.generateKeyPair(2048);
@@ -49607,6 +49619,10 @@ function createSelfSignedCertificate(signerName, password, organization = "", co
   return Buffer.from(p12Der, "binary");
 }
 async function signPdfBuffer(pdfBuffer, p12Buffer, password, metadata) {
+  const certificateInfo = inspectCertificate(p12Buffer, password);
+  if (!certificateInfo.valid) {
+    throw new Error(certificateInfo.isExpired ? t("error_expired_cert") : certificateInfo.error || t("error_invalid_cert"));
+  }
   const signer = new import_signer_p12.P12Signer(p12Buffer, {
     passphrase: password || ""
   });
