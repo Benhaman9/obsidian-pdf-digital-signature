@@ -12,7 +12,16 @@ const { transformSync } = require('esbuild');
 let language = 'en';
 const notices = [];
 class Modal { open() {} }
-class Plugin { registerInterval(id) { return id; } register() {} }
+class Plugin {
+  constructor() {
+    const secrets = new Map();
+    this.app = { secretStorage: {
+      getSecret: (id) => secrets.get(id) ?? null,
+      setSecret: (id, value) => secrets.set(id, value),
+    } };
+  }
+  registerInterval(id) { return id; } register() {}
+}
 class Setting {
   setName() { return this; } setDesc() { return this; }
   addToggle(callback) { callback({ setValue() {}, onChange() {} }); return this; }
@@ -39,6 +48,30 @@ function load(name) {
 }
 const i18n = load('i18n');
 const signer = load('signer');
+const { validateXRefEntries } = load('pdf-limits');
+
+test('XRef parser rejects amplified counts and malformed widths before allocation', async () => {
+  const parser = (length, widths = [1, 1, 1], available = 3) => ({
+    byteWidths: widths, subsections: [{ firstObjectNumber: 0, length }],
+    bytes: { length: available, offset: () => 0 },
+  });
+  assert.doesNotThrow(() => validateXRefEntries(parser(1)));
+  assert.doesNotThrow(() => validateXRefEntries(parser(3, [0, 0, 0], 0)));
+  for (const value of [parser(1e9), parser(1e9, [0, 0, 0], 0), parser(2),
+    parser(-1), parser(1.5), parser(1, [1, -1, 1]), parser(1, [1, 1, 1, 1]),
+    parser(1, [1000000000, 0, 0])]) {
+    assert.throws(() => validateXRefEntries(value));
+  }
+  const multiple = parser(1);
+  multiple.subsections.push({ firstObjectNumber: 5, length: 100000 });
+  assert.throws(() => validateXRefEntries(multiple));
+  const malformed = Buffer.from('%PDF-1.7\n1 0 obj\n<< /Type /XRef /Size 1000000000 /W [1 1 1] /Length 0 >>\nstream\n\nendstream\nendobj\nstartxref\n9\n%%EOF');
+  await assert.rejects(PDFDocument.load(malformed, { throwOnInvalidObject: true }), /Trying to parse invalid object/);
+  const valid = await PDFDocument.create();
+  valid.addPage();
+  const bytes = await valid.save(); // Compressed XRef stream, not just classic xref.
+  assert.equal((await PDFDocument.load(bytes, { throwOnInvalidObject: true })).getPageCount(), 1);
+});
 const PluginClass = load('main').default;
 const defaults = load('settings').DEFAULT_SETTINGS;
 
@@ -188,15 +221,18 @@ test('a PDF modified during signing is preserved, and successful replacement wri
 test('legacy settings retain independent footer controls during migration', async () => {
   const plugin = new PluginClass();
   plugin.loadData = async () => ({ firmarPdf: false, mostrarNumeroPagina: true, certPassword: 'existing-password' });
-  plugin.saveData = async () => {};
+  let saved;
+  plugin.saveData = async (settings) => { saved = settings; };
   await plugin.loadSettings();
   assert.equal(plugin.settings.firmarCriptograficamente, false);
   assert.equal(plugin.settings.mostrarNombreFirmante, false);
   assert.equal(plugin.settings.mostrarNumeroPagina, false);
   assert.equal(plugin.settings.certPassword, 'existing-password');
+  assert.equal(plugin.app.secretStorage.getSecret('obsidian-pdf-digital-signature-certificate-password'), 'existing-password');
+  assert.equal(Object.hasOwn(saved, 'certPassword'), false);
 });
 
-test('new installations localize defaults and persist a random certificate password', async () => {
+test('new installations localize defaults and keep the certificate password in SecretStorage', async () => {
   language = 'fr';
   const plugin = new PluginClass();
   plugin.loadData = async () => ({});
@@ -204,7 +240,11 @@ test('new installations localize defaults and persist a random certificate passw
   plugin.saveData = async (settings) => { saved = settings; };
   await plugin.loadSettings();
   assert.equal(plugin.settings.nombreFirmante, 'Nom du signataire');
-  assert.match(saved.certPassword, /^[0-9a-f-]{36}$/);
+  assert.match(plugin.app.secretStorage.getSecret('obsidian-pdf-digital-signature-certificate-password'), /^[0-9a-f-]{36}$/);
+  assert.equal(Object.hasOwn(saved, 'certPassword'), false);
+  await plugin.setCertificatePassword('replacement');
+  assert.equal(plugin.app.secretStorage.getSecret('obsidian-pdf-digital-signature-certificate-password'), 'replacement');
+  assert.equal(Object.hasOwn(saved, 'certPassword'), false);
   language = 'en';
 });
 

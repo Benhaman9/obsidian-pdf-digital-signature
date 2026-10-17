@@ -1,4 +1,5 @@
 import * as forge from "node-forge";
+import "./pdf-limits";
 import { PDFDocument, PDFSignature, PDFName, PDFDict } from "pdf-lib";
 import { pdflibAddPlaceholder } from "@signpdf/placeholder-pdf-lib";
 import { SignPdf } from "@signpdf/signpdf";
@@ -177,6 +178,7 @@ export async function signPdfBuffer(
 
   const pdfDoc = await PDFDocument.load(pdfBuffer, {
     ignoreEncryption: false,
+    throwOnInvalidObject: true,
   });
   if (pdfDoc.getForm().getFields().some((field) =>
     field instanceof PDFSignature && field.acroField.dict.lookupMaybe(PDFName.of("V"), PDFDict))) {

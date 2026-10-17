@@ -172,8 +172,7 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
         text
           .setValue(this.plugin.settings.certPassword)
           .onChange(async (val) => {
-            this.plugin.settings.certPassword = val;
-            await this.plugin.saveSettings();
+            await this.plugin.setCertificatePassword(val);
             this.renderCertificateStatus(containerEl);
           });
       });

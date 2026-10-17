@@ -24033,6 +24033,83 @@ var require_errors2 = __commonJS({
   }
 });
 
+// node_modules/pdf-lib/cjs/core/objects/PDFObject.js
+var require_PDFObject = __commonJS({
+  "node_modules/pdf-lib/cjs/core/objects/PDFObject.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var errors_1 = require_errors2();
+    var PDFObject = (
+      /** @class */
+      function() {
+        function PDFObject2() {
+        }
+        PDFObject2.prototype.clone = function(_context) {
+          throw new errors_1.MethodNotImplementedError(this.constructor.name, "clone");
+        };
+        PDFObject2.prototype.toString = function() {
+          throw new errors_1.MethodNotImplementedError(this.constructor.name, "toString");
+        };
+        PDFObject2.prototype.sizeInBytes = function() {
+          throw new errors_1.MethodNotImplementedError(this.constructor.name, "sizeInBytes");
+        };
+        PDFObject2.prototype.copyBytesInto = function(_buffer, _offset) {
+          throw new errors_1.MethodNotImplementedError(this.constructor.name, "copyBytesInto");
+        };
+        return PDFObject2;
+      }()
+    );
+    exports2.default = PDFObject;
+  }
+});
+
+// node_modules/pdf-lib/cjs/core/objects/PDFNumber.js
+var require_PDFNumber = __commonJS({
+  "node_modules/pdf-lib/cjs/core/objects/PDFNumber.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
+    var index_1 = require_utils2();
+    var PDFObject_1 = tslib_1.__importDefault(require_PDFObject());
+    var PDFNumber = (
+      /** @class */
+      function(_super) {
+        tslib_1.__extends(PDFNumber2, _super);
+        function PDFNumber2(value) {
+          var _this = _super.call(this) || this;
+          _this.numberValue = value;
+          _this.stringValue = index_1.numberToString(value);
+          return _this;
+        }
+        PDFNumber2.prototype.asNumber = function() {
+          return this.numberValue;
+        };
+        PDFNumber2.prototype.value = function() {
+          return this.numberValue;
+        };
+        PDFNumber2.prototype.clone = function() {
+          return PDFNumber2.of(this.numberValue);
+        };
+        PDFNumber2.prototype.toString = function() {
+          return this.stringValue;
+        };
+        PDFNumber2.prototype.sizeInBytes = function() {
+          return this.stringValue.length;
+        };
+        PDFNumber2.prototype.copyBytesInto = function(buffer, offset) {
+          offset += index_1.copyStringIntoBuffer(this.stringValue, buffer, offset);
+          return this.stringValue.length;
+        };
+        PDFNumber2.of = function(value) {
+          return new PDFNumber2(value);
+        };
+        return PDFNumber2;
+      }(PDFObject_1.default)
+    );
+    exports2.default = PDFNumber;
+  }
+});
+
 // node_modules/pdf-lib/cjs/core/syntax/CharCodes.js
 var require_CharCodes = __commonJS({
   "node_modules/pdf-lib/cjs/core/syntax/CharCodes.js"(exports2) {
@@ -24100,6 +24177,2268 @@ var require_CharCodes = __commonJS({
       CharCodes2[CharCodes2["Tilde"] = 126] = "Tilde";
     })(CharCodes || (CharCodes = {}));
     exports2.default = CharCodes;
+  }
+});
+
+// node_modules/pdf-lib/cjs/core/objects/PDFArray.js
+var require_PDFArray = __commonJS({
+  "node_modules/pdf-lib/cjs/core/objects/PDFArray.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
+    var PDFNumber_1 = tslib_1.__importDefault(require_PDFNumber());
+    var PDFObject_1 = tslib_1.__importDefault(require_PDFObject());
+    var CharCodes_1 = tslib_1.__importDefault(require_CharCodes());
+    var errors_1 = require_errors2();
+    var PDFArray = (
+      /** @class */
+      function(_super) {
+        tslib_1.__extends(PDFArray2, _super);
+        function PDFArray2(context) {
+          var _this = _super.call(this) || this;
+          _this.array = [];
+          _this.context = context;
+          return _this;
+        }
+        PDFArray2.prototype.size = function() {
+          return this.array.length;
+        };
+        PDFArray2.prototype.push = function(object) {
+          this.array.push(object);
+        };
+        PDFArray2.prototype.insert = function(index, object) {
+          this.array.splice(index, 0, object);
+        };
+        PDFArray2.prototype.indexOf = function(object) {
+          var index = this.array.indexOf(object);
+          return index === -1 ? void 0 : index;
+        };
+        PDFArray2.prototype.remove = function(index) {
+          this.array.splice(index, 1);
+        };
+        PDFArray2.prototype.set = function(idx, object) {
+          this.array[idx] = object;
+        };
+        PDFArray2.prototype.get = function(index) {
+          return this.array[index];
+        };
+        PDFArray2.prototype.lookupMaybe = function(index) {
+          var _a;
+          var types = [];
+          for (var _i = 1; _i < arguments.length; _i++) {
+            types[_i - 1] = arguments[_i];
+          }
+          return (_a = this.context).lookupMaybe.apply(_a, tslib_1.__spreadArrays([this.get(index)], types));
+        };
+        PDFArray2.prototype.lookup = function(index) {
+          var _a;
+          var types = [];
+          for (var _i = 1; _i < arguments.length; _i++) {
+            types[_i - 1] = arguments[_i];
+          }
+          return (_a = this.context).lookup.apply(_a, tslib_1.__spreadArrays([this.get(index)], types));
+        };
+        PDFArray2.prototype.asRectangle = function() {
+          if (this.size() !== 4)
+            throw new errors_1.PDFArrayIsNotRectangleError(this.size());
+          var lowerLeftX = this.lookup(0, PDFNumber_1.default).asNumber();
+          var lowerLeftY = this.lookup(1, PDFNumber_1.default).asNumber();
+          var upperRightX = this.lookup(2, PDFNumber_1.default).asNumber();
+          var upperRightY = this.lookup(3, PDFNumber_1.default).asNumber();
+          var x = lowerLeftX;
+          var y = lowerLeftY;
+          var width = upperRightX - lowerLeftX;
+          var height = upperRightY - lowerLeftY;
+          return { x, y, width, height };
+        };
+        PDFArray2.prototype.asArray = function() {
+          return this.array.slice();
+        };
+        PDFArray2.prototype.clone = function(context) {
+          var clone = PDFArray2.withContext(context || this.context);
+          for (var idx = 0, len = this.size(); idx < len; idx++) {
+            clone.push(this.array[idx]);
+          }
+          return clone;
+        };
+        PDFArray2.prototype.toString = function() {
+          var arrayString = "[ ";
+          for (var idx = 0, len = this.size(); idx < len; idx++) {
+            arrayString += this.get(idx).toString();
+            arrayString += " ";
+          }
+          arrayString += "]";
+          return arrayString;
+        };
+        PDFArray2.prototype.sizeInBytes = function() {
+          var size = 3;
+          for (var idx = 0, len = this.size(); idx < len; idx++) {
+            size += this.get(idx).sizeInBytes() + 1;
+          }
+          return size;
+        };
+        PDFArray2.prototype.copyBytesInto = function(buffer, offset) {
+          var initialOffset = offset;
+          buffer[offset++] = CharCodes_1.default.LeftSquareBracket;
+          buffer[offset++] = CharCodes_1.default.Space;
+          for (var idx = 0, len = this.size(); idx < len; idx++) {
+            offset += this.get(idx).copyBytesInto(buffer, offset);
+            buffer[offset++] = CharCodes_1.default.Space;
+          }
+          buffer[offset++] = CharCodes_1.default.RightSquareBracket;
+          return offset - initialOffset;
+        };
+        PDFArray2.prototype.scalePDFNumbers = function(x, y) {
+          for (var idx = 0, len = this.size(); idx < len; idx++) {
+            var el = this.lookup(idx);
+            if (el instanceof PDFNumber_1.default) {
+              var factor = idx % 2 === 0 ? x : y;
+              this.set(idx, PDFNumber_1.default.of(el.asNumber() * factor));
+            }
+          }
+        };
+        PDFArray2.withContext = function(context) {
+          return new PDFArray2(context);
+        };
+        return PDFArray2;
+      }(PDFObject_1.default)
+    );
+    exports2.default = PDFArray;
+  }
+});
+
+// node_modules/pdf-lib/cjs/core/syntax/Delimiters.js
+var require_Delimiters = __commonJS({
+  "node_modules/pdf-lib/cjs/core/syntax/Delimiters.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.IsDelimiter = void 0;
+    var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
+    var CharCodes_1 = tslib_1.__importDefault(require_CharCodes());
+    exports2.IsDelimiter = new Uint8Array(256);
+    exports2.IsDelimiter[CharCodes_1.default.LeftParen] = 1;
+    exports2.IsDelimiter[CharCodes_1.default.RightParen] = 1;
+    exports2.IsDelimiter[CharCodes_1.default.LessThan] = 1;
+    exports2.IsDelimiter[CharCodes_1.default.GreaterThan] = 1;
+    exports2.IsDelimiter[CharCodes_1.default.LeftSquareBracket] = 1;
+    exports2.IsDelimiter[CharCodes_1.default.RightSquareBracket] = 1;
+    exports2.IsDelimiter[CharCodes_1.default.LeftCurly] = 1;
+    exports2.IsDelimiter[CharCodes_1.default.RightCurly] = 1;
+    exports2.IsDelimiter[CharCodes_1.default.ForwardSlash] = 1;
+    exports2.IsDelimiter[CharCodes_1.default.Percent] = 1;
+  }
+});
+
+// node_modules/pdf-lib/cjs/core/syntax/Whitespace.js
+var require_Whitespace = __commonJS({
+  "node_modules/pdf-lib/cjs/core/syntax/Whitespace.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.IsWhitespace = void 0;
+    var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
+    var CharCodes_1 = tslib_1.__importDefault(require_CharCodes());
+    exports2.IsWhitespace = new Uint8Array(256);
+    exports2.IsWhitespace[CharCodes_1.default.Null] = 1;
+    exports2.IsWhitespace[CharCodes_1.default.Tab] = 1;
+    exports2.IsWhitespace[CharCodes_1.default.Newline] = 1;
+    exports2.IsWhitespace[CharCodes_1.default.FormFeed] = 1;
+    exports2.IsWhitespace[CharCodes_1.default.CarriageReturn] = 1;
+    exports2.IsWhitespace[CharCodes_1.default.Space] = 1;
+  }
+});
+
+// node_modules/pdf-lib/cjs/core/syntax/Irregular.js
+var require_Irregular = __commonJS({
+  "node_modules/pdf-lib/cjs/core/syntax/Irregular.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.IsIrregular = void 0;
+    var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
+    var CharCodes_1 = tslib_1.__importDefault(require_CharCodes());
+    var Delimiters_1 = require_Delimiters();
+    var Whitespace_1 = require_Whitespace();
+    exports2.IsIrregular = new Uint8Array(256);
+    for (idx = 0, len = 256; idx < len; idx++) {
+      exports2.IsIrregular[idx] = Whitespace_1.IsWhitespace[idx] || Delimiters_1.IsDelimiter[idx] ? 1 : 0;
+    }
+    var idx;
+    var len;
+    exports2.IsIrregular[CharCodes_1.default.Hash] = 1;
+  }
+});
+
+// node_modules/pdf-lib/cjs/core/objects/PDFName.js
+var require_PDFName = __commonJS({
+  "node_modules/pdf-lib/cjs/core/objects/PDFName.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
+    var errors_1 = require_errors2();
+    var PDFObject_1 = tslib_1.__importDefault(require_PDFObject());
+    var CharCodes_1 = tslib_1.__importDefault(require_CharCodes());
+    var Irregular_1 = require_Irregular();
+    var utils_1 = require_utils2();
+    var decodeName = function(name) {
+      return name.replace(/#([\dABCDEF]{2})/g, function(_, hex) {
+        return utils_1.charFromHexCode(hex);
+      });
+    };
+    var isRegularChar = function(charCode) {
+      return charCode >= CharCodes_1.default.ExclamationPoint && charCode <= CharCodes_1.default.Tilde && !Irregular_1.IsIrregular[charCode];
+    };
+    var ENFORCER = {};
+    var pool = /* @__PURE__ */ new Map();
+    var PDFName2 = (
+      /** @class */
+      function(_super) {
+        tslib_1.__extends(PDFName3, _super);
+        function PDFName3(enforcer, name) {
+          var _this = this;
+          if (enforcer !== ENFORCER)
+            throw new errors_1.PrivateConstructorError("PDFName");
+          _this = _super.call(this) || this;
+          var encodedName = "/";
+          for (var idx = 0, len = name.length; idx < len; idx++) {
+            var character = name[idx];
+            var code = utils_1.toCharCode(character);
+            encodedName += isRegularChar(code) ? character : "#" + utils_1.toHexString(code);
+          }
+          _this.encodedName = encodedName;
+          return _this;
+        }
+        PDFName3.prototype.asBytes = function() {
+          var bytes = [];
+          var hex = "";
+          var escaped = false;
+          var pushByte = function(byte2) {
+            if (byte2 !== void 0)
+              bytes.push(byte2);
+            escaped = false;
+          };
+          for (var idx = 1, len = this.encodedName.length; idx < len; idx++) {
+            var char = this.encodedName[idx];
+            var byte = utils_1.toCharCode(char);
+            var nextChar = this.encodedName[idx + 1];
+            if (!escaped) {
+              if (byte === CharCodes_1.default.Hash)
+                escaped = true;
+              else
+                pushByte(byte);
+            } else {
+              if (byte >= CharCodes_1.default.Zero && byte <= CharCodes_1.default.Nine || byte >= CharCodes_1.default.a && byte <= CharCodes_1.default.f || byte >= CharCodes_1.default.A && byte <= CharCodes_1.default.F) {
+                hex += char;
+                if (hex.length === 2 || !(nextChar >= "0" && nextChar <= "9" || nextChar >= "a" && nextChar <= "f" || nextChar >= "A" && nextChar <= "F")) {
+                  pushByte(parseInt(hex, 16));
+                  hex = "";
+                }
+              } else {
+                pushByte(byte);
+              }
+            }
+          }
+          return new Uint8Array(bytes);
+        };
+        PDFName3.prototype.decodeText = function() {
+          var bytes = this.asBytes();
+          return String.fromCharCode.apply(String, Array.from(bytes));
+        };
+        PDFName3.prototype.asString = function() {
+          return this.encodedName;
+        };
+        PDFName3.prototype.value = function() {
+          return this.encodedName;
+        };
+        PDFName3.prototype.clone = function() {
+          return this;
+        };
+        PDFName3.prototype.toString = function() {
+          return this.encodedName;
+        };
+        PDFName3.prototype.sizeInBytes = function() {
+          return this.encodedName.length;
+        };
+        PDFName3.prototype.copyBytesInto = function(buffer, offset) {
+          offset += utils_1.copyStringIntoBuffer(this.encodedName, buffer, offset);
+          return this.encodedName.length;
+        };
+        PDFName3.of = function(name) {
+          var decodedValue = decodeName(name);
+          var instance = pool.get(decodedValue);
+          if (!instance) {
+            instance = new PDFName3(ENFORCER, decodedValue);
+            pool.set(decodedValue, instance);
+          }
+          return instance;
+        };
+        PDFName3.Length = PDFName3.of("Length");
+        PDFName3.FlateDecode = PDFName3.of("FlateDecode");
+        PDFName3.Resources = PDFName3.of("Resources");
+        PDFName3.Font = PDFName3.of("Font");
+        PDFName3.XObject = PDFName3.of("XObject");
+        PDFName3.ExtGState = PDFName3.of("ExtGState");
+        PDFName3.Contents = PDFName3.of("Contents");
+        PDFName3.Type = PDFName3.of("Type");
+        PDFName3.Parent = PDFName3.of("Parent");
+        PDFName3.MediaBox = PDFName3.of("MediaBox");
+        PDFName3.Page = PDFName3.of("Page");
+        PDFName3.Annots = PDFName3.of("Annots");
+        PDFName3.TrimBox = PDFName3.of("TrimBox");
+        PDFName3.ArtBox = PDFName3.of("ArtBox");
+        PDFName3.BleedBox = PDFName3.of("BleedBox");
+        PDFName3.CropBox = PDFName3.of("CropBox");
+        PDFName3.Rotate = PDFName3.of("Rotate");
+        PDFName3.Title = PDFName3.of("Title");
+        PDFName3.Author = PDFName3.of("Author");
+        PDFName3.Subject = PDFName3.of("Subject");
+        PDFName3.Creator = PDFName3.of("Creator");
+        PDFName3.Keywords = PDFName3.of("Keywords");
+        PDFName3.Producer = PDFName3.of("Producer");
+        PDFName3.CreationDate = PDFName3.of("CreationDate");
+        PDFName3.ModDate = PDFName3.of("ModDate");
+        return PDFName3;
+      }(PDFObject_1.default)
+    );
+    exports2.default = PDFName2;
+  }
+});
+
+// node_modules/pdf-lib/cjs/core/objects/PDFRef.js
+var require_PDFRef = __commonJS({
+  "node_modules/pdf-lib/cjs/core/objects/PDFRef.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
+    var errors_1 = require_errors2();
+    var PDFObject_1 = tslib_1.__importDefault(require_PDFObject());
+    var utils_1 = require_utils2();
+    var ENFORCER = {};
+    var pool = /* @__PURE__ */ new Map();
+    var PDFRef = (
+      /** @class */
+      function(_super) {
+        tslib_1.__extends(PDFRef2, _super);
+        function PDFRef2(enforcer, objectNumber, generationNumber) {
+          var _this = this;
+          if (enforcer !== ENFORCER)
+            throw new errors_1.PrivateConstructorError("PDFRef");
+          _this = _super.call(this) || this;
+          _this.objectNumber = objectNumber;
+          _this.generationNumber = generationNumber;
+          _this.tag = objectNumber + " " + generationNumber + " R";
+          return _this;
+        }
+        PDFRef2.prototype.clone = function() {
+          return this;
+        };
+        PDFRef2.prototype.toString = function() {
+          return this.tag;
+        };
+        PDFRef2.prototype.sizeInBytes = function() {
+          return this.tag.length;
+        };
+        PDFRef2.prototype.copyBytesInto = function(buffer, offset) {
+          offset += utils_1.copyStringIntoBuffer(this.tag, buffer, offset);
+          return this.tag.length;
+        };
+        PDFRef2.of = function(objectNumber, generationNumber) {
+          if (generationNumber === void 0) {
+            generationNumber = 0;
+          }
+          var tag = objectNumber + " " + generationNumber + " R";
+          var instance = pool.get(tag);
+          if (!instance) {
+            instance = new PDFRef2(ENFORCER, objectNumber, generationNumber);
+            pool.set(tag, instance);
+          }
+          return instance;
+        };
+        return PDFRef2;
+      }(PDFObject_1.default)
+    );
+    exports2.default = PDFRef;
+  }
+});
+
+// node_modules/pdf-lib/cjs/core/objects/PDFNull.js
+var require_PDFNull = __commonJS({
+  "node_modules/pdf-lib/cjs/core/objects/PDFNull.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
+    var PDFObject_1 = tslib_1.__importDefault(require_PDFObject());
+    var CharCodes_1 = tslib_1.__importDefault(require_CharCodes());
+    var PDFNull = (
+      /** @class */
+      function(_super) {
+        tslib_1.__extends(PDFNull2, _super);
+        function PDFNull2() {
+          return _super !== null && _super.apply(this, arguments) || this;
+        }
+        PDFNull2.prototype.asNull = function() {
+          return null;
+        };
+        PDFNull2.prototype.clone = function() {
+          return this;
+        };
+        PDFNull2.prototype.toString = function() {
+          return "null";
+        };
+        PDFNull2.prototype.sizeInBytes = function() {
+          return 4;
+        };
+        PDFNull2.prototype.copyBytesInto = function(buffer, offset) {
+          buffer[offset++] = CharCodes_1.default.n;
+          buffer[offset++] = CharCodes_1.default.u;
+          buffer[offset++] = CharCodes_1.default.l;
+          buffer[offset++] = CharCodes_1.default.l;
+          return 4;
+        };
+        return PDFNull2;
+      }(PDFObject_1.default)
+    );
+    exports2.default = new PDFNull();
+  }
+});
+
+// node_modules/pdf-lib/cjs/core/objects/PDFDict.js
+var require_PDFDict = __commonJS({
+  "node_modules/pdf-lib/cjs/core/objects/PDFDict.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
+    var PDFName_1 = tslib_1.__importDefault(require_PDFName());
+    var PDFNull_1 = tslib_1.__importDefault(require_PDFNull());
+    var PDFObject_1 = tslib_1.__importDefault(require_PDFObject());
+    var CharCodes_1 = tslib_1.__importDefault(require_CharCodes());
+    var PDFDict2 = (
+      /** @class */
+      function(_super) {
+        tslib_1.__extends(PDFDict3, _super);
+        function PDFDict3(map, context) {
+          var _this = _super.call(this) || this;
+          _this.dict = map;
+          _this.context = context;
+          return _this;
+        }
+        PDFDict3.prototype.keys = function() {
+          return Array.from(this.dict.keys());
+        };
+        PDFDict3.prototype.values = function() {
+          return Array.from(this.dict.values());
+        };
+        PDFDict3.prototype.entries = function() {
+          return Array.from(this.dict.entries());
+        };
+        PDFDict3.prototype.set = function(key, value) {
+          this.dict.set(key, value);
+        };
+        PDFDict3.prototype.get = function(key, preservePDFNull) {
+          if (preservePDFNull === void 0) {
+            preservePDFNull = false;
+          }
+          var value = this.dict.get(key);
+          if (value === PDFNull_1.default && !preservePDFNull)
+            return void 0;
+          return value;
+        };
+        PDFDict3.prototype.has = function(key) {
+          var value = this.dict.get(key);
+          return value !== void 0 && value !== PDFNull_1.default;
+        };
+        PDFDict3.prototype.lookupMaybe = function(key) {
+          var _a;
+          var types = [];
+          for (var _i = 1; _i < arguments.length; _i++) {
+            types[_i - 1] = arguments[_i];
+          }
+          var preservePDFNull = types.includes(PDFNull_1.default);
+          var value = (_a = this.context).lookupMaybe.apply(_a, tslib_1.__spreadArrays([this.get(key, preservePDFNull)], types));
+          if (value === PDFNull_1.default && !preservePDFNull)
+            return void 0;
+          return value;
+        };
+        PDFDict3.prototype.lookup = function(key) {
+          var _a;
+          var types = [];
+          for (var _i = 1; _i < arguments.length; _i++) {
+            types[_i - 1] = arguments[_i];
+          }
+          var preservePDFNull = types.includes(PDFNull_1.default);
+          var value = (_a = this.context).lookup.apply(_a, tslib_1.__spreadArrays([this.get(key, preservePDFNull)], types));
+          if (value === PDFNull_1.default && !preservePDFNull)
+            return void 0;
+          return value;
+        };
+        PDFDict3.prototype.delete = function(key) {
+          return this.dict.delete(key);
+        };
+        PDFDict3.prototype.asMap = function() {
+          return new Map(this.dict);
+        };
+        PDFDict3.prototype.uniqueKey = function(tag) {
+          if (tag === void 0) {
+            tag = "";
+          }
+          var existingKeys = this.keys();
+          var key = PDFName_1.default.of(this.context.addRandomSuffix(tag, 10));
+          while (existingKeys.includes(key)) {
+            key = PDFName_1.default.of(this.context.addRandomSuffix(tag, 10));
+          }
+          return key;
+        };
+        PDFDict3.prototype.clone = function(context) {
+          var clone = PDFDict3.withContext(context || this.context);
+          var entries = this.entries();
+          for (var idx = 0, len = entries.length; idx < len; idx++) {
+            var _a = entries[idx], key = _a[0], value = _a[1];
+            clone.set(key, value);
+          }
+          return clone;
+        };
+        PDFDict3.prototype.toString = function() {
+          var dictString = "<<\n";
+          var entries = this.entries();
+          for (var idx = 0, len = entries.length; idx < len; idx++) {
+            var _a = entries[idx], key = _a[0], value = _a[1];
+            dictString += key.toString() + " " + value.toString() + "\n";
+          }
+          dictString += ">>";
+          return dictString;
+        };
+        PDFDict3.prototype.sizeInBytes = function() {
+          var size = 5;
+          var entries = this.entries();
+          for (var idx = 0, len = entries.length; idx < len; idx++) {
+            var _a = entries[idx], key = _a[0], value = _a[1];
+            size += key.sizeInBytes() + value.sizeInBytes() + 2;
+          }
+          return size;
+        };
+        PDFDict3.prototype.copyBytesInto = function(buffer, offset) {
+          var initialOffset = offset;
+          buffer[offset++] = CharCodes_1.default.LessThan;
+          buffer[offset++] = CharCodes_1.default.LessThan;
+          buffer[offset++] = CharCodes_1.default.Newline;
+          var entries = this.entries();
+          for (var idx = 0, len = entries.length; idx < len; idx++) {
+            var _a = entries[idx], key = _a[0], value = _a[1];
+            offset += key.copyBytesInto(buffer, offset);
+            buffer[offset++] = CharCodes_1.default.Space;
+            offset += value.copyBytesInto(buffer, offset);
+            buffer[offset++] = CharCodes_1.default.Newline;
+          }
+          buffer[offset++] = CharCodes_1.default.GreaterThan;
+          buffer[offset++] = CharCodes_1.default.GreaterThan;
+          return offset - initialOffset;
+        };
+        PDFDict3.withContext = function(context) {
+          return new PDFDict3(/* @__PURE__ */ new Map(), context);
+        };
+        PDFDict3.fromMapWithContext = function(map, context) {
+          return new PDFDict3(map, context);
+        };
+        return PDFDict3;
+      }(PDFObject_1.default)
+    );
+    exports2.default = PDFDict2;
+  }
+});
+
+// node_modules/pdf-lib/cjs/core/streams/Stream.js
+var require_Stream = __commonJS({
+  "node_modules/pdf-lib/cjs/core/streams/Stream.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var Stream = (
+      /** @class */
+      function() {
+        function Stream2(buffer, start, length) {
+          this.bytes = buffer;
+          this.start = start || 0;
+          this.pos = this.start;
+          this.end = !!start && !!length ? start + length : this.bytes.length;
+        }
+        Object.defineProperty(Stream2.prototype, "length", {
+          get: function() {
+            return this.end - this.start;
+          },
+          enumerable: false,
+          configurable: true
+        });
+        Object.defineProperty(Stream2.prototype, "isEmpty", {
+          get: function() {
+            return this.length === 0;
+          },
+          enumerable: false,
+          configurable: true
+        });
+        Stream2.prototype.getByte = function() {
+          if (this.pos >= this.end) {
+            return -1;
+          }
+          return this.bytes[this.pos++];
+        };
+        Stream2.prototype.getUint16 = function() {
+          var b0 = this.getByte();
+          var b1 = this.getByte();
+          if (b0 === -1 || b1 === -1) {
+            return -1;
+          }
+          return (b0 << 8) + b1;
+        };
+        Stream2.prototype.getInt32 = function() {
+          var b0 = this.getByte();
+          var b1 = this.getByte();
+          var b2 = this.getByte();
+          var b3 = this.getByte();
+          return (b0 << 24) + (b1 << 16) + (b2 << 8) + b3;
+        };
+        Stream2.prototype.getBytes = function(length, forceClamped) {
+          if (forceClamped === void 0) {
+            forceClamped = false;
+          }
+          var bytes = this.bytes;
+          var pos = this.pos;
+          var strEnd = this.end;
+          if (!length) {
+            var subarray = bytes.subarray(pos, strEnd);
+            return forceClamped ? new Uint8ClampedArray(subarray) : subarray;
+          } else {
+            var end = pos + length;
+            if (end > strEnd) {
+              end = strEnd;
+            }
+            this.pos = end;
+            var subarray = bytes.subarray(pos, end);
+            return forceClamped ? new Uint8ClampedArray(subarray) : subarray;
+          }
+        };
+        Stream2.prototype.peekByte = function() {
+          var peekedByte = this.getByte();
+          this.pos--;
+          return peekedByte;
+        };
+        Stream2.prototype.peekBytes = function(length, forceClamped) {
+          if (forceClamped === void 0) {
+            forceClamped = false;
+          }
+          var bytes = this.getBytes(length, forceClamped);
+          this.pos -= bytes.length;
+          return bytes;
+        };
+        Stream2.prototype.skip = function(n) {
+          if (!n) {
+            n = 1;
+          }
+          this.pos += n;
+        };
+        Stream2.prototype.reset = function() {
+          this.pos = this.start;
+        };
+        Stream2.prototype.moveStart = function() {
+          this.start = this.pos;
+        };
+        Stream2.prototype.makeSubStream = function(start, length) {
+          return new Stream2(this.bytes, start, length);
+        };
+        Stream2.prototype.decode = function() {
+          return this.bytes;
+        };
+        return Stream2;
+      }()
+    );
+    exports2.default = Stream;
+  }
+});
+
+// node_modules/pdf-lib/cjs/core/streams/DecodeStream.js
+var require_DecodeStream = __commonJS({
+  "node_modules/pdf-lib/cjs/core/streams/DecodeStream.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
+    var errors_1 = require_errors2();
+    var Stream_1 = tslib_1.__importDefault(require_Stream());
+    var emptyBuffer = new Uint8Array(0);
+    var DecodeStream = (
+      /** @class */
+      function() {
+        function DecodeStream2(maybeMinBufferLength) {
+          this.pos = 0;
+          this.bufferLength = 0;
+          this.eof = false;
+          this.buffer = emptyBuffer;
+          this.minBufferLength = 512;
+          if (maybeMinBufferLength) {
+            while (this.minBufferLength < maybeMinBufferLength) {
+              this.minBufferLength *= 2;
+            }
+          }
+        }
+        Object.defineProperty(DecodeStream2.prototype, "isEmpty", {
+          get: function() {
+            while (!this.eof && this.bufferLength === 0) {
+              this.readBlock();
+            }
+            return this.bufferLength === 0;
+          },
+          enumerable: false,
+          configurable: true
+        });
+        DecodeStream2.prototype.getByte = function() {
+          var pos = this.pos;
+          while (this.bufferLength <= pos) {
+            if (this.eof) {
+              return -1;
+            }
+            this.readBlock();
+          }
+          return this.buffer[this.pos++];
+        };
+        DecodeStream2.prototype.getUint16 = function() {
+          var b0 = this.getByte();
+          var b1 = this.getByte();
+          if (b0 === -1 || b1 === -1) {
+            return -1;
+          }
+          return (b0 << 8) + b1;
+        };
+        DecodeStream2.prototype.getInt32 = function() {
+          var b0 = this.getByte();
+          var b1 = this.getByte();
+          var b2 = this.getByte();
+          var b3 = this.getByte();
+          return (b0 << 24) + (b1 << 16) + (b2 << 8) + b3;
+        };
+        DecodeStream2.prototype.getBytes = function(length, forceClamped) {
+          if (forceClamped === void 0) {
+            forceClamped = false;
+          }
+          var end;
+          var pos = this.pos;
+          if (length) {
+            this.ensureBuffer(pos + length);
+            end = pos + length;
+            while (!this.eof && this.bufferLength < end) {
+              this.readBlock();
+            }
+            var bufEnd = this.bufferLength;
+            if (end > bufEnd) {
+              end = bufEnd;
+            }
+          } else {
+            while (!this.eof) {
+              this.readBlock();
+            }
+            end = this.bufferLength;
+          }
+          this.pos = end;
+          var subarray = this.buffer.subarray(pos, end);
+          return forceClamped && !(subarray instanceof Uint8ClampedArray) ? new Uint8ClampedArray(subarray) : subarray;
+        };
+        DecodeStream2.prototype.peekByte = function() {
+          var peekedByte = this.getByte();
+          this.pos--;
+          return peekedByte;
+        };
+        DecodeStream2.prototype.peekBytes = function(length, forceClamped) {
+          if (forceClamped === void 0) {
+            forceClamped = false;
+          }
+          var bytes = this.getBytes(length, forceClamped);
+          this.pos -= bytes.length;
+          return bytes;
+        };
+        DecodeStream2.prototype.skip = function(n) {
+          if (!n) {
+            n = 1;
+          }
+          this.pos += n;
+        };
+        DecodeStream2.prototype.reset = function() {
+          this.pos = 0;
+        };
+        DecodeStream2.prototype.makeSubStream = function(start, length) {
+          var end = start + length;
+          while (this.bufferLength <= end && !this.eof) {
+            this.readBlock();
+          }
+          return new Stream_1.default(
+            this.buffer,
+            start,
+            length
+            /* dict */
+          );
+        };
+        DecodeStream2.prototype.decode = function() {
+          while (!this.eof)
+            this.readBlock();
+          return this.buffer.subarray(0, this.bufferLength);
+        };
+        DecodeStream2.prototype.readBlock = function() {
+          throw new errors_1.MethodNotImplementedError(this.constructor.name, "readBlock");
+        };
+        DecodeStream2.prototype.ensureBuffer = function(requested) {
+          var buffer = this.buffer;
+          if (requested <= buffer.byteLength) {
+            return buffer;
+          }
+          var size = this.minBufferLength;
+          while (size < requested) {
+            size *= 2;
+          }
+          var buffer2 = new Uint8Array(size);
+          buffer2.set(buffer);
+          return this.buffer = buffer2;
+        };
+        return DecodeStream2;
+      }()
+    );
+    exports2.default = DecodeStream;
+  }
+});
+
+// node_modules/pdf-lib/cjs/core/streams/Ascii85Stream.js
+var require_Ascii85Stream = __commonJS({
+  "node_modules/pdf-lib/cjs/core/streams/Ascii85Stream.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
+    var DecodeStream_1 = tslib_1.__importDefault(require_DecodeStream());
+    var isSpace = function(ch) {
+      return ch === 32 || ch === 9 || ch === 13 || ch === 10;
+    };
+    var Ascii85Stream = (
+      /** @class */
+      function(_super) {
+        tslib_1.__extends(Ascii85Stream2, _super);
+        function Ascii85Stream2(stream, maybeLength) {
+          var _this = _super.call(this, maybeLength) || this;
+          _this.stream = stream;
+          _this.input = new Uint8Array(5);
+          if (maybeLength) {
+            maybeLength = 0.8 * maybeLength;
+          }
+          return _this;
+        }
+        Ascii85Stream2.prototype.readBlock = function() {
+          var TILDA_CHAR = 126;
+          var Z_LOWER_CHAR = 122;
+          var EOF = -1;
+          var stream = this.stream;
+          var c = stream.getByte();
+          while (isSpace(c)) {
+            c = stream.getByte();
+          }
+          if (c === EOF || c === TILDA_CHAR) {
+            this.eof = true;
+            return;
+          }
+          var bufferLength = this.bufferLength;
+          var buffer;
+          var i;
+          if (c === Z_LOWER_CHAR) {
+            buffer = this.ensureBuffer(bufferLength + 4);
+            for (i = 0; i < 4; ++i) {
+              buffer[bufferLength + i] = 0;
+            }
+            this.bufferLength += 4;
+          } else {
+            var input = this.input;
+            input[0] = c;
+            for (i = 1; i < 5; ++i) {
+              c = stream.getByte();
+              while (isSpace(c)) {
+                c = stream.getByte();
+              }
+              input[i] = c;
+              if (c === EOF || c === TILDA_CHAR) {
+                break;
+              }
+            }
+            buffer = this.ensureBuffer(bufferLength + i - 1);
+            this.bufferLength += i - 1;
+            if (i < 5) {
+              for (; i < 5; ++i) {
+                input[i] = 33 + 84;
+              }
+              this.eof = true;
+            }
+            var t2 = 0;
+            for (i = 0; i < 5; ++i) {
+              t2 = t2 * 85 + (input[i] - 33);
+            }
+            for (i = 3; i >= 0; --i) {
+              buffer[bufferLength + i] = t2 & 255;
+              t2 >>= 8;
+            }
+          }
+        };
+        return Ascii85Stream2;
+      }(DecodeStream_1.default)
+    );
+    exports2.default = Ascii85Stream;
+  }
+});
+
+// node_modules/pdf-lib/cjs/core/streams/AsciiHexStream.js
+var require_AsciiHexStream = __commonJS({
+  "node_modules/pdf-lib/cjs/core/streams/AsciiHexStream.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
+    var DecodeStream_1 = tslib_1.__importDefault(require_DecodeStream());
+    var AsciiHexStream = (
+      /** @class */
+      function(_super) {
+        tslib_1.__extends(AsciiHexStream2, _super);
+        function AsciiHexStream2(stream, maybeLength) {
+          var _this = _super.call(this, maybeLength) || this;
+          _this.stream = stream;
+          _this.firstDigit = -1;
+          if (maybeLength) {
+            maybeLength = 0.5 * maybeLength;
+          }
+          return _this;
+        }
+        AsciiHexStream2.prototype.readBlock = function() {
+          var UPSTREAM_BLOCK_SIZE = 8e3;
+          var bytes = this.stream.getBytes(UPSTREAM_BLOCK_SIZE);
+          if (!bytes.length) {
+            this.eof = true;
+            return;
+          }
+          var maxDecodeLength = bytes.length + 1 >> 1;
+          var buffer = this.ensureBuffer(this.bufferLength + maxDecodeLength);
+          var bufferLength = this.bufferLength;
+          var firstDigit = this.firstDigit;
+          for (var i = 0, ii = bytes.length; i < ii; i++) {
+            var ch = bytes[i];
+            var digit = void 0;
+            if (ch >= 48 && ch <= 57) {
+              digit = ch & 15;
+            } else if (ch >= 65 && ch <= 70 || ch >= 97 && ch <= 102) {
+              digit = (ch & 15) + 9;
+            } else if (ch === 62) {
+              this.eof = true;
+              break;
+            } else {
+              continue;
+            }
+            if (firstDigit < 0) {
+              firstDigit = digit;
+            } else {
+              buffer[bufferLength++] = firstDigit << 4 | digit;
+              firstDigit = -1;
+            }
+          }
+          if (firstDigit >= 0 && this.eof) {
+            buffer[bufferLength++] = firstDigit << 4;
+            firstDigit = -1;
+          }
+          this.firstDigit = firstDigit;
+          this.bufferLength = bufferLength;
+        };
+        return AsciiHexStream2;
+      }(DecodeStream_1.default)
+    );
+    exports2.default = AsciiHexStream;
+  }
+});
+
+// node_modules/pdf-lib/cjs/core/streams/FlateStream.js
+var require_FlateStream = __commonJS({
+  "node_modules/pdf-lib/cjs/core/streams/FlateStream.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
+    var DecodeStream_1 = tslib_1.__importDefault(require_DecodeStream());
+    var codeLenCodeMap = new Int32Array([
+      16,
+      17,
+      18,
+      0,
+      8,
+      7,
+      9,
+      6,
+      10,
+      5,
+      11,
+      4,
+      12,
+      3,
+      13,
+      2,
+      14,
+      1,
+      15
+    ]);
+    var lengthDecode = new Int32Array([
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      65547,
+      65549,
+      65551,
+      65553,
+      131091,
+      131095,
+      131099,
+      131103,
+      196643,
+      196651,
+      196659,
+      196667,
+      262211,
+      262227,
+      262243,
+      262259,
+      327811,
+      327843,
+      327875,
+      327907,
+      258,
+      258,
+      258
+    ]);
+    var distDecode = new Int32Array([
+      1,
+      2,
+      3,
+      4,
+      65541,
+      65543,
+      131081,
+      131085,
+      196625,
+      196633,
+      262177,
+      262193,
+      327745,
+      327777,
+      393345,
+      393409,
+      459009,
+      459137,
+      524801,
+      525057,
+      590849,
+      591361,
+      657409,
+      658433,
+      724993,
+      727041,
+      794625,
+      798721,
+      868353,
+      876545
+    ]);
+    var fixedLitCodeTab = [new Int32Array([
+      459008,
+      524368,
+      524304,
+      524568,
+      459024,
+      524400,
+      524336,
+      590016,
+      459016,
+      524384,
+      524320,
+      589984,
+      524288,
+      524416,
+      524352,
+      590048,
+      459012,
+      524376,
+      524312,
+      589968,
+      459028,
+      524408,
+      524344,
+      590032,
+      459020,
+      524392,
+      524328,
+      59e4,
+      524296,
+      524424,
+      524360,
+      590064,
+      459010,
+      524372,
+      524308,
+      524572,
+      459026,
+      524404,
+      524340,
+      590024,
+      459018,
+      524388,
+      524324,
+      589992,
+      524292,
+      524420,
+      524356,
+      590056,
+      459014,
+      524380,
+      524316,
+      589976,
+      459030,
+      524412,
+      524348,
+      590040,
+      459022,
+      524396,
+      524332,
+      590008,
+      524300,
+      524428,
+      524364,
+      590072,
+      459009,
+      524370,
+      524306,
+      524570,
+      459025,
+      524402,
+      524338,
+      590020,
+      459017,
+      524386,
+      524322,
+      589988,
+      524290,
+      524418,
+      524354,
+      590052,
+      459013,
+      524378,
+      524314,
+      589972,
+      459029,
+      524410,
+      524346,
+      590036,
+      459021,
+      524394,
+      524330,
+      590004,
+      524298,
+      524426,
+      524362,
+      590068,
+      459011,
+      524374,
+      524310,
+      524574,
+      459027,
+      524406,
+      524342,
+      590028,
+      459019,
+      524390,
+      524326,
+      589996,
+      524294,
+      524422,
+      524358,
+      590060,
+      459015,
+      524382,
+      524318,
+      589980,
+      459031,
+      524414,
+      524350,
+      590044,
+      459023,
+      524398,
+      524334,
+      590012,
+      524302,
+      524430,
+      524366,
+      590076,
+      459008,
+      524369,
+      524305,
+      524569,
+      459024,
+      524401,
+      524337,
+      590018,
+      459016,
+      524385,
+      524321,
+      589986,
+      524289,
+      524417,
+      524353,
+      590050,
+      459012,
+      524377,
+      524313,
+      589970,
+      459028,
+      524409,
+      524345,
+      590034,
+      459020,
+      524393,
+      524329,
+      590002,
+      524297,
+      524425,
+      524361,
+      590066,
+      459010,
+      524373,
+      524309,
+      524573,
+      459026,
+      524405,
+      524341,
+      590026,
+      459018,
+      524389,
+      524325,
+      589994,
+      524293,
+      524421,
+      524357,
+      590058,
+      459014,
+      524381,
+      524317,
+      589978,
+      459030,
+      524413,
+      524349,
+      590042,
+      459022,
+      524397,
+      524333,
+      590010,
+      524301,
+      524429,
+      524365,
+      590074,
+      459009,
+      524371,
+      524307,
+      524571,
+      459025,
+      524403,
+      524339,
+      590022,
+      459017,
+      524387,
+      524323,
+      589990,
+      524291,
+      524419,
+      524355,
+      590054,
+      459013,
+      524379,
+      524315,
+      589974,
+      459029,
+      524411,
+      524347,
+      590038,
+      459021,
+      524395,
+      524331,
+      590006,
+      524299,
+      524427,
+      524363,
+      590070,
+      459011,
+      524375,
+      524311,
+      524575,
+      459027,
+      524407,
+      524343,
+      590030,
+      459019,
+      524391,
+      524327,
+      589998,
+      524295,
+      524423,
+      524359,
+      590062,
+      459015,
+      524383,
+      524319,
+      589982,
+      459031,
+      524415,
+      524351,
+      590046,
+      459023,
+      524399,
+      524335,
+      590014,
+      524303,
+      524431,
+      524367,
+      590078,
+      459008,
+      524368,
+      524304,
+      524568,
+      459024,
+      524400,
+      524336,
+      590017,
+      459016,
+      524384,
+      524320,
+      589985,
+      524288,
+      524416,
+      524352,
+      590049,
+      459012,
+      524376,
+      524312,
+      589969,
+      459028,
+      524408,
+      524344,
+      590033,
+      459020,
+      524392,
+      524328,
+      590001,
+      524296,
+      524424,
+      524360,
+      590065,
+      459010,
+      524372,
+      524308,
+      524572,
+      459026,
+      524404,
+      524340,
+      590025,
+      459018,
+      524388,
+      524324,
+      589993,
+      524292,
+      524420,
+      524356,
+      590057,
+      459014,
+      524380,
+      524316,
+      589977,
+      459030,
+      524412,
+      524348,
+      590041,
+      459022,
+      524396,
+      524332,
+      590009,
+      524300,
+      524428,
+      524364,
+      590073,
+      459009,
+      524370,
+      524306,
+      524570,
+      459025,
+      524402,
+      524338,
+      590021,
+      459017,
+      524386,
+      524322,
+      589989,
+      524290,
+      524418,
+      524354,
+      590053,
+      459013,
+      524378,
+      524314,
+      589973,
+      459029,
+      524410,
+      524346,
+      590037,
+      459021,
+      524394,
+      524330,
+      590005,
+      524298,
+      524426,
+      524362,
+      590069,
+      459011,
+      524374,
+      524310,
+      524574,
+      459027,
+      524406,
+      524342,
+      590029,
+      459019,
+      524390,
+      524326,
+      589997,
+      524294,
+      524422,
+      524358,
+      590061,
+      459015,
+      524382,
+      524318,
+      589981,
+      459031,
+      524414,
+      524350,
+      590045,
+      459023,
+      524398,
+      524334,
+      590013,
+      524302,
+      524430,
+      524366,
+      590077,
+      459008,
+      524369,
+      524305,
+      524569,
+      459024,
+      524401,
+      524337,
+      590019,
+      459016,
+      524385,
+      524321,
+      589987,
+      524289,
+      524417,
+      524353,
+      590051,
+      459012,
+      524377,
+      524313,
+      589971,
+      459028,
+      524409,
+      524345,
+      590035,
+      459020,
+      524393,
+      524329,
+      590003,
+      524297,
+      524425,
+      524361,
+      590067,
+      459010,
+      524373,
+      524309,
+      524573,
+      459026,
+      524405,
+      524341,
+      590027,
+      459018,
+      524389,
+      524325,
+      589995,
+      524293,
+      524421,
+      524357,
+      590059,
+      459014,
+      524381,
+      524317,
+      589979,
+      459030,
+      524413,
+      524349,
+      590043,
+      459022,
+      524397,
+      524333,
+      590011,
+      524301,
+      524429,
+      524365,
+      590075,
+      459009,
+      524371,
+      524307,
+      524571,
+      459025,
+      524403,
+      524339,
+      590023,
+      459017,
+      524387,
+      524323,
+      589991,
+      524291,
+      524419,
+      524355,
+      590055,
+      459013,
+      524379,
+      524315,
+      589975,
+      459029,
+      524411,
+      524347,
+      590039,
+      459021,
+      524395,
+      524331,
+      590007,
+      524299,
+      524427,
+      524363,
+      590071,
+      459011,
+      524375,
+      524311,
+      524575,
+      459027,
+      524407,
+      524343,
+      590031,
+      459019,
+      524391,
+      524327,
+      589999,
+      524295,
+      524423,
+      524359,
+      590063,
+      459015,
+      524383,
+      524319,
+      589983,
+      459031,
+      524415,
+      524351,
+      590047,
+      459023,
+      524399,
+      524335,
+      590015,
+      524303,
+      524431,
+      524367,
+      590079
+    ]), 9];
+    var fixedDistCodeTab = [new Int32Array([
+      327680,
+      327696,
+      327688,
+      327704,
+      327684,
+      327700,
+      327692,
+      327708,
+      327682,
+      327698,
+      327690,
+      327706,
+      327686,
+      327702,
+      327694,
+      0,
+      327681,
+      327697,
+      327689,
+      327705,
+      327685,
+      327701,
+      327693,
+      327709,
+      327683,
+      327699,
+      327691,
+      327707,
+      327687,
+      327703,
+      327695,
+      0
+    ]), 5];
+    var FlateStream = (
+      /** @class */
+      function(_super) {
+        tslib_1.__extends(FlateStream2, _super);
+        function FlateStream2(stream, maybeLength) {
+          var _this = _super.call(this, maybeLength) || this;
+          _this.stream = stream;
+          var cmf = stream.getByte();
+          var flg = stream.getByte();
+          if (cmf === -1 || flg === -1) {
+            throw new Error("Invalid header in flate stream: " + cmf + ", " + flg);
+          }
+          if ((cmf & 15) !== 8) {
+            throw new Error("Unknown compression method in flate stream: " + cmf + ", " + flg);
+          }
+          if (((cmf << 8) + flg) % 31 !== 0) {
+            throw new Error("Bad FCHECK in flate stream: " + cmf + ", " + flg);
+          }
+          if (flg & 32) {
+            throw new Error("FDICT bit set in flate stream: " + cmf + ", " + flg);
+          }
+          _this.codeSize = 0;
+          _this.codeBuf = 0;
+          return _this;
+        }
+        FlateStream2.prototype.readBlock = function() {
+          var buffer;
+          var len;
+          var str = this.stream;
+          var hdr = this.getBits(3);
+          if (hdr & 1) {
+            this.eof = true;
+          }
+          hdr >>= 1;
+          if (hdr === 0) {
+            var b = void 0;
+            if ((b = str.getByte()) === -1) {
+              throw new Error("Bad block header in flate stream");
+            }
+            var blockLen = b;
+            if ((b = str.getByte()) === -1) {
+              throw new Error("Bad block header in flate stream");
+            }
+            blockLen |= b << 8;
+            if ((b = str.getByte()) === -1) {
+              throw new Error("Bad block header in flate stream");
+            }
+            var check = b;
+            if ((b = str.getByte()) === -1) {
+              throw new Error("Bad block header in flate stream");
+            }
+            check |= b << 8;
+            if (check !== (~blockLen & 65535) && (blockLen !== 0 || check !== 0)) {
+              throw new Error("Bad uncompressed block length in flate stream");
+            }
+            this.codeBuf = 0;
+            this.codeSize = 0;
+            var bufferLength = this.bufferLength;
+            buffer = this.ensureBuffer(bufferLength + blockLen);
+            var end = bufferLength + blockLen;
+            this.bufferLength = end;
+            if (blockLen === 0) {
+              if (str.peekByte() === -1) {
+                this.eof = true;
+              }
+            } else {
+              for (var n = bufferLength; n < end; ++n) {
+                if ((b = str.getByte()) === -1) {
+                  this.eof = true;
+                  break;
+                }
+                buffer[n] = b;
+              }
+            }
+            return;
+          }
+          var litCodeTable;
+          var distCodeTable;
+          if (hdr === 1) {
+            litCodeTable = fixedLitCodeTab;
+            distCodeTable = fixedDistCodeTab;
+          } else if (hdr === 2) {
+            var numLitCodes = this.getBits(5) + 257;
+            var numDistCodes = this.getBits(5) + 1;
+            var numCodeLenCodes = this.getBits(4) + 4;
+            var codeLenCodeLengths = new Uint8Array(codeLenCodeMap.length);
+            var i = void 0;
+            for (i = 0; i < numCodeLenCodes; ++i) {
+              codeLenCodeLengths[codeLenCodeMap[i]] = this.getBits(3);
+            }
+            var codeLenCodeTab = this.generateHuffmanTable(codeLenCodeLengths);
+            len = 0;
+            i = 0;
+            var codes = numLitCodes + numDistCodes;
+            var codeLengths = new Uint8Array(codes);
+            var bitsLength = void 0;
+            var bitsOffset = void 0;
+            var what = void 0;
+            while (i < codes) {
+              var code = this.getCode(codeLenCodeTab);
+              if (code === 16) {
+                bitsLength = 2;
+                bitsOffset = 3;
+                what = len;
+              } else if (code === 17) {
+                bitsLength = 3;
+                bitsOffset = 3;
+                what = len = 0;
+              } else if (code === 18) {
+                bitsLength = 7;
+                bitsOffset = 11;
+                what = len = 0;
+              } else {
+                codeLengths[i++] = len = code;
+                continue;
+              }
+              var repeatLength = this.getBits(bitsLength) + bitsOffset;
+              while (repeatLength-- > 0) {
+                codeLengths[i++] = what;
+              }
+            }
+            litCodeTable = this.generateHuffmanTable(codeLengths.subarray(0, numLitCodes));
+            distCodeTable = this.generateHuffmanTable(codeLengths.subarray(numLitCodes, codes));
+          } else {
+            throw new Error("Unknown block type in flate stream");
+          }
+          buffer = this.buffer;
+          var limit = buffer ? buffer.length : 0;
+          var pos = this.bufferLength;
+          while (true) {
+            var code1 = this.getCode(litCodeTable);
+            if (code1 < 256) {
+              if (pos + 1 >= limit) {
+                buffer = this.ensureBuffer(pos + 1);
+                limit = buffer.length;
+              }
+              buffer[pos++] = code1;
+              continue;
+            }
+            if (code1 === 256) {
+              this.bufferLength = pos;
+              return;
+            }
+            code1 -= 257;
+            code1 = lengthDecode[code1];
+            var code2 = code1 >> 16;
+            if (code2 > 0) {
+              code2 = this.getBits(code2);
+            }
+            len = (code1 & 65535) + code2;
+            code1 = this.getCode(distCodeTable);
+            code1 = distDecode[code1];
+            code2 = code1 >> 16;
+            if (code2 > 0) {
+              code2 = this.getBits(code2);
+            }
+            var dist = (code1 & 65535) + code2;
+            if (pos + len >= limit) {
+              buffer = this.ensureBuffer(pos + len);
+              limit = buffer.length;
+            }
+            for (var k = 0; k < len; ++k, ++pos) {
+              buffer[pos] = buffer[pos - dist];
+            }
+          }
+        };
+        FlateStream2.prototype.getBits = function(bits) {
+          var str = this.stream;
+          var codeSize = this.codeSize;
+          var codeBuf = this.codeBuf;
+          var b;
+          while (codeSize < bits) {
+            if ((b = str.getByte()) === -1) {
+              throw new Error("Bad encoding in flate stream");
+            }
+            codeBuf |= b << codeSize;
+            codeSize += 8;
+          }
+          b = codeBuf & (1 << bits) - 1;
+          this.codeBuf = codeBuf >> bits;
+          this.codeSize = codeSize -= bits;
+          return b;
+        };
+        FlateStream2.prototype.getCode = function(table) {
+          var str = this.stream;
+          var codes = table[0];
+          var maxLen = table[1];
+          var codeSize = this.codeSize;
+          var codeBuf = this.codeBuf;
+          var b;
+          while (codeSize < maxLen) {
+            if ((b = str.getByte()) === -1) {
+              break;
+            }
+            codeBuf |= b << codeSize;
+            codeSize += 8;
+          }
+          var code = codes[codeBuf & (1 << maxLen) - 1];
+          if (typeof codes === "number") {
+            console.log("FLATE:", code);
+          }
+          var codeLen = code >> 16;
+          var codeVal = code & 65535;
+          if (codeLen < 1 || codeSize < codeLen) {
+            throw new Error("Bad encoding in flate stream");
+          }
+          this.codeBuf = codeBuf >> codeLen;
+          this.codeSize = codeSize - codeLen;
+          return codeVal;
+        };
+        FlateStream2.prototype.generateHuffmanTable = function(lengths) {
+          var n = lengths.length;
+          var maxLen = 0;
+          var i;
+          for (i = 0; i < n; ++i) {
+            if (lengths[i] > maxLen) {
+              maxLen = lengths[i];
+            }
+          }
+          var size = 1 << maxLen;
+          var codes = new Int32Array(size);
+          for (var len = 1, code = 0, skip = 2; len <= maxLen; ++len, code <<= 1, skip <<= 1) {
+            for (var val = 0; val < n; ++val) {
+              if (lengths[val] === len) {
+                var code2 = 0;
+                var t2 = code;
+                for (i = 0; i < len; ++i) {
+                  code2 = code2 << 1 | t2 & 1;
+                  t2 >>= 1;
+                }
+                for (i = code2; i < size; i += skip) {
+                  codes[i] = len << 16 | val;
+                }
+                ++code;
+              }
+            }
+          }
+          return [codes, maxLen];
+        };
+        return FlateStream2;
+      }(DecodeStream_1.default)
+    );
+    exports2.default = FlateStream;
+  }
+});
+
+// node_modules/pdf-lib/cjs/core/streams/LZWStream.js
+var require_LZWStream = __commonJS({
+  "node_modules/pdf-lib/cjs/core/streams/LZWStream.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
+    var DecodeStream_1 = tslib_1.__importDefault(require_DecodeStream());
+    var LZWStream = (
+      /** @class */
+      function(_super) {
+        tslib_1.__extends(LZWStream2, _super);
+        function LZWStream2(stream, maybeLength, earlyChange) {
+          var _this = _super.call(this, maybeLength) || this;
+          _this.stream = stream;
+          _this.cachedData = 0;
+          _this.bitsCached = 0;
+          var maxLzwDictionarySize = 4096;
+          var lzwState = {
+            earlyChange,
+            codeLength: 9,
+            nextCode: 258,
+            dictionaryValues: new Uint8Array(maxLzwDictionarySize),
+            dictionaryLengths: new Uint16Array(maxLzwDictionarySize),
+            dictionaryPrevCodes: new Uint16Array(maxLzwDictionarySize),
+            currentSequence: new Uint8Array(maxLzwDictionarySize),
+            currentSequenceLength: 0
+          };
+          for (var i = 0; i < 256; ++i) {
+            lzwState.dictionaryValues[i] = i;
+            lzwState.dictionaryLengths[i] = 1;
+          }
+          _this.lzwState = lzwState;
+          return _this;
+        }
+        LZWStream2.prototype.readBlock = function() {
+          var blockSize = 512;
+          var estimatedDecodedSize = blockSize * 2;
+          var decodedSizeDelta = blockSize;
+          var i;
+          var j;
+          var q;
+          var lzwState = this.lzwState;
+          if (!lzwState) {
+            return;
+          }
+          var earlyChange = lzwState.earlyChange;
+          var nextCode = lzwState.nextCode;
+          var dictionaryValues = lzwState.dictionaryValues;
+          var dictionaryLengths = lzwState.dictionaryLengths;
+          var dictionaryPrevCodes = lzwState.dictionaryPrevCodes;
+          var codeLength = lzwState.codeLength;
+          var prevCode = lzwState.prevCode;
+          var currentSequence = lzwState.currentSequence;
+          var currentSequenceLength = lzwState.currentSequenceLength;
+          var decodedLength = 0;
+          var currentBufferLength = this.bufferLength;
+          var buffer = this.ensureBuffer(this.bufferLength + estimatedDecodedSize);
+          for (i = 0; i < blockSize; i++) {
+            var code = this.readBits(codeLength);
+            var hasPrev = currentSequenceLength > 0;
+            if (!code || code < 256) {
+              currentSequence[0] = code;
+              currentSequenceLength = 1;
+            } else if (code >= 258) {
+              if (code < nextCode) {
+                currentSequenceLength = dictionaryLengths[code];
+                for (j = currentSequenceLength - 1, q = code; j >= 0; j--) {
+                  currentSequence[j] = dictionaryValues[q];
+                  q = dictionaryPrevCodes[q];
+                }
+              } else {
+                currentSequence[currentSequenceLength++] = currentSequence[0];
+              }
+            } else if (code === 256) {
+              codeLength = 9;
+              nextCode = 258;
+              currentSequenceLength = 0;
+              continue;
+            } else {
+              this.eof = true;
+              delete this.lzwState;
+              break;
+            }
+            if (hasPrev) {
+              dictionaryPrevCodes[nextCode] = prevCode;
+              dictionaryLengths[nextCode] = dictionaryLengths[prevCode] + 1;
+              dictionaryValues[nextCode] = currentSequence[0];
+              nextCode++;
+              codeLength = nextCode + earlyChange & nextCode + earlyChange - 1 ? codeLength : Math.min(Math.log(nextCode + earlyChange) / 0.6931471805599453 + 1, 12) | 0;
+            }
+            prevCode = code;
+            decodedLength += currentSequenceLength;
+            if (estimatedDecodedSize < decodedLength) {
+              do {
+                estimatedDecodedSize += decodedSizeDelta;
+              } while (estimatedDecodedSize < decodedLength);
+              buffer = this.ensureBuffer(this.bufferLength + estimatedDecodedSize);
+            }
+            for (j = 0; j < currentSequenceLength; j++) {
+              buffer[currentBufferLength++] = currentSequence[j];
+            }
+          }
+          lzwState.nextCode = nextCode;
+          lzwState.codeLength = codeLength;
+          lzwState.prevCode = prevCode;
+          lzwState.currentSequenceLength = currentSequenceLength;
+          this.bufferLength = currentBufferLength;
+        };
+        LZWStream2.prototype.readBits = function(n) {
+          var bitsCached = this.bitsCached;
+          var cachedData = this.cachedData;
+          while (bitsCached < n) {
+            var c = this.stream.getByte();
+            if (c === -1) {
+              this.eof = true;
+              return null;
+            }
+            cachedData = cachedData << 8 | c;
+            bitsCached += 8;
+          }
+          this.bitsCached = bitsCached -= n;
+          this.cachedData = cachedData;
+          return cachedData >>> bitsCached & (1 << n) - 1;
+        };
+        return LZWStream2;
+      }(DecodeStream_1.default)
+    );
+    exports2.default = LZWStream;
+  }
+});
+
+// node_modules/pdf-lib/cjs/core/streams/RunLengthStream.js
+var require_RunLengthStream = __commonJS({
+  "node_modules/pdf-lib/cjs/core/streams/RunLengthStream.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
+    var DecodeStream_1 = tslib_1.__importDefault(require_DecodeStream());
+    var RunLengthStream = (
+      /** @class */
+      function(_super) {
+        tslib_1.__extends(RunLengthStream2, _super);
+        function RunLengthStream2(stream, maybeLength) {
+          var _this = _super.call(this, maybeLength) || this;
+          _this.stream = stream;
+          return _this;
+        }
+        RunLengthStream2.prototype.readBlock = function() {
+          var repeatHeader = this.stream.getBytes(2);
+          if (!repeatHeader || repeatHeader.length < 2 || repeatHeader[0] === 128) {
+            this.eof = true;
+            return;
+          }
+          var buffer;
+          var bufferLength = this.bufferLength;
+          var n = repeatHeader[0];
+          if (n < 128) {
+            buffer = this.ensureBuffer(bufferLength + n + 1);
+            buffer[bufferLength++] = repeatHeader[1];
+            if (n > 0) {
+              var source = this.stream.getBytes(n);
+              buffer.set(source, bufferLength);
+              bufferLength += n;
+            }
+          } else {
+            n = 257 - n;
+            var b = repeatHeader[1];
+            buffer = this.ensureBuffer(bufferLength + n + 1);
+            for (var i = 0; i < n; i++) {
+              buffer[bufferLength++] = b;
+            }
+          }
+          this.bufferLength = bufferLength;
+        };
+        return RunLengthStream2;
+      }(DecodeStream_1.default)
+    );
+    exports2.default = RunLengthStream;
+  }
+});
+
+// node_modules/pdf-lib/cjs/core/streams/decode.js
+var require_decode = __commonJS({
+  "node_modules/pdf-lib/cjs/core/streams/decode.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.decodePDFRawStream = void 0;
+    var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
+    var errors_1 = require_errors2();
+    var PDFArray_1 = tslib_1.__importDefault(require_PDFArray());
+    var PDFDict_1 = tslib_1.__importDefault(require_PDFDict());
+    var PDFName_1 = tslib_1.__importDefault(require_PDFName());
+    var PDFNumber_1 = tslib_1.__importDefault(require_PDFNumber());
+    var Ascii85Stream_1 = tslib_1.__importDefault(require_Ascii85Stream());
+    var AsciiHexStream_1 = tslib_1.__importDefault(require_AsciiHexStream());
+    var FlateStream_1 = tslib_1.__importDefault(require_FlateStream());
+    var LZWStream_1 = tslib_1.__importDefault(require_LZWStream());
+    var RunLengthStream_1 = tslib_1.__importDefault(require_RunLengthStream());
+    var Stream_1 = tslib_1.__importDefault(require_Stream());
+    var decodeStream = function(stream, encoding, params) {
+      if (encoding === PDFName_1.default.of("FlateDecode")) {
+        return new FlateStream_1.default(stream);
+      }
+      if (encoding === PDFName_1.default.of("LZWDecode")) {
+        var earlyChange = 1;
+        if (params instanceof PDFDict_1.default) {
+          var EarlyChange = params.lookup(PDFName_1.default.of("EarlyChange"));
+          if (EarlyChange instanceof PDFNumber_1.default) {
+            earlyChange = EarlyChange.asNumber();
+          }
+        }
+        return new LZWStream_1.default(stream, void 0, earlyChange);
+      }
+      if (encoding === PDFName_1.default.of("ASCII85Decode")) {
+        return new Ascii85Stream_1.default(stream);
+      }
+      if (encoding === PDFName_1.default.of("ASCIIHexDecode")) {
+        return new AsciiHexStream_1.default(stream);
+      }
+      if (encoding === PDFName_1.default.of("RunLengthDecode")) {
+        return new RunLengthStream_1.default(stream);
+      }
+      throw new errors_1.UnsupportedEncodingError(encoding.asString());
+    };
+    exports2.decodePDFRawStream = function(_a) {
+      var dict = _a.dict, contents = _a.contents;
+      var stream = new Stream_1.default(contents);
+      var Filter = dict.lookup(PDFName_1.default.of("Filter"));
+      var DecodeParms = dict.lookup(PDFName_1.default.of("DecodeParms"));
+      if (Filter instanceof PDFName_1.default) {
+        stream = decodeStream(stream, Filter, DecodeParms);
+      } else if (Filter instanceof PDFArray_1.default) {
+        for (var idx = 0, len = Filter.size(); idx < len; idx++) {
+          stream = decodeStream(stream, Filter.lookup(idx, PDFName_1.default), DecodeParms && DecodeParms.lookupMaybe(idx, PDFDict_1.default));
+        }
+      } else if (!!Filter) {
+        throw new errors_1.UnexpectedObjectTypeError([PDFName_1.default, PDFArray_1.default], Filter);
+      }
+      return stream;
+    };
+  }
+});
+
+// node_modules/pdf-lib/cjs/core/parser/ByteStream.js
+var require_ByteStream = __commonJS({
+  "node_modules/pdf-lib/cjs/core/parser/ByteStream.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
+    var errors_1 = require_errors2();
+    var decode_1 = require_decode();
+    var CharCodes_1 = tslib_1.__importDefault(require_CharCodes());
+    var ByteStream = (
+      /** @class */
+      function() {
+        function ByteStream2(bytes) {
+          this.idx = 0;
+          this.line = 0;
+          this.column = 0;
+          this.bytes = bytes;
+          this.length = this.bytes.length;
+        }
+        ByteStream2.prototype.moveTo = function(offset) {
+          this.idx = offset;
+        };
+        ByteStream2.prototype.next = function() {
+          var byte = this.bytes[this.idx++];
+          if (byte === CharCodes_1.default.Newline) {
+            this.line += 1;
+            this.column = 0;
+          } else {
+            this.column += 1;
+          }
+          return byte;
+        };
+        ByteStream2.prototype.assertNext = function(expected) {
+          if (this.peek() !== expected) {
+            throw new errors_1.NextByteAssertionError(this.position(), expected, this.peek());
+          }
+          return this.next();
+        };
+        ByteStream2.prototype.peek = function() {
+          return this.bytes[this.idx];
+        };
+        ByteStream2.prototype.peekAhead = function(steps) {
+          return this.bytes[this.idx + steps];
+        };
+        ByteStream2.prototype.peekAt = function(offset) {
+          return this.bytes[offset];
+        };
+        ByteStream2.prototype.done = function() {
+          return this.idx >= this.length;
+        };
+        ByteStream2.prototype.offset = function() {
+          return this.idx;
+        };
+        ByteStream2.prototype.slice = function(start, end) {
+          return this.bytes.slice(start, end);
+        };
+        ByteStream2.prototype.position = function() {
+          return { line: this.line, column: this.column, offset: this.idx };
+        };
+        ByteStream2.of = function(bytes) {
+          return new ByteStream2(bytes);
+        };
+        ByteStream2.fromPDFRawStream = function(rawStream) {
+          return ByteStream2.of(decode_1.decodePDFRawStream(rawStream).decode());
+        };
+        return ByteStream2;
+      }()
+    );
+    exports2.default = ByteStream;
+  }
+});
+
+// node_modules/pdf-lib/cjs/core/parser/PDFXRefStreamParser.js
+var require_PDFXRefStreamParser = __commonJS({
+  "node_modules/pdf-lib/cjs/core/parser/PDFXRefStreamParser.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
+    var errors_1 = require_errors2();
+    var PDFArray_1 = tslib_1.__importDefault(require_PDFArray());
+    var PDFName_1 = tslib_1.__importDefault(require_PDFName());
+    var PDFNumber_1 = tslib_1.__importDefault(require_PDFNumber());
+    var PDFRef_1 = tslib_1.__importDefault(require_PDFRef());
+    var ByteStream_1 = tslib_1.__importDefault(require_ByteStream());
+    var PDFXRefStreamParser2 = (
+      /** @class */
+      function() {
+        function PDFXRefStreamParser3(rawStream) {
+          this.alreadyParsed = false;
+          this.dict = rawStream.dict;
+          this.bytes = ByteStream_1.default.fromPDFRawStream(rawStream);
+          this.context = this.dict.context;
+          var Size = this.dict.lookup(PDFName_1.default.of("Size"), PDFNumber_1.default);
+          var Index = this.dict.lookup(PDFName_1.default.of("Index"));
+          if (Index instanceof PDFArray_1.default) {
+            this.subsections = [];
+            for (var idx = 0, len = Index.size(); idx < len; idx += 2) {
+              var firstObjectNumber = Index.lookup(idx + 0, PDFNumber_1.default).asNumber();
+              var length_1 = Index.lookup(idx + 1, PDFNumber_1.default).asNumber();
+              this.subsections.push({ firstObjectNumber, length: length_1 });
+            }
+          } else {
+            this.subsections = [{ firstObjectNumber: 0, length: Size.asNumber() }];
+          }
+          var W = this.dict.lookup(PDFName_1.default.of("W"), PDFArray_1.default);
+          this.byteWidths = [-1, -1, -1];
+          for (var idx = 0, len = W.size(); idx < len; idx++) {
+            this.byteWidths[idx] = W.lookup(idx, PDFNumber_1.default).asNumber();
+          }
+        }
+        PDFXRefStreamParser3.prototype.parseIntoContext = function() {
+          if (this.alreadyParsed) {
+            throw new errors_1.ReparseError("PDFXRefStreamParser", "parseIntoContext");
+          }
+          this.alreadyParsed = true;
+          this.context.trailerInfo = {
+            Root: this.dict.get(PDFName_1.default.of("Root")),
+            Encrypt: this.dict.get(PDFName_1.default.of("Encrypt")),
+            Info: this.dict.get(PDFName_1.default.of("Info")),
+            ID: this.dict.get(PDFName_1.default.of("ID"))
+          };
+          var entries = this.parseEntries();
+          return entries;
+        };
+        PDFXRefStreamParser3.prototype.parseEntries = function() {
+          var entries = [];
+          var _a = this.byteWidths, typeFieldWidth = _a[0], offsetFieldWidth = _a[1], genFieldWidth = _a[2];
+          for (var subsectionIdx = 0, subsectionLen = this.subsections.length; subsectionIdx < subsectionLen; subsectionIdx++) {
+            var _b = this.subsections[subsectionIdx], firstObjectNumber = _b.firstObjectNumber, length_2 = _b.length;
+            for (var objIdx = 0; objIdx < length_2; objIdx++) {
+              var type = 0;
+              for (var idx = 0, len = typeFieldWidth; idx < len; idx++) {
+                type = type << 8 | this.bytes.next();
+              }
+              var offset = 0;
+              for (var idx = 0, len = offsetFieldWidth; idx < len; idx++) {
+                offset = offset << 8 | this.bytes.next();
+              }
+              var generationNumber = 0;
+              for (var idx = 0, len = genFieldWidth; idx < len; idx++) {
+                generationNumber = generationNumber << 8 | this.bytes.next();
+              }
+              if (typeFieldWidth === 0)
+                type = 1;
+              var objectNumber = firstObjectNumber + objIdx;
+              var entry = {
+                ref: PDFRef_1.default.of(objectNumber, generationNumber),
+                offset,
+                deleted: type === 0,
+                inObjectStream: type === 2
+              };
+              entries.push(entry);
+            }
+          }
+          return entries;
+        };
+        PDFXRefStreamParser3.forStream = function(rawStream) {
+          return new PDFXRefStreamParser3(rawStream);
+        };
+        return PDFXRefStreamParser3;
+      }()
+    );
+    exports2.default = PDFXRefStreamParser2;
   }
 });
 
@@ -28376,210 +30715,6 @@ var require_PDFHeader = __commonJS({
   }
 });
 
-// node_modules/pdf-lib/cjs/core/objects/PDFObject.js
-var require_PDFObject = __commonJS({
-  "node_modules/pdf-lib/cjs/core/objects/PDFObject.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var errors_1 = require_errors2();
-    var PDFObject = (
-      /** @class */
-      function() {
-        function PDFObject2() {
-        }
-        PDFObject2.prototype.clone = function(_context) {
-          throw new errors_1.MethodNotImplementedError(this.constructor.name, "clone");
-        };
-        PDFObject2.prototype.toString = function() {
-          throw new errors_1.MethodNotImplementedError(this.constructor.name, "toString");
-        };
-        PDFObject2.prototype.sizeInBytes = function() {
-          throw new errors_1.MethodNotImplementedError(this.constructor.name, "sizeInBytes");
-        };
-        PDFObject2.prototype.copyBytesInto = function(_buffer, _offset) {
-          throw new errors_1.MethodNotImplementedError(this.constructor.name, "copyBytesInto");
-        };
-        return PDFObject2;
-      }()
-    );
-    exports2.default = PDFObject;
-  }
-});
-
-// node_modules/pdf-lib/cjs/core/objects/PDFNumber.js
-var require_PDFNumber = __commonJS({
-  "node_modules/pdf-lib/cjs/core/objects/PDFNumber.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
-    var index_1 = require_utils2();
-    var PDFObject_1 = tslib_1.__importDefault(require_PDFObject());
-    var PDFNumber = (
-      /** @class */
-      function(_super) {
-        tslib_1.__extends(PDFNumber2, _super);
-        function PDFNumber2(value) {
-          var _this = _super.call(this) || this;
-          _this.numberValue = value;
-          _this.stringValue = index_1.numberToString(value);
-          return _this;
-        }
-        PDFNumber2.prototype.asNumber = function() {
-          return this.numberValue;
-        };
-        PDFNumber2.prototype.value = function() {
-          return this.numberValue;
-        };
-        PDFNumber2.prototype.clone = function() {
-          return PDFNumber2.of(this.numberValue);
-        };
-        PDFNumber2.prototype.toString = function() {
-          return this.stringValue;
-        };
-        PDFNumber2.prototype.sizeInBytes = function() {
-          return this.stringValue.length;
-        };
-        PDFNumber2.prototype.copyBytesInto = function(buffer, offset) {
-          offset += index_1.copyStringIntoBuffer(this.stringValue, buffer, offset);
-          return this.stringValue.length;
-        };
-        PDFNumber2.of = function(value) {
-          return new PDFNumber2(value);
-        };
-        return PDFNumber2;
-      }(PDFObject_1.default)
-    );
-    exports2.default = PDFNumber;
-  }
-});
-
-// node_modules/pdf-lib/cjs/core/objects/PDFArray.js
-var require_PDFArray = __commonJS({
-  "node_modules/pdf-lib/cjs/core/objects/PDFArray.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
-    var PDFNumber_1 = tslib_1.__importDefault(require_PDFNumber());
-    var PDFObject_1 = tslib_1.__importDefault(require_PDFObject());
-    var CharCodes_1 = tslib_1.__importDefault(require_CharCodes());
-    var errors_1 = require_errors2();
-    var PDFArray = (
-      /** @class */
-      function(_super) {
-        tslib_1.__extends(PDFArray2, _super);
-        function PDFArray2(context) {
-          var _this = _super.call(this) || this;
-          _this.array = [];
-          _this.context = context;
-          return _this;
-        }
-        PDFArray2.prototype.size = function() {
-          return this.array.length;
-        };
-        PDFArray2.prototype.push = function(object) {
-          this.array.push(object);
-        };
-        PDFArray2.prototype.insert = function(index, object) {
-          this.array.splice(index, 0, object);
-        };
-        PDFArray2.prototype.indexOf = function(object) {
-          var index = this.array.indexOf(object);
-          return index === -1 ? void 0 : index;
-        };
-        PDFArray2.prototype.remove = function(index) {
-          this.array.splice(index, 1);
-        };
-        PDFArray2.prototype.set = function(idx, object) {
-          this.array[idx] = object;
-        };
-        PDFArray2.prototype.get = function(index) {
-          return this.array[index];
-        };
-        PDFArray2.prototype.lookupMaybe = function(index) {
-          var _a;
-          var types = [];
-          for (var _i = 1; _i < arguments.length; _i++) {
-            types[_i - 1] = arguments[_i];
-          }
-          return (_a = this.context).lookupMaybe.apply(_a, tslib_1.__spreadArrays([this.get(index)], types));
-        };
-        PDFArray2.prototype.lookup = function(index) {
-          var _a;
-          var types = [];
-          for (var _i = 1; _i < arguments.length; _i++) {
-            types[_i - 1] = arguments[_i];
-          }
-          return (_a = this.context).lookup.apply(_a, tslib_1.__spreadArrays([this.get(index)], types));
-        };
-        PDFArray2.prototype.asRectangle = function() {
-          if (this.size() !== 4)
-            throw new errors_1.PDFArrayIsNotRectangleError(this.size());
-          var lowerLeftX = this.lookup(0, PDFNumber_1.default).asNumber();
-          var lowerLeftY = this.lookup(1, PDFNumber_1.default).asNumber();
-          var upperRightX = this.lookup(2, PDFNumber_1.default).asNumber();
-          var upperRightY = this.lookup(3, PDFNumber_1.default).asNumber();
-          var x = lowerLeftX;
-          var y = lowerLeftY;
-          var width = upperRightX - lowerLeftX;
-          var height = upperRightY - lowerLeftY;
-          return { x, y, width, height };
-        };
-        PDFArray2.prototype.asArray = function() {
-          return this.array.slice();
-        };
-        PDFArray2.prototype.clone = function(context) {
-          var clone = PDFArray2.withContext(context || this.context);
-          for (var idx = 0, len = this.size(); idx < len; idx++) {
-            clone.push(this.array[idx]);
-          }
-          return clone;
-        };
-        PDFArray2.prototype.toString = function() {
-          var arrayString = "[ ";
-          for (var idx = 0, len = this.size(); idx < len; idx++) {
-            arrayString += this.get(idx).toString();
-            arrayString += " ";
-          }
-          arrayString += "]";
-          return arrayString;
-        };
-        PDFArray2.prototype.sizeInBytes = function() {
-          var size = 3;
-          for (var idx = 0, len = this.size(); idx < len; idx++) {
-            size += this.get(idx).sizeInBytes() + 1;
-          }
-          return size;
-        };
-        PDFArray2.prototype.copyBytesInto = function(buffer, offset) {
-          var initialOffset = offset;
-          buffer[offset++] = CharCodes_1.default.LeftSquareBracket;
-          buffer[offset++] = CharCodes_1.default.Space;
-          for (var idx = 0, len = this.size(); idx < len; idx++) {
-            offset += this.get(idx).copyBytesInto(buffer, offset);
-            buffer[offset++] = CharCodes_1.default.Space;
-          }
-          buffer[offset++] = CharCodes_1.default.RightSquareBracket;
-          return offset - initialOffset;
-        };
-        PDFArray2.prototype.scalePDFNumbers = function(x, y) {
-          for (var idx = 0, len = this.size(); idx < len; idx++) {
-            var el = this.lookup(idx);
-            if (el instanceof PDFNumber_1.default) {
-              var factor = idx % 2 === 0 ? x : y;
-              this.set(idx, PDFNumber_1.default.of(el.asNumber() * factor));
-            }
-          }
-        };
-        PDFArray2.withContext = function(context) {
-          return new PDFArray2(context);
-        };
-        return PDFArray2;
-      }(PDFObject_1.default)
-    );
-    exports2.default = PDFArray;
-  }
-});
-
 // node_modules/pdf-lib/cjs/core/objects/PDFBool.js
 var require_PDFBool = __commonJS({
   "node_modules/pdf-lib/cjs/core/objects/PDFBool.js"(exports2) {
@@ -28636,386 +30771,6 @@ var require_PDFBool = __commonJS({
       }(PDFObject_1.default)
     );
     exports2.default = PDFBool;
-  }
-});
-
-// node_modules/pdf-lib/cjs/core/syntax/Delimiters.js
-var require_Delimiters = __commonJS({
-  "node_modules/pdf-lib/cjs/core/syntax/Delimiters.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.IsDelimiter = void 0;
-    var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
-    var CharCodes_1 = tslib_1.__importDefault(require_CharCodes());
-    exports2.IsDelimiter = new Uint8Array(256);
-    exports2.IsDelimiter[CharCodes_1.default.LeftParen] = 1;
-    exports2.IsDelimiter[CharCodes_1.default.RightParen] = 1;
-    exports2.IsDelimiter[CharCodes_1.default.LessThan] = 1;
-    exports2.IsDelimiter[CharCodes_1.default.GreaterThan] = 1;
-    exports2.IsDelimiter[CharCodes_1.default.LeftSquareBracket] = 1;
-    exports2.IsDelimiter[CharCodes_1.default.RightSquareBracket] = 1;
-    exports2.IsDelimiter[CharCodes_1.default.LeftCurly] = 1;
-    exports2.IsDelimiter[CharCodes_1.default.RightCurly] = 1;
-    exports2.IsDelimiter[CharCodes_1.default.ForwardSlash] = 1;
-    exports2.IsDelimiter[CharCodes_1.default.Percent] = 1;
-  }
-});
-
-// node_modules/pdf-lib/cjs/core/syntax/Whitespace.js
-var require_Whitespace = __commonJS({
-  "node_modules/pdf-lib/cjs/core/syntax/Whitespace.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.IsWhitespace = void 0;
-    var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
-    var CharCodes_1 = tslib_1.__importDefault(require_CharCodes());
-    exports2.IsWhitespace = new Uint8Array(256);
-    exports2.IsWhitespace[CharCodes_1.default.Null] = 1;
-    exports2.IsWhitespace[CharCodes_1.default.Tab] = 1;
-    exports2.IsWhitespace[CharCodes_1.default.Newline] = 1;
-    exports2.IsWhitespace[CharCodes_1.default.FormFeed] = 1;
-    exports2.IsWhitespace[CharCodes_1.default.CarriageReturn] = 1;
-    exports2.IsWhitespace[CharCodes_1.default.Space] = 1;
-  }
-});
-
-// node_modules/pdf-lib/cjs/core/syntax/Irregular.js
-var require_Irregular = __commonJS({
-  "node_modules/pdf-lib/cjs/core/syntax/Irregular.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.IsIrregular = void 0;
-    var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
-    var CharCodes_1 = tslib_1.__importDefault(require_CharCodes());
-    var Delimiters_1 = require_Delimiters();
-    var Whitespace_1 = require_Whitespace();
-    exports2.IsIrregular = new Uint8Array(256);
-    for (idx = 0, len = 256; idx < len; idx++) {
-      exports2.IsIrregular[idx] = Whitespace_1.IsWhitespace[idx] || Delimiters_1.IsDelimiter[idx] ? 1 : 0;
-    }
-    var idx;
-    var len;
-    exports2.IsIrregular[CharCodes_1.default.Hash] = 1;
-  }
-});
-
-// node_modules/pdf-lib/cjs/core/objects/PDFName.js
-var require_PDFName = __commonJS({
-  "node_modules/pdf-lib/cjs/core/objects/PDFName.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
-    var errors_1 = require_errors2();
-    var PDFObject_1 = tslib_1.__importDefault(require_PDFObject());
-    var CharCodes_1 = tslib_1.__importDefault(require_CharCodes());
-    var Irregular_1 = require_Irregular();
-    var utils_1 = require_utils2();
-    var decodeName = function(name) {
-      return name.replace(/#([\dABCDEF]{2})/g, function(_, hex) {
-        return utils_1.charFromHexCode(hex);
-      });
-    };
-    var isRegularChar = function(charCode) {
-      return charCode >= CharCodes_1.default.ExclamationPoint && charCode <= CharCodes_1.default.Tilde && !Irregular_1.IsIrregular[charCode];
-    };
-    var ENFORCER = {};
-    var pool = /* @__PURE__ */ new Map();
-    var PDFName2 = (
-      /** @class */
-      function(_super) {
-        tslib_1.__extends(PDFName3, _super);
-        function PDFName3(enforcer, name) {
-          var _this = this;
-          if (enforcer !== ENFORCER)
-            throw new errors_1.PrivateConstructorError("PDFName");
-          _this = _super.call(this) || this;
-          var encodedName = "/";
-          for (var idx = 0, len = name.length; idx < len; idx++) {
-            var character = name[idx];
-            var code = utils_1.toCharCode(character);
-            encodedName += isRegularChar(code) ? character : "#" + utils_1.toHexString(code);
-          }
-          _this.encodedName = encodedName;
-          return _this;
-        }
-        PDFName3.prototype.asBytes = function() {
-          var bytes = [];
-          var hex = "";
-          var escaped = false;
-          var pushByte = function(byte2) {
-            if (byte2 !== void 0)
-              bytes.push(byte2);
-            escaped = false;
-          };
-          for (var idx = 1, len = this.encodedName.length; idx < len; idx++) {
-            var char = this.encodedName[idx];
-            var byte = utils_1.toCharCode(char);
-            var nextChar = this.encodedName[idx + 1];
-            if (!escaped) {
-              if (byte === CharCodes_1.default.Hash)
-                escaped = true;
-              else
-                pushByte(byte);
-            } else {
-              if (byte >= CharCodes_1.default.Zero && byte <= CharCodes_1.default.Nine || byte >= CharCodes_1.default.a && byte <= CharCodes_1.default.f || byte >= CharCodes_1.default.A && byte <= CharCodes_1.default.F) {
-                hex += char;
-                if (hex.length === 2 || !(nextChar >= "0" && nextChar <= "9" || nextChar >= "a" && nextChar <= "f" || nextChar >= "A" && nextChar <= "F")) {
-                  pushByte(parseInt(hex, 16));
-                  hex = "";
-                }
-              } else {
-                pushByte(byte);
-              }
-            }
-          }
-          return new Uint8Array(bytes);
-        };
-        PDFName3.prototype.decodeText = function() {
-          var bytes = this.asBytes();
-          return String.fromCharCode.apply(String, Array.from(bytes));
-        };
-        PDFName3.prototype.asString = function() {
-          return this.encodedName;
-        };
-        PDFName3.prototype.value = function() {
-          return this.encodedName;
-        };
-        PDFName3.prototype.clone = function() {
-          return this;
-        };
-        PDFName3.prototype.toString = function() {
-          return this.encodedName;
-        };
-        PDFName3.prototype.sizeInBytes = function() {
-          return this.encodedName.length;
-        };
-        PDFName3.prototype.copyBytesInto = function(buffer, offset) {
-          offset += utils_1.copyStringIntoBuffer(this.encodedName, buffer, offset);
-          return this.encodedName.length;
-        };
-        PDFName3.of = function(name) {
-          var decodedValue = decodeName(name);
-          var instance = pool.get(decodedValue);
-          if (!instance) {
-            instance = new PDFName3(ENFORCER, decodedValue);
-            pool.set(decodedValue, instance);
-          }
-          return instance;
-        };
-        PDFName3.Length = PDFName3.of("Length");
-        PDFName3.FlateDecode = PDFName3.of("FlateDecode");
-        PDFName3.Resources = PDFName3.of("Resources");
-        PDFName3.Font = PDFName3.of("Font");
-        PDFName3.XObject = PDFName3.of("XObject");
-        PDFName3.ExtGState = PDFName3.of("ExtGState");
-        PDFName3.Contents = PDFName3.of("Contents");
-        PDFName3.Type = PDFName3.of("Type");
-        PDFName3.Parent = PDFName3.of("Parent");
-        PDFName3.MediaBox = PDFName3.of("MediaBox");
-        PDFName3.Page = PDFName3.of("Page");
-        PDFName3.Annots = PDFName3.of("Annots");
-        PDFName3.TrimBox = PDFName3.of("TrimBox");
-        PDFName3.ArtBox = PDFName3.of("ArtBox");
-        PDFName3.BleedBox = PDFName3.of("BleedBox");
-        PDFName3.CropBox = PDFName3.of("CropBox");
-        PDFName3.Rotate = PDFName3.of("Rotate");
-        PDFName3.Title = PDFName3.of("Title");
-        PDFName3.Author = PDFName3.of("Author");
-        PDFName3.Subject = PDFName3.of("Subject");
-        PDFName3.Creator = PDFName3.of("Creator");
-        PDFName3.Keywords = PDFName3.of("Keywords");
-        PDFName3.Producer = PDFName3.of("Producer");
-        PDFName3.CreationDate = PDFName3.of("CreationDate");
-        PDFName3.ModDate = PDFName3.of("ModDate");
-        return PDFName3;
-      }(PDFObject_1.default)
-    );
-    exports2.default = PDFName2;
-  }
-});
-
-// node_modules/pdf-lib/cjs/core/objects/PDFNull.js
-var require_PDFNull = __commonJS({
-  "node_modules/pdf-lib/cjs/core/objects/PDFNull.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
-    var PDFObject_1 = tslib_1.__importDefault(require_PDFObject());
-    var CharCodes_1 = tslib_1.__importDefault(require_CharCodes());
-    var PDFNull = (
-      /** @class */
-      function(_super) {
-        tslib_1.__extends(PDFNull2, _super);
-        function PDFNull2() {
-          return _super !== null && _super.apply(this, arguments) || this;
-        }
-        PDFNull2.prototype.asNull = function() {
-          return null;
-        };
-        PDFNull2.prototype.clone = function() {
-          return this;
-        };
-        PDFNull2.prototype.toString = function() {
-          return "null";
-        };
-        PDFNull2.prototype.sizeInBytes = function() {
-          return 4;
-        };
-        PDFNull2.prototype.copyBytesInto = function(buffer, offset) {
-          buffer[offset++] = CharCodes_1.default.n;
-          buffer[offset++] = CharCodes_1.default.u;
-          buffer[offset++] = CharCodes_1.default.l;
-          buffer[offset++] = CharCodes_1.default.l;
-          return 4;
-        };
-        return PDFNull2;
-      }(PDFObject_1.default)
-    );
-    exports2.default = new PDFNull();
-  }
-});
-
-// node_modules/pdf-lib/cjs/core/objects/PDFDict.js
-var require_PDFDict = __commonJS({
-  "node_modules/pdf-lib/cjs/core/objects/PDFDict.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
-    var PDFName_1 = tslib_1.__importDefault(require_PDFName());
-    var PDFNull_1 = tslib_1.__importDefault(require_PDFNull());
-    var PDFObject_1 = tslib_1.__importDefault(require_PDFObject());
-    var CharCodes_1 = tslib_1.__importDefault(require_CharCodes());
-    var PDFDict2 = (
-      /** @class */
-      function(_super) {
-        tslib_1.__extends(PDFDict3, _super);
-        function PDFDict3(map, context) {
-          var _this = _super.call(this) || this;
-          _this.dict = map;
-          _this.context = context;
-          return _this;
-        }
-        PDFDict3.prototype.keys = function() {
-          return Array.from(this.dict.keys());
-        };
-        PDFDict3.prototype.values = function() {
-          return Array.from(this.dict.values());
-        };
-        PDFDict3.prototype.entries = function() {
-          return Array.from(this.dict.entries());
-        };
-        PDFDict3.prototype.set = function(key, value) {
-          this.dict.set(key, value);
-        };
-        PDFDict3.prototype.get = function(key, preservePDFNull) {
-          if (preservePDFNull === void 0) {
-            preservePDFNull = false;
-          }
-          var value = this.dict.get(key);
-          if (value === PDFNull_1.default && !preservePDFNull)
-            return void 0;
-          return value;
-        };
-        PDFDict3.prototype.has = function(key) {
-          var value = this.dict.get(key);
-          return value !== void 0 && value !== PDFNull_1.default;
-        };
-        PDFDict3.prototype.lookupMaybe = function(key) {
-          var _a;
-          var types = [];
-          for (var _i = 1; _i < arguments.length; _i++) {
-            types[_i - 1] = arguments[_i];
-          }
-          var preservePDFNull = types.includes(PDFNull_1.default);
-          var value = (_a = this.context).lookupMaybe.apply(_a, tslib_1.__spreadArrays([this.get(key, preservePDFNull)], types));
-          if (value === PDFNull_1.default && !preservePDFNull)
-            return void 0;
-          return value;
-        };
-        PDFDict3.prototype.lookup = function(key) {
-          var _a;
-          var types = [];
-          for (var _i = 1; _i < arguments.length; _i++) {
-            types[_i - 1] = arguments[_i];
-          }
-          var preservePDFNull = types.includes(PDFNull_1.default);
-          var value = (_a = this.context).lookup.apply(_a, tslib_1.__spreadArrays([this.get(key, preservePDFNull)], types));
-          if (value === PDFNull_1.default && !preservePDFNull)
-            return void 0;
-          return value;
-        };
-        PDFDict3.prototype.delete = function(key) {
-          return this.dict.delete(key);
-        };
-        PDFDict3.prototype.asMap = function() {
-          return new Map(this.dict);
-        };
-        PDFDict3.prototype.uniqueKey = function(tag) {
-          if (tag === void 0) {
-            tag = "";
-          }
-          var existingKeys = this.keys();
-          var key = PDFName_1.default.of(this.context.addRandomSuffix(tag, 10));
-          while (existingKeys.includes(key)) {
-            key = PDFName_1.default.of(this.context.addRandomSuffix(tag, 10));
-          }
-          return key;
-        };
-        PDFDict3.prototype.clone = function(context) {
-          var clone = PDFDict3.withContext(context || this.context);
-          var entries = this.entries();
-          for (var idx = 0, len = entries.length; idx < len; idx++) {
-            var _a = entries[idx], key = _a[0], value = _a[1];
-            clone.set(key, value);
-          }
-          return clone;
-        };
-        PDFDict3.prototype.toString = function() {
-          var dictString = "<<\n";
-          var entries = this.entries();
-          for (var idx = 0, len = entries.length; idx < len; idx++) {
-            var _a = entries[idx], key = _a[0], value = _a[1];
-            dictString += key.toString() + " " + value.toString() + "\n";
-          }
-          dictString += ">>";
-          return dictString;
-        };
-        PDFDict3.prototype.sizeInBytes = function() {
-          var size = 5;
-          var entries = this.entries();
-          for (var idx = 0, len = entries.length; idx < len; idx++) {
-            var _a = entries[idx], key = _a[0], value = _a[1];
-            size += key.sizeInBytes() + value.sizeInBytes() + 2;
-          }
-          return size;
-        };
-        PDFDict3.prototype.copyBytesInto = function(buffer, offset) {
-          var initialOffset = offset;
-          buffer[offset++] = CharCodes_1.default.LessThan;
-          buffer[offset++] = CharCodes_1.default.LessThan;
-          buffer[offset++] = CharCodes_1.default.Newline;
-          var entries = this.entries();
-          for (var idx = 0, len = entries.length; idx < len; idx++) {
-            var _a = entries[idx], key = _a[0], value = _a[1];
-            offset += key.copyBytesInto(buffer, offset);
-            buffer[offset++] = CharCodes_1.default.Space;
-            offset += value.copyBytesInto(buffer, offset);
-            buffer[offset++] = CharCodes_1.default.Newline;
-          }
-          buffer[offset++] = CharCodes_1.default.GreaterThan;
-          buffer[offset++] = CharCodes_1.default.GreaterThan;
-          return offset - initialOffset;
-        };
-        PDFDict3.withContext = function(context) {
-          return new PDFDict3(/* @__PURE__ */ new Map(), context);
-        };
-        PDFDict3.fromMapWithContext = function(map, context) {
-          return new PDFDict3(map, context);
-        };
-        return PDFDict3;
-      }(PDFObject_1.default)
-    );
-    exports2.default = PDFDict2;
   }
 });
 
@@ -29141,63 +30896,6 @@ var require_PDFRawStream = __commonJS({
       }(PDFStream_1.default)
     );
     exports2.default = PDFRawStream;
-  }
-});
-
-// node_modules/pdf-lib/cjs/core/objects/PDFRef.js
-var require_PDFRef = __commonJS({
-  "node_modules/pdf-lib/cjs/core/objects/PDFRef.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
-    var errors_1 = require_errors2();
-    var PDFObject_1 = tslib_1.__importDefault(require_PDFObject());
-    var utils_1 = require_utils2();
-    var ENFORCER = {};
-    var pool = /* @__PURE__ */ new Map();
-    var PDFRef = (
-      /** @class */
-      function(_super) {
-        tslib_1.__extends(PDFRef2, _super);
-        function PDFRef2(enforcer, objectNumber, generationNumber) {
-          var _this = this;
-          if (enforcer !== ENFORCER)
-            throw new errors_1.PrivateConstructorError("PDFRef");
-          _this = _super.call(this) || this;
-          _this.objectNumber = objectNumber;
-          _this.generationNumber = generationNumber;
-          _this.tag = objectNumber + " " + generationNumber + " R";
-          return _this;
-        }
-        PDFRef2.prototype.clone = function() {
-          return this;
-        };
-        PDFRef2.prototype.toString = function() {
-          return this.tag;
-        };
-        PDFRef2.prototype.sizeInBytes = function() {
-          return this.tag.length;
-        };
-        PDFRef2.prototype.copyBytesInto = function(buffer, offset) {
-          offset += utils_1.copyStringIntoBuffer(this.tag, buffer, offset);
-          return this.tag.length;
-        };
-        PDFRef2.of = function(objectNumber, generationNumber) {
-          if (generationNumber === void 0) {
-            generationNumber = 0;
-          }
-          var tag = objectNumber + " " + generationNumber + " R";
-          var instance = pool.get(tag);
-          if (!instance) {
-            instance = new PDFRef2(ENFORCER, objectNumber, generationNumber);
-            pool.set(tag, instance);
-          }
-          return instance;
-        };
-        return PDFRef2;
-      }(PDFObject_1.default)
-    );
-    exports2.default = PDFRef;
   }
 });
 
@@ -37570,1538 +39268,6 @@ var require_PngEmbedder = __commonJS({
   }
 });
 
-// node_modules/pdf-lib/cjs/core/streams/Stream.js
-var require_Stream = __commonJS({
-  "node_modules/pdf-lib/cjs/core/streams/Stream.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var Stream = (
-      /** @class */
-      function() {
-        function Stream2(buffer, start, length) {
-          this.bytes = buffer;
-          this.start = start || 0;
-          this.pos = this.start;
-          this.end = !!start && !!length ? start + length : this.bytes.length;
-        }
-        Object.defineProperty(Stream2.prototype, "length", {
-          get: function() {
-            return this.end - this.start;
-          },
-          enumerable: false,
-          configurable: true
-        });
-        Object.defineProperty(Stream2.prototype, "isEmpty", {
-          get: function() {
-            return this.length === 0;
-          },
-          enumerable: false,
-          configurable: true
-        });
-        Stream2.prototype.getByte = function() {
-          if (this.pos >= this.end) {
-            return -1;
-          }
-          return this.bytes[this.pos++];
-        };
-        Stream2.prototype.getUint16 = function() {
-          var b0 = this.getByte();
-          var b1 = this.getByte();
-          if (b0 === -1 || b1 === -1) {
-            return -1;
-          }
-          return (b0 << 8) + b1;
-        };
-        Stream2.prototype.getInt32 = function() {
-          var b0 = this.getByte();
-          var b1 = this.getByte();
-          var b2 = this.getByte();
-          var b3 = this.getByte();
-          return (b0 << 24) + (b1 << 16) + (b2 << 8) + b3;
-        };
-        Stream2.prototype.getBytes = function(length, forceClamped) {
-          if (forceClamped === void 0) {
-            forceClamped = false;
-          }
-          var bytes = this.bytes;
-          var pos = this.pos;
-          var strEnd = this.end;
-          if (!length) {
-            var subarray = bytes.subarray(pos, strEnd);
-            return forceClamped ? new Uint8ClampedArray(subarray) : subarray;
-          } else {
-            var end = pos + length;
-            if (end > strEnd) {
-              end = strEnd;
-            }
-            this.pos = end;
-            var subarray = bytes.subarray(pos, end);
-            return forceClamped ? new Uint8ClampedArray(subarray) : subarray;
-          }
-        };
-        Stream2.prototype.peekByte = function() {
-          var peekedByte = this.getByte();
-          this.pos--;
-          return peekedByte;
-        };
-        Stream2.prototype.peekBytes = function(length, forceClamped) {
-          if (forceClamped === void 0) {
-            forceClamped = false;
-          }
-          var bytes = this.getBytes(length, forceClamped);
-          this.pos -= bytes.length;
-          return bytes;
-        };
-        Stream2.prototype.skip = function(n) {
-          if (!n) {
-            n = 1;
-          }
-          this.pos += n;
-        };
-        Stream2.prototype.reset = function() {
-          this.pos = this.start;
-        };
-        Stream2.prototype.moveStart = function() {
-          this.start = this.pos;
-        };
-        Stream2.prototype.makeSubStream = function(start, length) {
-          return new Stream2(this.bytes, start, length);
-        };
-        Stream2.prototype.decode = function() {
-          return this.bytes;
-        };
-        return Stream2;
-      }()
-    );
-    exports2.default = Stream;
-  }
-});
-
-// node_modules/pdf-lib/cjs/core/streams/DecodeStream.js
-var require_DecodeStream = __commonJS({
-  "node_modules/pdf-lib/cjs/core/streams/DecodeStream.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
-    var errors_1 = require_errors2();
-    var Stream_1 = tslib_1.__importDefault(require_Stream());
-    var emptyBuffer = new Uint8Array(0);
-    var DecodeStream = (
-      /** @class */
-      function() {
-        function DecodeStream2(maybeMinBufferLength) {
-          this.pos = 0;
-          this.bufferLength = 0;
-          this.eof = false;
-          this.buffer = emptyBuffer;
-          this.minBufferLength = 512;
-          if (maybeMinBufferLength) {
-            while (this.minBufferLength < maybeMinBufferLength) {
-              this.minBufferLength *= 2;
-            }
-          }
-        }
-        Object.defineProperty(DecodeStream2.prototype, "isEmpty", {
-          get: function() {
-            while (!this.eof && this.bufferLength === 0) {
-              this.readBlock();
-            }
-            return this.bufferLength === 0;
-          },
-          enumerable: false,
-          configurable: true
-        });
-        DecodeStream2.prototype.getByte = function() {
-          var pos = this.pos;
-          while (this.bufferLength <= pos) {
-            if (this.eof) {
-              return -1;
-            }
-            this.readBlock();
-          }
-          return this.buffer[this.pos++];
-        };
-        DecodeStream2.prototype.getUint16 = function() {
-          var b0 = this.getByte();
-          var b1 = this.getByte();
-          if (b0 === -1 || b1 === -1) {
-            return -1;
-          }
-          return (b0 << 8) + b1;
-        };
-        DecodeStream2.prototype.getInt32 = function() {
-          var b0 = this.getByte();
-          var b1 = this.getByte();
-          var b2 = this.getByte();
-          var b3 = this.getByte();
-          return (b0 << 24) + (b1 << 16) + (b2 << 8) + b3;
-        };
-        DecodeStream2.prototype.getBytes = function(length, forceClamped) {
-          if (forceClamped === void 0) {
-            forceClamped = false;
-          }
-          var end;
-          var pos = this.pos;
-          if (length) {
-            this.ensureBuffer(pos + length);
-            end = pos + length;
-            while (!this.eof && this.bufferLength < end) {
-              this.readBlock();
-            }
-            var bufEnd = this.bufferLength;
-            if (end > bufEnd) {
-              end = bufEnd;
-            }
-          } else {
-            while (!this.eof) {
-              this.readBlock();
-            }
-            end = this.bufferLength;
-          }
-          this.pos = end;
-          var subarray = this.buffer.subarray(pos, end);
-          return forceClamped && !(subarray instanceof Uint8ClampedArray) ? new Uint8ClampedArray(subarray) : subarray;
-        };
-        DecodeStream2.prototype.peekByte = function() {
-          var peekedByte = this.getByte();
-          this.pos--;
-          return peekedByte;
-        };
-        DecodeStream2.prototype.peekBytes = function(length, forceClamped) {
-          if (forceClamped === void 0) {
-            forceClamped = false;
-          }
-          var bytes = this.getBytes(length, forceClamped);
-          this.pos -= bytes.length;
-          return bytes;
-        };
-        DecodeStream2.prototype.skip = function(n) {
-          if (!n) {
-            n = 1;
-          }
-          this.pos += n;
-        };
-        DecodeStream2.prototype.reset = function() {
-          this.pos = 0;
-        };
-        DecodeStream2.prototype.makeSubStream = function(start, length) {
-          var end = start + length;
-          while (this.bufferLength <= end && !this.eof) {
-            this.readBlock();
-          }
-          return new Stream_1.default(
-            this.buffer,
-            start,
-            length
-            /* dict */
-          );
-        };
-        DecodeStream2.prototype.decode = function() {
-          while (!this.eof)
-            this.readBlock();
-          return this.buffer.subarray(0, this.bufferLength);
-        };
-        DecodeStream2.prototype.readBlock = function() {
-          throw new errors_1.MethodNotImplementedError(this.constructor.name, "readBlock");
-        };
-        DecodeStream2.prototype.ensureBuffer = function(requested) {
-          var buffer = this.buffer;
-          if (requested <= buffer.byteLength) {
-            return buffer;
-          }
-          var size = this.minBufferLength;
-          while (size < requested) {
-            size *= 2;
-          }
-          var buffer2 = new Uint8Array(size);
-          buffer2.set(buffer);
-          return this.buffer = buffer2;
-        };
-        return DecodeStream2;
-      }()
-    );
-    exports2.default = DecodeStream;
-  }
-});
-
-// node_modules/pdf-lib/cjs/core/streams/Ascii85Stream.js
-var require_Ascii85Stream = __commonJS({
-  "node_modules/pdf-lib/cjs/core/streams/Ascii85Stream.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
-    var DecodeStream_1 = tslib_1.__importDefault(require_DecodeStream());
-    var isSpace = function(ch) {
-      return ch === 32 || ch === 9 || ch === 13 || ch === 10;
-    };
-    var Ascii85Stream = (
-      /** @class */
-      function(_super) {
-        tslib_1.__extends(Ascii85Stream2, _super);
-        function Ascii85Stream2(stream, maybeLength) {
-          var _this = _super.call(this, maybeLength) || this;
-          _this.stream = stream;
-          _this.input = new Uint8Array(5);
-          if (maybeLength) {
-            maybeLength = 0.8 * maybeLength;
-          }
-          return _this;
-        }
-        Ascii85Stream2.prototype.readBlock = function() {
-          var TILDA_CHAR = 126;
-          var Z_LOWER_CHAR = 122;
-          var EOF = -1;
-          var stream = this.stream;
-          var c = stream.getByte();
-          while (isSpace(c)) {
-            c = stream.getByte();
-          }
-          if (c === EOF || c === TILDA_CHAR) {
-            this.eof = true;
-            return;
-          }
-          var bufferLength = this.bufferLength;
-          var buffer;
-          var i;
-          if (c === Z_LOWER_CHAR) {
-            buffer = this.ensureBuffer(bufferLength + 4);
-            for (i = 0; i < 4; ++i) {
-              buffer[bufferLength + i] = 0;
-            }
-            this.bufferLength += 4;
-          } else {
-            var input = this.input;
-            input[0] = c;
-            for (i = 1; i < 5; ++i) {
-              c = stream.getByte();
-              while (isSpace(c)) {
-                c = stream.getByte();
-              }
-              input[i] = c;
-              if (c === EOF || c === TILDA_CHAR) {
-                break;
-              }
-            }
-            buffer = this.ensureBuffer(bufferLength + i - 1);
-            this.bufferLength += i - 1;
-            if (i < 5) {
-              for (; i < 5; ++i) {
-                input[i] = 33 + 84;
-              }
-              this.eof = true;
-            }
-            var t2 = 0;
-            for (i = 0; i < 5; ++i) {
-              t2 = t2 * 85 + (input[i] - 33);
-            }
-            for (i = 3; i >= 0; --i) {
-              buffer[bufferLength + i] = t2 & 255;
-              t2 >>= 8;
-            }
-          }
-        };
-        return Ascii85Stream2;
-      }(DecodeStream_1.default)
-    );
-    exports2.default = Ascii85Stream;
-  }
-});
-
-// node_modules/pdf-lib/cjs/core/streams/AsciiHexStream.js
-var require_AsciiHexStream = __commonJS({
-  "node_modules/pdf-lib/cjs/core/streams/AsciiHexStream.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
-    var DecodeStream_1 = tslib_1.__importDefault(require_DecodeStream());
-    var AsciiHexStream = (
-      /** @class */
-      function(_super) {
-        tslib_1.__extends(AsciiHexStream2, _super);
-        function AsciiHexStream2(stream, maybeLength) {
-          var _this = _super.call(this, maybeLength) || this;
-          _this.stream = stream;
-          _this.firstDigit = -1;
-          if (maybeLength) {
-            maybeLength = 0.5 * maybeLength;
-          }
-          return _this;
-        }
-        AsciiHexStream2.prototype.readBlock = function() {
-          var UPSTREAM_BLOCK_SIZE = 8e3;
-          var bytes = this.stream.getBytes(UPSTREAM_BLOCK_SIZE);
-          if (!bytes.length) {
-            this.eof = true;
-            return;
-          }
-          var maxDecodeLength = bytes.length + 1 >> 1;
-          var buffer = this.ensureBuffer(this.bufferLength + maxDecodeLength);
-          var bufferLength = this.bufferLength;
-          var firstDigit = this.firstDigit;
-          for (var i = 0, ii = bytes.length; i < ii; i++) {
-            var ch = bytes[i];
-            var digit = void 0;
-            if (ch >= 48 && ch <= 57) {
-              digit = ch & 15;
-            } else if (ch >= 65 && ch <= 70 || ch >= 97 && ch <= 102) {
-              digit = (ch & 15) + 9;
-            } else if (ch === 62) {
-              this.eof = true;
-              break;
-            } else {
-              continue;
-            }
-            if (firstDigit < 0) {
-              firstDigit = digit;
-            } else {
-              buffer[bufferLength++] = firstDigit << 4 | digit;
-              firstDigit = -1;
-            }
-          }
-          if (firstDigit >= 0 && this.eof) {
-            buffer[bufferLength++] = firstDigit << 4;
-            firstDigit = -1;
-          }
-          this.firstDigit = firstDigit;
-          this.bufferLength = bufferLength;
-        };
-        return AsciiHexStream2;
-      }(DecodeStream_1.default)
-    );
-    exports2.default = AsciiHexStream;
-  }
-});
-
-// node_modules/pdf-lib/cjs/core/streams/FlateStream.js
-var require_FlateStream = __commonJS({
-  "node_modules/pdf-lib/cjs/core/streams/FlateStream.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
-    var DecodeStream_1 = tslib_1.__importDefault(require_DecodeStream());
-    var codeLenCodeMap = new Int32Array([
-      16,
-      17,
-      18,
-      0,
-      8,
-      7,
-      9,
-      6,
-      10,
-      5,
-      11,
-      4,
-      12,
-      3,
-      13,
-      2,
-      14,
-      1,
-      15
-    ]);
-    var lengthDecode = new Int32Array([
-      3,
-      4,
-      5,
-      6,
-      7,
-      8,
-      9,
-      10,
-      65547,
-      65549,
-      65551,
-      65553,
-      131091,
-      131095,
-      131099,
-      131103,
-      196643,
-      196651,
-      196659,
-      196667,
-      262211,
-      262227,
-      262243,
-      262259,
-      327811,
-      327843,
-      327875,
-      327907,
-      258,
-      258,
-      258
-    ]);
-    var distDecode = new Int32Array([
-      1,
-      2,
-      3,
-      4,
-      65541,
-      65543,
-      131081,
-      131085,
-      196625,
-      196633,
-      262177,
-      262193,
-      327745,
-      327777,
-      393345,
-      393409,
-      459009,
-      459137,
-      524801,
-      525057,
-      590849,
-      591361,
-      657409,
-      658433,
-      724993,
-      727041,
-      794625,
-      798721,
-      868353,
-      876545
-    ]);
-    var fixedLitCodeTab = [new Int32Array([
-      459008,
-      524368,
-      524304,
-      524568,
-      459024,
-      524400,
-      524336,
-      590016,
-      459016,
-      524384,
-      524320,
-      589984,
-      524288,
-      524416,
-      524352,
-      590048,
-      459012,
-      524376,
-      524312,
-      589968,
-      459028,
-      524408,
-      524344,
-      590032,
-      459020,
-      524392,
-      524328,
-      59e4,
-      524296,
-      524424,
-      524360,
-      590064,
-      459010,
-      524372,
-      524308,
-      524572,
-      459026,
-      524404,
-      524340,
-      590024,
-      459018,
-      524388,
-      524324,
-      589992,
-      524292,
-      524420,
-      524356,
-      590056,
-      459014,
-      524380,
-      524316,
-      589976,
-      459030,
-      524412,
-      524348,
-      590040,
-      459022,
-      524396,
-      524332,
-      590008,
-      524300,
-      524428,
-      524364,
-      590072,
-      459009,
-      524370,
-      524306,
-      524570,
-      459025,
-      524402,
-      524338,
-      590020,
-      459017,
-      524386,
-      524322,
-      589988,
-      524290,
-      524418,
-      524354,
-      590052,
-      459013,
-      524378,
-      524314,
-      589972,
-      459029,
-      524410,
-      524346,
-      590036,
-      459021,
-      524394,
-      524330,
-      590004,
-      524298,
-      524426,
-      524362,
-      590068,
-      459011,
-      524374,
-      524310,
-      524574,
-      459027,
-      524406,
-      524342,
-      590028,
-      459019,
-      524390,
-      524326,
-      589996,
-      524294,
-      524422,
-      524358,
-      590060,
-      459015,
-      524382,
-      524318,
-      589980,
-      459031,
-      524414,
-      524350,
-      590044,
-      459023,
-      524398,
-      524334,
-      590012,
-      524302,
-      524430,
-      524366,
-      590076,
-      459008,
-      524369,
-      524305,
-      524569,
-      459024,
-      524401,
-      524337,
-      590018,
-      459016,
-      524385,
-      524321,
-      589986,
-      524289,
-      524417,
-      524353,
-      590050,
-      459012,
-      524377,
-      524313,
-      589970,
-      459028,
-      524409,
-      524345,
-      590034,
-      459020,
-      524393,
-      524329,
-      590002,
-      524297,
-      524425,
-      524361,
-      590066,
-      459010,
-      524373,
-      524309,
-      524573,
-      459026,
-      524405,
-      524341,
-      590026,
-      459018,
-      524389,
-      524325,
-      589994,
-      524293,
-      524421,
-      524357,
-      590058,
-      459014,
-      524381,
-      524317,
-      589978,
-      459030,
-      524413,
-      524349,
-      590042,
-      459022,
-      524397,
-      524333,
-      590010,
-      524301,
-      524429,
-      524365,
-      590074,
-      459009,
-      524371,
-      524307,
-      524571,
-      459025,
-      524403,
-      524339,
-      590022,
-      459017,
-      524387,
-      524323,
-      589990,
-      524291,
-      524419,
-      524355,
-      590054,
-      459013,
-      524379,
-      524315,
-      589974,
-      459029,
-      524411,
-      524347,
-      590038,
-      459021,
-      524395,
-      524331,
-      590006,
-      524299,
-      524427,
-      524363,
-      590070,
-      459011,
-      524375,
-      524311,
-      524575,
-      459027,
-      524407,
-      524343,
-      590030,
-      459019,
-      524391,
-      524327,
-      589998,
-      524295,
-      524423,
-      524359,
-      590062,
-      459015,
-      524383,
-      524319,
-      589982,
-      459031,
-      524415,
-      524351,
-      590046,
-      459023,
-      524399,
-      524335,
-      590014,
-      524303,
-      524431,
-      524367,
-      590078,
-      459008,
-      524368,
-      524304,
-      524568,
-      459024,
-      524400,
-      524336,
-      590017,
-      459016,
-      524384,
-      524320,
-      589985,
-      524288,
-      524416,
-      524352,
-      590049,
-      459012,
-      524376,
-      524312,
-      589969,
-      459028,
-      524408,
-      524344,
-      590033,
-      459020,
-      524392,
-      524328,
-      590001,
-      524296,
-      524424,
-      524360,
-      590065,
-      459010,
-      524372,
-      524308,
-      524572,
-      459026,
-      524404,
-      524340,
-      590025,
-      459018,
-      524388,
-      524324,
-      589993,
-      524292,
-      524420,
-      524356,
-      590057,
-      459014,
-      524380,
-      524316,
-      589977,
-      459030,
-      524412,
-      524348,
-      590041,
-      459022,
-      524396,
-      524332,
-      590009,
-      524300,
-      524428,
-      524364,
-      590073,
-      459009,
-      524370,
-      524306,
-      524570,
-      459025,
-      524402,
-      524338,
-      590021,
-      459017,
-      524386,
-      524322,
-      589989,
-      524290,
-      524418,
-      524354,
-      590053,
-      459013,
-      524378,
-      524314,
-      589973,
-      459029,
-      524410,
-      524346,
-      590037,
-      459021,
-      524394,
-      524330,
-      590005,
-      524298,
-      524426,
-      524362,
-      590069,
-      459011,
-      524374,
-      524310,
-      524574,
-      459027,
-      524406,
-      524342,
-      590029,
-      459019,
-      524390,
-      524326,
-      589997,
-      524294,
-      524422,
-      524358,
-      590061,
-      459015,
-      524382,
-      524318,
-      589981,
-      459031,
-      524414,
-      524350,
-      590045,
-      459023,
-      524398,
-      524334,
-      590013,
-      524302,
-      524430,
-      524366,
-      590077,
-      459008,
-      524369,
-      524305,
-      524569,
-      459024,
-      524401,
-      524337,
-      590019,
-      459016,
-      524385,
-      524321,
-      589987,
-      524289,
-      524417,
-      524353,
-      590051,
-      459012,
-      524377,
-      524313,
-      589971,
-      459028,
-      524409,
-      524345,
-      590035,
-      459020,
-      524393,
-      524329,
-      590003,
-      524297,
-      524425,
-      524361,
-      590067,
-      459010,
-      524373,
-      524309,
-      524573,
-      459026,
-      524405,
-      524341,
-      590027,
-      459018,
-      524389,
-      524325,
-      589995,
-      524293,
-      524421,
-      524357,
-      590059,
-      459014,
-      524381,
-      524317,
-      589979,
-      459030,
-      524413,
-      524349,
-      590043,
-      459022,
-      524397,
-      524333,
-      590011,
-      524301,
-      524429,
-      524365,
-      590075,
-      459009,
-      524371,
-      524307,
-      524571,
-      459025,
-      524403,
-      524339,
-      590023,
-      459017,
-      524387,
-      524323,
-      589991,
-      524291,
-      524419,
-      524355,
-      590055,
-      459013,
-      524379,
-      524315,
-      589975,
-      459029,
-      524411,
-      524347,
-      590039,
-      459021,
-      524395,
-      524331,
-      590007,
-      524299,
-      524427,
-      524363,
-      590071,
-      459011,
-      524375,
-      524311,
-      524575,
-      459027,
-      524407,
-      524343,
-      590031,
-      459019,
-      524391,
-      524327,
-      589999,
-      524295,
-      524423,
-      524359,
-      590063,
-      459015,
-      524383,
-      524319,
-      589983,
-      459031,
-      524415,
-      524351,
-      590047,
-      459023,
-      524399,
-      524335,
-      590015,
-      524303,
-      524431,
-      524367,
-      590079
-    ]), 9];
-    var fixedDistCodeTab = [new Int32Array([
-      327680,
-      327696,
-      327688,
-      327704,
-      327684,
-      327700,
-      327692,
-      327708,
-      327682,
-      327698,
-      327690,
-      327706,
-      327686,
-      327702,
-      327694,
-      0,
-      327681,
-      327697,
-      327689,
-      327705,
-      327685,
-      327701,
-      327693,
-      327709,
-      327683,
-      327699,
-      327691,
-      327707,
-      327687,
-      327703,
-      327695,
-      0
-    ]), 5];
-    var FlateStream = (
-      /** @class */
-      function(_super) {
-        tslib_1.__extends(FlateStream2, _super);
-        function FlateStream2(stream, maybeLength) {
-          var _this = _super.call(this, maybeLength) || this;
-          _this.stream = stream;
-          var cmf = stream.getByte();
-          var flg = stream.getByte();
-          if (cmf === -1 || flg === -1) {
-            throw new Error("Invalid header in flate stream: " + cmf + ", " + flg);
-          }
-          if ((cmf & 15) !== 8) {
-            throw new Error("Unknown compression method in flate stream: " + cmf + ", " + flg);
-          }
-          if (((cmf << 8) + flg) % 31 !== 0) {
-            throw new Error("Bad FCHECK in flate stream: " + cmf + ", " + flg);
-          }
-          if (flg & 32) {
-            throw new Error("FDICT bit set in flate stream: " + cmf + ", " + flg);
-          }
-          _this.codeSize = 0;
-          _this.codeBuf = 0;
-          return _this;
-        }
-        FlateStream2.prototype.readBlock = function() {
-          var buffer;
-          var len;
-          var str = this.stream;
-          var hdr = this.getBits(3);
-          if (hdr & 1) {
-            this.eof = true;
-          }
-          hdr >>= 1;
-          if (hdr === 0) {
-            var b = void 0;
-            if ((b = str.getByte()) === -1) {
-              throw new Error("Bad block header in flate stream");
-            }
-            var blockLen = b;
-            if ((b = str.getByte()) === -1) {
-              throw new Error("Bad block header in flate stream");
-            }
-            blockLen |= b << 8;
-            if ((b = str.getByte()) === -1) {
-              throw new Error("Bad block header in flate stream");
-            }
-            var check = b;
-            if ((b = str.getByte()) === -1) {
-              throw new Error("Bad block header in flate stream");
-            }
-            check |= b << 8;
-            if (check !== (~blockLen & 65535) && (blockLen !== 0 || check !== 0)) {
-              throw new Error("Bad uncompressed block length in flate stream");
-            }
-            this.codeBuf = 0;
-            this.codeSize = 0;
-            var bufferLength = this.bufferLength;
-            buffer = this.ensureBuffer(bufferLength + blockLen);
-            var end = bufferLength + blockLen;
-            this.bufferLength = end;
-            if (blockLen === 0) {
-              if (str.peekByte() === -1) {
-                this.eof = true;
-              }
-            } else {
-              for (var n = bufferLength; n < end; ++n) {
-                if ((b = str.getByte()) === -1) {
-                  this.eof = true;
-                  break;
-                }
-                buffer[n] = b;
-              }
-            }
-            return;
-          }
-          var litCodeTable;
-          var distCodeTable;
-          if (hdr === 1) {
-            litCodeTable = fixedLitCodeTab;
-            distCodeTable = fixedDistCodeTab;
-          } else if (hdr === 2) {
-            var numLitCodes = this.getBits(5) + 257;
-            var numDistCodes = this.getBits(5) + 1;
-            var numCodeLenCodes = this.getBits(4) + 4;
-            var codeLenCodeLengths = new Uint8Array(codeLenCodeMap.length);
-            var i = void 0;
-            for (i = 0; i < numCodeLenCodes; ++i) {
-              codeLenCodeLengths[codeLenCodeMap[i]] = this.getBits(3);
-            }
-            var codeLenCodeTab = this.generateHuffmanTable(codeLenCodeLengths);
-            len = 0;
-            i = 0;
-            var codes = numLitCodes + numDistCodes;
-            var codeLengths = new Uint8Array(codes);
-            var bitsLength = void 0;
-            var bitsOffset = void 0;
-            var what = void 0;
-            while (i < codes) {
-              var code = this.getCode(codeLenCodeTab);
-              if (code === 16) {
-                bitsLength = 2;
-                bitsOffset = 3;
-                what = len;
-              } else if (code === 17) {
-                bitsLength = 3;
-                bitsOffset = 3;
-                what = len = 0;
-              } else if (code === 18) {
-                bitsLength = 7;
-                bitsOffset = 11;
-                what = len = 0;
-              } else {
-                codeLengths[i++] = len = code;
-                continue;
-              }
-              var repeatLength = this.getBits(bitsLength) + bitsOffset;
-              while (repeatLength-- > 0) {
-                codeLengths[i++] = what;
-              }
-            }
-            litCodeTable = this.generateHuffmanTable(codeLengths.subarray(0, numLitCodes));
-            distCodeTable = this.generateHuffmanTable(codeLengths.subarray(numLitCodes, codes));
-          } else {
-            throw new Error("Unknown block type in flate stream");
-          }
-          buffer = this.buffer;
-          var limit = buffer ? buffer.length : 0;
-          var pos = this.bufferLength;
-          while (true) {
-            var code1 = this.getCode(litCodeTable);
-            if (code1 < 256) {
-              if (pos + 1 >= limit) {
-                buffer = this.ensureBuffer(pos + 1);
-                limit = buffer.length;
-              }
-              buffer[pos++] = code1;
-              continue;
-            }
-            if (code1 === 256) {
-              this.bufferLength = pos;
-              return;
-            }
-            code1 -= 257;
-            code1 = lengthDecode[code1];
-            var code2 = code1 >> 16;
-            if (code2 > 0) {
-              code2 = this.getBits(code2);
-            }
-            len = (code1 & 65535) + code2;
-            code1 = this.getCode(distCodeTable);
-            code1 = distDecode[code1];
-            code2 = code1 >> 16;
-            if (code2 > 0) {
-              code2 = this.getBits(code2);
-            }
-            var dist = (code1 & 65535) + code2;
-            if (pos + len >= limit) {
-              buffer = this.ensureBuffer(pos + len);
-              limit = buffer.length;
-            }
-            for (var k = 0; k < len; ++k, ++pos) {
-              buffer[pos] = buffer[pos - dist];
-            }
-          }
-        };
-        FlateStream2.prototype.getBits = function(bits) {
-          var str = this.stream;
-          var codeSize = this.codeSize;
-          var codeBuf = this.codeBuf;
-          var b;
-          while (codeSize < bits) {
-            if ((b = str.getByte()) === -1) {
-              throw new Error("Bad encoding in flate stream");
-            }
-            codeBuf |= b << codeSize;
-            codeSize += 8;
-          }
-          b = codeBuf & (1 << bits) - 1;
-          this.codeBuf = codeBuf >> bits;
-          this.codeSize = codeSize -= bits;
-          return b;
-        };
-        FlateStream2.prototype.getCode = function(table) {
-          var str = this.stream;
-          var codes = table[0];
-          var maxLen = table[1];
-          var codeSize = this.codeSize;
-          var codeBuf = this.codeBuf;
-          var b;
-          while (codeSize < maxLen) {
-            if ((b = str.getByte()) === -1) {
-              break;
-            }
-            codeBuf |= b << codeSize;
-            codeSize += 8;
-          }
-          var code = codes[codeBuf & (1 << maxLen) - 1];
-          if (typeof codes === "number") {
-            console.log("FLATE:", code);
-          }
-          var codeLen = code >> 16;
-          var codeVal = code & 65535;
-          if (codeLen < 1 || codeSize < codeLen) {
-            throw new Error("Bad encoding in flate stream");
-          }
-          this.codeBuf = codeBuf >> codeLen;
-          this.codeSize = codeSize - codeLen;
-          return codeVal;
-        };
-        FlateStream2.prototype.generateHuffmanTable = function(lengths) {
-          var n = lengths.length;
-          var maxLen = 0;
-          var i;
-          for (i = 0; i < n; ++i) {
-            if (lengths[i] > maxLen) {
-              maxLen = lengths[i];
-            }
-          }
-          var size = 1 << maxLen;
-          var codes = new Int32Array(size);
-          for (var len = 1, code = 0, skip = 2; len <= maxLen; ++len, code <<= 1, skip <<= 1) {
-            for (var val = 0; val < n; ++val) {
-              if (lengths[val] === len) {
-                var code2 = 0;
-                var t2 = code;
-                for (i = 0; i < len; ++i) {
-                  code2 = code2 << 1 | t2 & 1;
-                  t2 >>= 1;
-                }
-                for (i = code2; i < size; i += skip) {
-                  codes[i] = len << 16 | val;
-                }
-                ++code;
-              }
-            }
-          }
-          return [codes, maxLen];
-        };
-        return FlateStream2;
-      }(DecodeStream_1.default)
-    );
-    exports2.default = FlateStream;
-  }
-});
-
-// node_modules/pdf-lib/cjs/core/streams/LZWStream.js
-var require_LZWStream = __commonJS({
-  "node_modules/pdf-lib/cjs/core/streams/LZWStream.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
-    var DecodeStream_1 = tslib_1.__importDefault(require_DecodeStream());
-    var LZWStream = (
-      /** @class */
-      function(_super) {
-        tslib_1.__extends(LZWStream2, _super);
-        function LZWStream2(stream, maybeLength, earlyChange) {
-          var _this = _super.call(this, maybeLength) || this;
-          _this.stream = stream;
-          _this.cachedData = 0;
-          _this.bitsCached = 0;
-          var maxLzwDictionarySize = 4096;
-          var lzwState = {
-            earlyChange,
-            codeLength: 9,
-            nextCode: 258,
-            dictionaryValues: new Uint8Array(maxLzwDictionarySize),
-            dictionaryLengths: new Uint16Array(maxLzwDictionarySize),
-            dictionaryPrevCodes: new Uint16Array(maxLzwDictionarySize),
-            currentSequence: new Uint8Array(maxLzwDictionarySize),
-            currentSequenceLength: 0
-          };
-          for (var i = 0; i < 256; ++i) {
-            lzwState.dictionaryValues[i] = i;
-            lzwState.dictionaryLengths[i] = 1;
-          }
-          _this.lzwState = lzwState;
-          return _this;
-        }
-        LZWStream2.prototype.readBlock = function() {
-          var blockSize = 512;
-          var estimatedDecodedSize = blockSize * 2;
-          var decodedSizeDelta = blockSize;
-          var i;
-          var j;
-          var q;
-          var lzwState = this.lzwState;
-          if (!lzwState) {
-            return;
-          }
-          var earlyChange = lzwState.earlyChange;
-          var nextCode = lzwState.nextCode;
-          var dictionaryValues = lzwState.dictionaryValues;
-          var dictionaryLengths = lzwState.dictionaryLengths;
-          var dictionaryPrevCodes = lzwState.dictionaryPrevCodes;
-          var codeLength = lzwState.codeLength;
-          var prevCode = lzwState.prevCode;
-          var currentSequence = lzwState.currentSequence;
-          var currentSequenceLength = lzwState.currentSequenceLength;
-          var decodedLength = 0;
-          var currentBufferLength = this.bufferLength;
-          var buffer = this.ensureBuffer(this.bufferLength + estimatedDecodedSize);
-          for (i = 0; i < blockSize; i++) {
-            var code = this.readBits(codeLength);
-            var hasPrev = currentSequenceLength > 0;
-            if (!code || code < 256) {
-              currentSequence[0] = code;
-              currentSequenceLength = 1;
-            } else if (code >= 258) {
-              if (code < nextCode) {
-                currentSequenceLength = dictionaryLengths[code];
-                for (j = currentSequenceLength - 1, q = code; j >= 0; j--) {
-                  currentSequence[j] = dictionaryValues[q];
-                  q = dictionaryPrevCodes[q];
-                }
-              } else {
-                currentSequence[currentSequenceLength++] = currentSequence[0];
-              }
-            } else if (code === 256) {
-              codeLength = 9;
-              nextCode = 258;
-              currentSequenceLength = 0;
-              continue;
-            } else {
-              this.eof = true;
-              delete this.lzwState;
-              break;
-            }
-            if (hasPrev) {
-              dictionaryPrevCodes[nextCode] = prevCode;
-              dictionaryLengths[nextCode] = dictionaryLengths[prevCode] + 1;
-              dictionaryValues[nextCode] = currentSequence[0];
-              nextCode++;
-              codeLength = nextCode + earlyChange & nextCode + earlyChange - 1 ? codeLength : Math.min(Math.log(nextCode + earlyChange) / 0.6931471805599453 + 1, 12) | 0;
-            }
-            prevCode = code;
-            decodedLength += currentSequenceLength;
-            if (estimatedDecodedSize < decodedLength) {
-              do {
-                estimatedDecodedSize += decodedSizeDelta;
-              } while (estimatedDecodedSize < decodedLength);
-              buffer = this.ensureBuffer(this.bufferLength + estimatedDecodedSize);
-            }
-            for (j = 0; j < currentSequenceLength; j++) {
-              buffer[currentBufferLength++] = currentSequence[j];
-            }
-          }
-          lzwState.nextCode = nextCode;
-          lzwState.codeLength = codeLength;
-          lzwState.prevCode = prevCode;
-          lzwState.currentSequenceLength = currentSequenceLength;
-          this.bufferLength = currentBufferLength;
-        };
-        LZWStream2.prototype.readBits = function(n) {
-          var bitsCached = this.bitsCached;
-          var cachedData = this.cachedData;
-          while (bitsCached < n) {
-            var c = this.stream.getByte();
-            if (c === -1) {
-              this.eof = true;
-              return null;
-            }
-            cachedData = cachedData << 8 | c;
-            bitsCached += 8;
-          }
-          this.bitsCached = bitsCached -= n;
-          this.cachedData = cachedData;
-          return cachedData >>> bitsCached & (1 << n) - 1;
-        };
-        return LZWStream2;
-      }(DecodeStream_1.default)
-    );
-    exports2.default = LZWStream;
-  }
-});
-
-// node_modules/pdf-lib/cjs/core/streams/RunLengthStream.js
-var require_RunLengthStream = __commonJS({
-  "node_modules/pdf-lib/cjs/core/streams/RunLengthStream.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
-    var DecodeStream_1 = tslib_1.__importDefault(require_DecodeStream());
-    var RunLengthStream = (
-      /** @class */
-      function(_super) {
-        tslib_1.__extends(RunLengthStream2, _super);
-        function RunLengthStream2(stream, maybeLength) {
-          var _this = _super.call(this, maybeLength) || this;
-          _this.stream = stream;
-          return _this;
-        }
-        RunLengthStream2.prototype.readBlock = function() {
-          var repeatHeader = this.stream.getBytes(2);
-          if (!repeatHeader || repeatHeader.length < 2 || repeatHeader[0] === 128) {
-            this.eof = true;
-            return;
-          }
-          var buffer;
-          var bufferLength = this.bufferLength;
-          var n = repeatHeader[0];
-          if (n < 128) {
-            buffer = this.ensureBuffer(bufferLength + n + 1);
-            buffer[bufferLength++] = repeatHeader[1];
-            if (n > 0) {
-              var source = this.stream.getBytes(n);
-              buffer.set(source, bufferLength);
-              bufferLength += n;
-            }
-          } else {
-            n = 257 - n;
-            var b = repeatHeader[1];
-            buffer = this.ensureBuffer(bufferLength + n + 1);
-            for (var i = 0; i < n; i++) {
-              buffer[bufferLength++] = b;
-            }
-          }
-          this.bufferLength = bufferLength;
-        };
-        return RunLengthStream2;
-      }(DecodeStream_1.default)
-    );
-    exports2.default = RunLengthStream;
-  }
-});
-
-// node_modules/pdf-lib/cjs/core/streams/decode.js
-var require_decode = __commonJS({
-  "node_modules/pdf-lib/cjs/core/streams/decode.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.decodePDFRawStream = void 0;
-    var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
-    var errors_1 = require_errors2();
-    var PDFArray_1 = tslib_1.__importDefault(require_PDFArray());
-    var PDFDict_1 = tslib_1.__importDefault(require_PDFDict());
-    var PDFName_1 = tslib_1.__importDefault(require_PDFName());
-    var PDFNumber_1 = tslib_1.__importDefault(require_PDFNumber());
-    var Ascii85Stream_1 = tslib_1.__importDefault(require_Ascii85Stream());
-    var AsciiHexStream_1 = tslib_1.__importDefault(require_AsciiHexStream());
-    var FlateStream_1 = tslib_1.__importDefault(require_FlateStream());
-    var LZWStream_1 = tslib_1.__importDefault(require_LZWStream());
-    var RunLengthStream_1 = tslib_1.__importDefault(require_RunLengthStream());
-    var Stream_1 = tslib_1.__importDefault(require_Stream());
-    var decodeStream = function(stream, encoding, params) {
-      if (encoding === PDFName_1.default.of("FlateDecode")) {
-        return new FlateStream_1.default(stream);
-      }
-      if (encoding === PDFName_1.default.of("LZWDecode")) {
-        var earlyChange = 1;
-        if (params instanceof PDFDict_1.default) {
-          var EarlyChange = params.lookup(PDFName_1.default.of("EarlyChange"));
-          if (EarlyChange instanceof PDFNumber_1.default) {
-            earlyChange = EarlyChange.asNumber();
-          }
-        }
-        return new LZWStream_1.default(stream, void 0, earlyChange);
-      }
-      if (encoding === PDFName_1.default.of("ASCII85Decode")) {
-        return new Ascii85Stream_1.default(stream);
-      }
-      if (encoding === PDFName_1.default.of("ASCIIHexDecode")) {
-        return new AsciiHexStream_1.default(stream);
-      }
-      if (encoding === PDFName_1.default.of("RunLengthDecode")) {
-        return new RunLengthStream_1.default(stream);
-      }
-      throw new errors_1.UnsupportedEncodingError(encoding.asString());
-    };
-    exports2.decodePDFRawStream = function(_a) {
-      var dict = _a.dict, contents = _a.contents;
-      var stream = new Stream_1.default(contents);
-      var Filter = dict.lookup(PDFName_1.default.of("Filter"));
-      var DecodeParms = dict.lookup(PDFName_1.default.of("DecodeParms"));
-      if (Filter instanceof PDFName_1.default) {
-        stream = decodeStream(stream, Filter, DecodeParms);
-      } else if (Filter instanceof PDFArray_1.default) {
-        for (var idx = 0, len = Filter.size(); idx < len; idx++) {
-          stream = decodeStream(stream, Filter.lookup(idx, PDFName_1.default), DecodeParms && DecodeParms.lookupMaybe(idx, PDFDict_1.default));
-        }
-      } else if (!!Filter) {
-        throw new errors_1.UnexpectedObjectTypeError([PDFName_1.default, PDFArray_1.default], Filter);
-      }
-      return stream;
-    };
-  }
-});
-
 // node_modules/pdf-lib/cjs/core/embedders/PDFPageEmbedder.js
 var require_PDFPageEmbedder = __commonJS({
   "node_modules/pdf-lib/cjs/core/embedders/PDFPageEmbedder.js"(exports2) {
@@ -41355,78 +41521,6 @@ var require_BaseParser = __commonJS({
   }
 });
 
-// node_modules/pdf-lib/cjs/core/parser/ByteStream.js
-var require_ByteStream = __commonJS({
-  "node_modules/pdf-lib/cjs/core/parser/ByteStream.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
-    var errors_1 = require_errors2();
-    var decode_1 = require_decode();
-    var CharCodes_1 = tslib_1.__importDefault(require_CharCodes());
-    var ByteStream = (
-      /** @class */
-      function() {
-        function ByteStream2(bytes) {
-          this.idx = 0;
-          this.line = 0;
-          this.column = 0;
-          this.bytes = bytes;
-          this.length = this.bytes.length;
-        }
-        ByteStream2.prototype.moveTo = function(offset) {
-          this.idx = offset;
-        };
-        ByteStream2.prototype.next = function() {
-          var byte = this.bytes[this.idx++];
-          if (byte === CharCodes_1.default.Newline) {
-            this.line += 1;
-            this.column = 0;
-          } else {
-            this.column += 1;
-          }
-          return byte;
-        };
-        ByteStream2.prototype.assertNext = function(expected) {
-          if (this.peek() !== expected) {
-            throw new errors_1.NextByteAssertionError(this.position(), expected, this.peek());
-          }
-          return this.next();
-        };
-        ByteStream2.prototype.peek = function() {
-          return this.bytes[this.idx];
-        };
-        ByteStream2.prototype.peekAhead = function(steps) {
-          return this.bytes[this.idx + steps];
-        };
-        ByteStream2.prototype.peekAt = function(offset) {
-          return this.bytes[offset];
-        };
-        ByteStream2.prototype.done = function() {
-          return this.idx >= this.length;
-        };
-        ByteStream2.prototype.offset = function() {
-          return this.idx;
-        };
-        ByteStream2.prototype.slice = function(start, end) {
-          return this.bytes.slice(start, end);
-        };
-        ByteStream2.prototype.position = function() {
-          return { line: this.line, column: this.column, offset: this.idx };
-        };
-        ByteStream2.of = function(bytes) {
-          return new ByteStream2(bytes);
-        };
-        ByteStream2.fromPDFRawStream = function(rawStream) {
-          return ByteStream2.of(decode_1.decodePDFRawStream(rawStream).decode());
-        };
-        return ByteStream2;
-      }()
-    );
-    exports2.default = ByteStream;
-  }
-});
-
 // node_modules/pdf-lib/cjs/core/syntax/Keywords.js
 var require_Keywords = __commonJS({
   "node_modules/pdf-lib/cjs/core/syntax/Keywords.js"(exports2) {
@@ -41821,100 +41915,6 @@ var require_PDFObjectStreamParser = __commonJS({
       }(PDFObjectParser_1.default)
     );
     exports2.default = PDFObjectStreamParser;
-  }
-});
-
-// node_modules/pdf-lib/cjs/core/parser/PDFXRefStreamParser.js
-var require_PDFXRefStreamParser = __commonJS({
-  "node_modules/pdf-lib/cjs/core/parser/PDFXRefStreamParser.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
-    var errors_1 = require_errors2();
-    var PDFArray_1 = tslib_1.__importDefault(require_PDFArray());
-    var PDFName_1 = tslib_1.__importDefault(require_PDFName());
-    var PDFNumber_1 = tslib_1.__importDefault(require_PDFNumber());
-    var PDFRef_1 = tslib_1.__importDefault(require_PDFRef());
-    var ByteStream_1 = tslib_1.__importDefault(require_ByteStream());
-    var PDFXRefStreamParser = (
-      /** @class */
-      function() {
-        function PDFXRefStreamParser2(rawStream) {
-          this.alreadyParsed = false;
-          this.dict = rawStream.dict;
-          this.bytes = ByteStream_1.default.fromPDFRawStream(rawStream);
-          this.context = this.dict.context;
-          var Size = this.dict.lookup(PDFName_1.default.of("Size"), PDFNumber_1.default);
-          var Index = this.dict.lookup(PDFName_1.default.of("Index"));
-          if (Index instanceof PDFArray_1.default) {
-            this.subsections = [];
-            for (var idx = 0, len = Index.size(); idx < len; idx += 2) {
-              var firstObjectNumber = Index.lookup(idx + 0, PDFNumber_1.default).asNumber();
-              var length_1 = Index.lookup(idx + 1, PDFNumber_1.default).asNumber();
-              this.subsections.push({ firstObjectNumber, length: length_1 });
-            }
-          } else {
-            this.subsections = [{ firstObjectNumber: 0, length: Size.asNumber() }];
-          }
-          var W = this.dict.lookup(PDFName_1.default.of("W"), PDFArray_1.default);
-          this.byteWidths = [-1, -1, -1];
-          for (var idx = 0, len = W.size(); idx < len; idx++) {
-            this.byteWidths[idx] = W.lookup(idx, PDFNumber_1.default).asNumber();
-          }
-        }
-        PDFXRefStreamParser2.prototype.parseIntoContext = function() {
-          if (this.alreadyParsed) {
-            throw new errors_1.ReparseError("PDFXRefStreamParser", "parseIntoContext");
-          }
-          this.alreadyParsed = true;
-          this.context.trailerInfo = {
-            Root: this.dict.get(PDFName_1.default.of("Root")),
-            Encrypt: this.dict.get(PDFName_1.default.of("Encrypt")),
-            Info: this.dict.get(PDFName_1.default.of("Info")),
-            ID: this.dict.get(PDFName_1.default.of("ID"))
-          };
-          var entries = this.parseEntries();
-          return entries;
-        };
-        PDFXRefStreamParser2.prototype.parseEntries = function() {
-          var entries = [];
-          var _a = this.byteWidths, typeFieldWidth = _a[0], offsetFieldWidth = _a[1], genFieldWidth = _a[2];
-          for (var subsectionIdx = 0, subsectionLen = this.subsections.length; subsectionIdx < subsectionLen; subsectionIdx++) {
-            var _b = this.subsections[subsectionIdx], firstObjectNumber = _b.firstObjectNumber, length_2 = _b.length;
-            for (var objIdx = 0; objIdx < length_2; objIdx++) {
-              var type = 0;
-              for (var idx = 0, len = typeFieldWidth; idx < len; idx++) {
-                type = type << 8 | this.bytes.next();
-              }
-              var offset = 0;
-              for (var idx = 0, len = offsetFieldWidth; idx < len; idx++) {
-                offset = offset << 8 | this.bytes.next();
-              }
-              var generationNumber = 0;
-              for (var idx = 0, len = genFieldWidth; idx < len; idx++) {
-                generationNumber = generationNumber << 8 | this.bytes.next();
-              }
-              if (typeFieldWidth === 0)
-                type = 1;
-              var objectNumber = firstObjectNumber + objIdx;
-              var entry = {
-                ref: PDFRef_1.default.of(objectNumber, generationNumber),
-                offset,
-                deleted: type === 0,
-                inObjectStream: type === 2
-              };
-              entries.push(entry);
-            }
-          }
-          return entries;
-        };
-        PDFXRefStreamParser2.forStream = function(rawStream) {
-          return new PDFXRefStreamParser2(rawStream);
-        };
-        return PDFXRefStreamParser2;
-      }()
-    );
-    exports2.default = PDFXRefStreamParser;
   }
 });
 
@@ -49514,6 +49514,41 @@ function t(key, params) {
 
 // src/signer.ts
 var forge = __toESM(require_lib());
+
+// src/pdf-limits.ts
+var import_PDFXRefStreamParser = __toESM(require_PDFXRefStreamParser());
+var MAX_XREF_ENTRIES = 1e5;
+function validateXRefEntries(parser) {
+  const valid = (n) => Number.isSafeInteger(n) && n >= 0;
+  const widths = parser.byteWidths;
+  if (widths.length !== 3 || widths.some((n) => !valid(n) || n > 4)) {
+    throw new Error("Unsupported or malformed PDF XRef widths");
+  }
+  let count = 0;
+  for (const section of parser.subsections) {
+    if (!valid(section.firstObjectNumber) || !valid(section.length) || !valid(section.firstObjectNumber + section.length)) {
+      throw new Error("Malformed PDF XRef index");
+    }
+    count += section.length;
+    if (!valid(count) || count > MAX_XREF_ENTRIES) {
+      throw new Error("PDF XRef entry budget exceeded");
+    }
+  }
+  const available = parser.bytes.length - parser.bytes.offset();
+  const stride = widths.reduce((sum, width) => sum + width, 0);
+  if (!valid(available) || count * stride > available) {
+    throw new Error("Truncated PDF XRef stream");
+  }
+}
+var prototype = import_PDFXRefStreamParser.default.prototype;
+var original = prototype.parseEntries;
+if (typeof original !== "function") throw new Error("Unsupported PDF parser version");
+prototype.parseEntries = function() {
+  validateXRefEntries(this);
+  return original.call(this);
+};
+
+// src/signer.ts
 var import_pdf_lib = __toESM(require_cjs());
 var import_placeholder_pdf_lib = __toESM(require_pdflibAddPlaceholder());
 var import_signpdf = __toESM(require_signpdf());
@@ -49627,7 +49662,8 @@ async function signPdfBuffer(pdfBuffer, p12Buffer, password, metadata) {
     passphrase: password || ""
   });
   const pdfDoc = await import_pdf_lib.PDFDocument.load(pdfBuffer, {
-    ignoreEncryption: false
+    ignoreEncryption: false,
+    throwOnInvalidObject: true
   });
   if (pdfDoc.getForm().getFields().some((field) => field instanceof import_pdf_lib.PDFSignature && field.acroField.dict.lookupMaybe(import_pdf_lib.PDFName.of("V"), import_pdf_lib.PDFDict))) {
     throw new Error(t("error_already_signed"));
@@ -49755,8 +49791,7 @@ var PdfSignatureSettingTab = class extends import_obsidian2.PluginSettingTab {
     new import_obsidian2.Setting(containerEl).setName(t("settings_cert_password_name")).setDesc(t("settings_cert_password_desc")).addText((text) => {
       text.inputEl.type = "password";
       text.setValue(this.plugin.settings.certPassword).onChange(async (val) => {
-        this.plugin.settings.certPassword = val;
-        await this.plugin.saveSettings();
+        await this.plugin.setCertificatePassword(val);
         this.renderCertificateStatus(containerEl);
       });
     });
@@ -49904,22 +49939,31 @@ var PdfDigitalSignaturePlugin = class extends import_obsidian3.Plugin {
   }
   async loadSettings() {
     const savedSettings = await this.loadData() || {};
+    const secretId = "obsidian-pdf-digital-signature-certificate-password";
+    const storedPassword = this.app.secretStorage.getSecret(secretId);
+    const password = storedPassword ?? savedSettings.certPassword ?? (0, import_crypto2.randomUUID)();
+    if (storedPassword === null) this.app.secretStorage.setSecret(secretId, password);
     this.settings = Object.assign({}, DEFAULT_SETTINGS, {
       nombreFirmante: t("default_signer_name"),
       motivo: t("default_reason"),
-      ubicacion: t("default_location"),
-      certPassword: (0, import_crypto2.randomUUID)()
-    }, savedSettings);
+      ubicacion: t("default_location")
+    }, savedSettings, { certPassword: password });
     if (!Object.prototype.hasOwnProperty.call(savedSettings, "firmarCriptograficamente")) {
       const legacyEnabled = Boolean(savedSettings.firmarPdf ?? DEFAULT_SETTINGS.firmarPdf);
       this.settings.firmarCriptograficamente = legacyEnabled;
       this.settings.mostrarNombreFirmante = legacyEnabled;
       this.settings.mostrarNumeroPagina = legacyEnabled && Boolean(savedSettings.mostrarNumeroPagina ?? DEFAULT_SETTINGS.mostrarNumeroPagina);
     }
-    if (!Object.prototype.hasOwnProperty.call(savedSettings, "firmarCriptograficamente") || !Object.prototype.hasOwnProperty.call(savedSettings, "certPassword")) await this.saveSettings();
+    if (!Object.prototype.hasOwnProperty.call(savedSettings, "firmarCriptograficamente") || Object.prototype.hasOwnProperty.call(savedSettings, "certPassword")) await this.saveSettings();
   }
   async saveSettings() {
-    await this.saveData(this.settings);
+    const { certPassword: _password, ...persistedSettings } = this.settings;
+    await this.saveData(persistedSettings);
+  }
+  async setCertificatePassword(password) {
+    this.app.secretStorage.setSecret("obsidian-pdf-digital-signature-certificate-password", password);
+    this.settings.certPassword = password;
+    await this.saveSettings();
   }
   getVaultBasePath() {
     const adapter = this.app.vault.adapter;

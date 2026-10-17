@@ -96,10 +96,13 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
 
   async loadSettings(): Promise<void> {
     const savedSettings = ((await this.loadData()) || {}) as Partial<PdfSignatureSettings>;
+    const secretId = "obsidian-pdf-digital-signature-certificate-password";
+    const storedPassword = this.app.secretStorage.getSecret(secretId);
+    const password = storedPassword ?? savedSettings.certPassword ?? randomUUID();
+    if (storedPassword === null) this.app.secretStorage.setSecret(secretId, password);
     this.settings = Object.assign({}, DEFAULT_SETTINGS, {
       nombreFirmante: t("default_signer_name"), motivo: t("default_reason"), ubicacion: t("default_location"),
-      certPassword: randomUUID(),
-    }, savedSettings);
+    }, savedSettings, { certPassword: password });
 
     if (!Object.prototype.hasOwnProperty.call(savedSettings, "firmarCriptograficamente")) {
       const legacyEnabled = Boolean(savedSettings.firmarPdf ?? DEFAULT_SETTINGS.firmarPdf);
@@ -109,11 +112,18 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
         legacyEnabled && Boolean(savedSettings.mostrarNumeroPagina ?? DEFAULT_SETTINGS.mostrarNumeroPagina);
     }
     if (!Object.prototype.hasOwnProperty.call(savedSettings, "firmarCriptograficamente") ||
-        !Object.prototype.hasOwnProperty.call(savedSettings, "certPassword")) await this.saveSettings();
+        Object.prototype.hasOwnProperty.call(savedSettings, "certPassword")) await this.saveSettings();
   }
 
   async saveSettings(): Promise<void> {
-    await this.saveData(this.settings);
+    const { certPassword: _password, ...persistedSettings } = this.settings;
+    await this.saveData(persistedSettings);
+  }
+
+  async setCertificatePassword(password: string): Promise<void> {
+    this.app.secretStorage.setSecret("obsidian-pdf-digital-signature-certificate-password", password);
+    this.settings.certPassword = password;
+    await this.saveSettings();
   }
 
   getVaultBasePath(): string {

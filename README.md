@@ -105,6 +105,13 @@ Made with ❤️ by [Benjamín Alcalde G.](https://github.com/Benhaman9)
 
 ## Certificate and signature limitations
 
-A random password is generated on first load. You can change it before creating a certificate; a blank password is refused for new certificates. The plugin saves it in plain text in its local settings; protect the vault and its backups. Renewal preserves the previous certificate in a `.bak` file next to it. Expired or not-yet-valid certificates cannot be used to sign. Existing signed PDFs are rejected because this plugin rewrites the PDF rather than adding an incremental signature. The signature uses `adbe.pkcs7.detached`; full PAdES profile conformance, trusted timestamps and long-term validation are not claimed.
+A random password is generated on first load. You can change it before creating a certificate; a blank password is refused for new certificates. Obsidian 1.11.5 or newer is required. The password is kept in the vault's local SecretStorage instead of the plugin's `data.json`; existing passwords are migrated when the plugin loads. Configure it separately on each device. Older vault backups or sync history may still contain the former plaintext value, so review those copies and rotate the certificate if it was exposed. Renewal preserves the previous certificate in a `.bak` file next to it. Expired or not-yet-valid certificates cannot be used to sign. Existing signed PDFs are rejected because this plugin rewrites the PDF rather than adding an incremental signature. The signature uses `adbe.pkcs7.detached`; full PAdES profile conformance, trusted timestamps and long-term validation are not claimed.
+
+Malformed PDF objects are rejected rather than recovered during signing. XRef
+streams are checked before allocating entries: safe counts and byte widths,
+enough decoded bytes, and at most 100,000 entries per stream. Widths above four
+bytes are unsupported by the pinned parser's bitwise implementation. These
+limits prevent the reviewed count-amplification path; they do not impose a total
+CPU or decompression-memory budget on every PDF feature.
 
 [Adobe: certificate trust](https://helpx.adobe.com/acrobat/using/trusted-identities.html) · [Signing library](https://github.com/vbuch/node-signpdf)

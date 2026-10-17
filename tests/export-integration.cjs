@@ -10,9 +10,10 @@ const forge = require('node-forge');
 
 test('production plugin exports and signs real Chromium PDFs in all control combinations', async () => {
   const { chromium } = require(process.env.PDF_TEST_PLAYWRIGHT || 'playwright');
-  const output = process.env.PDF_TEST_OUTPUT;
-  assert.ok(output, 'PDF_TEST_OUTPUT must point to an isolated test directory');
-  fs.mkdirSync(output, { recursive: true });
+  const outputRoot = process.env.PDF_TEST_OUTPUT;
+  assert.ok(outputRoot, 'PDF_TEST_OUTPUT must point to an isolated test directory');
+  fs.mkdirSync(outputRoot, { recursive: true });
+  const output = fs.mkdtempSync(path.join(outputRoot, 'run-'));
   const browser = await chromium.launch({ executablePath: process.env.PDF_TEST_CHROMIUM, headless: true });
   try {
     const page = await browser.newPage();
@@ -47,9 +48,13 @@ test('production plugin exports and signs real Chromium PDFs in all control comb
       require: (id) => id === 'obsidian' ? mock : require(id),
     });
     const plugin = new module.exports.default();
-    plugin.app = { vault: { adapter: new FileSystemAdapter() } };
+    const secrets = new Map();
+    plugin.app = { vault: { adapter: new FileSystemAdapter() }, secretStorage: {
+      getSecret: (id) => secrets.get(id) ?? null,
+      setSecret: (id, value) => secrets.set(id, value),
+    } };
     plugin.loadData = async () => ({});
-    plugin.saveData = async () => {};
+    plugin.saveData = async (settings) => { assert.equal(Object.hasOwn(settings, 'certPassword'), false); };
     await plugin.loadSettings();
     const cases = [
       ['signed-footer', true, true, true],
