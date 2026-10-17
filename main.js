@@ -24860,10 +24860,10 @@ var require_DecodeStream = __commonJS({
     var errors_1 = require_errors2();
     var Stream_1 = tslib_1.__importDefault(require_Stream());
     var emptyBuffer = new Uint8Array(0);
-    var DecodeStream = (
+    var DecodeStream2 = (
       /** @class */
       function() {
-        function DecodeStream2(maybeMinBufferLength) {
+        function DecodeStream3(maybeMinBufferLength) {
           this.pos = 0;
           this.bufferLength = 0;
           this.eof = false;
@@ -24875,7 +24875,7 @@ var require_DecodeStream = __commonJS({
             }
           }
         }
-        Object.defineProperty(DecodeStream2.prototype, "isEmpty", {
+        Object.defineProperty(DecodeStream3.prototype, "isEmpty", {
           get: function() {
             while (!this.eof && this.bufferLength === 0) {
               this.readBlock();
@@ -24885,7 +24885,7 @@ var require_DecodeStream = __commonJS({
           enumerable: false,
           configurable: true
         });
-        DecodeStream2.prototype.getByte = function() {
+        DecodeStream3.prototype.getByte = function() {
           var pos = this.pos;
           while (this.bufferLength <= pos) {
             if (this.eof) {
@@ -24895,7 +24895,7 @@ var require_DecodeStream = __commonJS({
           }
           return this.buffer[this.pos++];
         };
-        DecodeStream2.prototype.getUint16 = function() {
+        DecodeStream3.prototype.getUint16 = function() {
           var b0 = this.getByte();
           var b1 = this.getByte();
           if (b0 === -1 || b1 === -1) {
@@ -24903,14 +24903,14 @@ var require_DecodeStream = __commonJS({
           }
           return (b0 << 8) + b1;
         };
-        DecodeStream2.prototype.getInt32 = function() {
+        DecodeStream3.prototype.getInt32 = function() {
           var b0 = this.getByte();
           var b1 = this.getByte();
           var b2 = this.getByte();
           var b3 = this.getByte();
           return (b0 << 24) + (b1 << 16) + (b2 << 8) + b3;
         };
-        DecodeStream2.prototype.getBytes = function(length, forceClamped) {
+        DecodeStream3.prototype.getBytes = function(length, forceClamped) {
           if (forceClamped === void 0) {
             forceClamped = false;
           }
@@ -24936,12 +24936,12 @@ var require_DecodeStream = __commonJS({
           var subarray = this.buffer.subarray(pos, end);
           return forceClamped && !(subarray instanceof Uint8ClampedArray) ? new Uint8ClampedArray(subarray) : subarray;
         };
-        DecodeStream2.prototype.peekByte = function() {
+        DecodeStream3.prototype.peekByte = function() {
           var peekedByte = this.getByte();
           this.pos--;
           return peekedByte;
         };
-        DecodeStream2.prototype.peekBytes = function(length, forceClamped) {
+        DecodeStream3.prototype.peekBytes = function(length, forceClamped) {
           if (forceClamped === void 0) {
             forceClamped = false;
           }
@@ -24949,16 +24949,16 @@ var require_DecodeStream = __commonJS({
           this.pos -= bytes.length;
           return bytes;
         };
-        DecodeStream2.prototype.skip = function(n) {
+        DecodeStream3.prototype.skip = function(n) {
           if (!n) {
             n = 1;
           }
           this.pos += n;
         };
-        DecodeStream2.prototype.reset = function() {
+        DecodeStream3.prototype.reset = function() {
           this.pos = 0;
         };
-        DecodeStream2.prototype.makeSubStream = function(start, length) {
+        DecodeStream3.prototype.makeSubStream = function(start, length) {
           var end = start + length;
           while (this.bufferLength <= end && !this.eof) {
             this.readBlock();
@@ -24970,15 +24970,15 @@ var require_DecodeStream = __commonJS({
             /* dict */
           );
         };
-        DecodeStream2.prototype.decode = function() {
+        DecodeStream3.prototype.decode = function() {
           while (!this.eof)
             this.readBlock();
           return this.buffer.subarray(0, this.bufferLength);
         };
-        DecodeStream2.prototype.readBlock = function() {
+        DecodeStream3.prototype.readBlock = function() {
           throw new errors_1.MethodNotImplementedError(this.constructor.name, "readBlock");
         };
-        DecodeStream2.prototype.ensureBuffer = function(requested) {
+        DecodeStream3.prototype.ensureBuffer = function(requested) {
           var buffer = this.buffer;
           if (requested <= buffer.byteLength) {
             return buffer;
@@ -24991,10 +24991,10 @@ var require_DecodeStream = __commonJS({
           buffer2.set(buffer);
           return this.buffer = buffer2;
         };
-        return DecodeStream2;
+        return DecodeStream3;
       }()
     );
-    exports2.default = DecodeStream;
+    exports2.default = DecodeStream2;
   }
 });
 
@@ -49517,6 +49517,40 @@ var forge = __toESM(require_lib());
 
 // src/pdf-limits.ts
 var import_PDFXRefStreamParser = __toESM(require_PDFXRefStreamParser());
+var import_DecodeStream = __toESM(require_DecodeStream());
+var import_node_async_hooks = require("node:async_hooks");
+var MAX_DECODED_STREAM_BYTES = 64 * 1024 * 1024;
+var MAX_DECODED_DOCUMENT_BYTES = 128 * 1024 * 1024;
+var decodeBudget = new import_node_async_hooks.AsyncLocalStorage();
+function withPdfDecodeBudget(operation, limit = MAX_DECODED_DOCUMENT_BYTES) {
+  if (!Number.isSafeInteger(limit) || limit < 1 || limit > MAX_DECODED_DOCUMENT_BYTES) throw new RangeError("Invalid PDF decode budget");
+  return decodeBudget.run({ used: 0, limit }, operation);
+}
+function decodedCapacity(requested, current, minimum) {
+  if (!Number.isSafeInteger(requested) || requested < 0 || requested > MAX_DECODED_STREAM_BYTES || !Number.isSafeInteger(current) || current < 0 || current > MAX_DECODED_STREAM_BYTES || !Number.isSafeInteger(minimum) || minimum <= 0 || minimum > MAX_DECODED_STREAM_BYTES) {
+    throw new Error("PDF decoded stream budget exceeded");
+  }
+  if (requested <= current) return current;
+  let capacity = minimum;
+  while (capacity < requested) capacity *= 2;
+  if (capacity > MAX_DECODED_STREAM_BYTES) throw new Error("PDF decoded stream budget exceeded");
+  return capacity;
+}
+var streamPrototype = import_DecodeStream.default.prototype;
+var ensureBuffer = streamPrototype.ensureBuffer;
+if (typeof ensureBuffer !== "function") throw new Error("Unsupported PDF stream parser version");
+streamPrototype.ensureBuffer = function(requested) {
+  const previous = this.buffer.byteLength;
+  const capacity = decodedCapacity(requested, previous, this.minBufferLength);
+  const budget = decodeBudget.getStore();
+  const growth = capacity - previous;
+  if (budget && budget.used + growth > budget.limit) {
+    throw new Error("PDF decoded document budget exceeded");
+  }
+  const result = ensureBuffer.call(this, requested);
+  if (budget) budget.used += growth;
+  return result;
+};
 var MAX_XREF_ENTRIES = 1e5;
 function validateXRefEntries(parser) {
   const valid = (n) => Number.isSafeInteger(n) && n >= 0;
@@ -49661,10 +49695,10 @@ async function signPdfBuffer(pdfBuffer, p12Buffer, password, metadata) {
   const signer = new import_signer_p12.P12Signer(p12Buffer, {
     passphrase: password || ""
   });
-  const pdfDoc = await import_pdf_lib.PDFDocument.load(pdfBuffer, {
+  const pdfDoc = await withPdfDecodeBudget(() => import_pdf_lib.PDFDocument.load(pdfBuffer, {
     ignoreEncryption: false,
     throwOnInvalidObject: true
-  });
+  }));
   if (pdfDoc.getForm().getFields().some((field) => field instanceof import_pdf_lib.PDFSignature && field.acroField.dict.lookupMaybe(import_pdf_lib.PDFName.of("V"), import_pdf_lib.PDFDict))) {
     throw new Error(t("error_already_signed"));
   }

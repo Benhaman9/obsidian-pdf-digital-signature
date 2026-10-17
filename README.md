@@ -70,7 +70,7 @@ The signature allows a PDF reader to check whether the signed content has change
 
 ### Method 3: Manual Installation
 1. Download `main.js`, `manifest.json`, and `styles.css` from the [Latest Release](https://github.com/Benhaman9/obsidian-pdf-digital-signature/releases).
-2. Create a folder named `obsidian-pdf-digital-signature` in your vault's `.obsidian/plugins/` directory.
+2. Create a folder named `pdf-digital-signature` in your vault's `.obsidian/plugins/` directory.
 3. Copy the 3 downloaded files into that folder.
 4. Reload Obsidian and enable the plugin under **Community plugins**.
 
@@ -111,7 +111,10 @@ Malformed PDF objects are rejected rather than recovered during signing. XRef
 streams are checked before allocating entries: safe counts and byte widths,
 enough decoded bytes, and at most 100,000 entries per stream. Widths above four
 bytes are unsupported by the pinned parser's bitwise implementation. These
-limits prevent the reviewed count-amplification path; they do not impose a total
-CPU or decompression-memory budget on every PDF feature.
+limits prevent the reviewed count-amplification path. Version 1.0.13 also caps
+decoded stream buffers at 64 MiB each and 128 MiB of cumulative buffer growth
+per document load, before allocation, across supported decoding filters.
+Documents exceeding these limits fail explicitly. These are parser allocation
+guards, not a total process-memory or CPU limit on every PDF feature.
 
 [Adobe: certificate trust](https://helpx.adobe.com/acrobat/using/trusted-identities.html) · [Signing library](https://github.com/vbuch/node-signpdf)

@@ -48,7 +48,24 @@ function load(name) {
 }
 const i18n = load('i18n');
 const signer = load('signer');
-const { validateXRefEntries } = load('pdf-limits');
+const { validateXRefEntries, decodedCapacity, withPdfDecodeBudget, MAX_DECODED_STREAM_BYTES } = load('pdf-limits');
+
+test('decoded PDF capacity is bounded before allocation and budgets are per document', async () => {
+  assert.equal(decodedCapacity(513, 512, 512), 1024);
+  assert.equal(decodedCapacity(100, 512, 512), 512);
+  assert.throws(() => decodedCapacity(MAX_DECODED_STREAM_BYTES + 1, 0, 512), /budget/);
+  assert.throws(() => decodedCapacity(1, 0, MAX_DECODED_STREAM_BYTES + 1), /budget/);
+  const DecodeStream = require('pdf-lib/cjs/core/streams/DecodeStream').default;
+  await withPdfDecodeBudget(async () => {
+    const first = new DecodeStream(); first.ensureBuffer(512); first.ensureBuffer(1);
+    const second = new DecodeStream(); second.ensureBuffer(512);
+    assert.throws(() => new DecodeStream().ensureBuffer(1), /document budget/);
+  }, 1024);
+  await Promise.all([1, 2].map(() => withPdfDecodeBudget(async () => {
+    await Promise.resolve();
+    assert.equal(new DecodeStream().ensureBuffer(512).length, 512);
+  }, 512)));
+});
 
 test('XRef parser rejects amplified counts and malformed widths before allocation', async () => {
   const parser = (length, widths = [1, 1, 1], available = 3) => ({
