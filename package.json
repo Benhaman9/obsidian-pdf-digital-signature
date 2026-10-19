@@ -1,13 +1,13 @@
 {
   "name": "obsidian-pdf-digital-signature",
-  "version": "1.0.13",
+  "version": "1.0.14",
   "description": "Offline digital cryptographic signature (PKCS#7) and custom footer stamping for exported PDFs in Obsidian.",
   "main": "main.js",
   "scripts": {
     "dev": "node esbuild.config.mjs",
     "build": "node esbuild.config.mjs production",
     "test": "node --test tests/regression.cjs tests/bundle-smoke.cjs",
-    "test:integration": "node --test tests/export-integration.cjs"
+    "test:integration": "node --test tests/export-integration.cjs tests/math-print.cjs"
   },
   "keywords": [
     "obsidian",

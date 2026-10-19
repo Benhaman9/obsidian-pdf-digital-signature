@@ -282,6 +282,47 @@ test('footer escapes user text and scheduled signing retains export settings', a
   assert.equal(scheduledSettings.nombreFirmante, '<b>François & María</b>');
 });
 
+test('native math print hook refreshes after rendering, waits for fonts and restores on unload', async () => {
+  const plugin = new PluginClass();
+  plugin.settings = { ...defaults, firmarCriptograficamente: true };
+  plugin.checkCertificateExpirationAlert = () => {};
+  const cleanup = []; plugin.register = fn => cleanup.push(fn);
+  const events = [];
+  const sourceStyle = {id:'MJX-CHTML-styles',sheet:{cssRules:[]}};
+  const source = {getElementById:()=>sourceStyle};
+  let fontsReady;
+  const targetStyle = {textContent:''};
+  const dest = {getElementById:()=>targetStyle,fonts:{ready:new Promise(resolve=>{fontsReady=resolve;})}};
+  const rendered = {ownerDocument:dest,querySelector:()=>({}),getBoundingClientRect(){events.push('layout');}};
+  let fail = false;
+  const modal = {file:{},modalEl:{classList:{contains:()=>true}},
+    contentEl:{ownerDocument:source,createDiv(){return {style:{},createEl(){},remove(){}};}},
+    async print(){
+      if(fail) throw new Error('render failed');
+      sourceStyle.sheet.cssRules.push({cssText:'mjx-frac { display: inline-block; }'});
+      events.push('render');return rendered;
+    },
+    async printToPdf(){try{await this.print({}, {},false);events.push('pdf');}catch{}},
+  };
+  const originalPrint = modal.print;
+  const originalPrintToPdf = modal.printToPdf;
+  let signed=0;plugin.scheduleSigning=()=>signed++;
+  plugin.inspectAndEnhanceModal(modal);
+  const job=modal.printToPdf({filepath:'test.pdf'});
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.match(targetStyle.textContent,/mjx-frac/);
+  assert.equal(events.includes('pdf'),false,'Printing waits for fonts');
+  fontsReady();await job;
+  assert.deepEqual(events,['render','layout','pdf']);
+  assert.equal(signed,1);
+  fail=true;
+  await modal.printToPdf({filepath:'test.pdf'});
+  assert.equal(signed,1,'A swallowed native render error must not sign an old PDF');
+  cleanup.forEach(fn=>fn());
+  assert.equal(modal.print,originalPrint);
+  assert.equal(modal.printToPdf,originalPrintToPdf);
+});
+
 test('signing jobs deduplicate and catch rejected file dialogs', async () => {
   const plugin = new PluginClass();
   plugin.settings = { ...defaults };

@@ -22,6 +22,7 @@ import {
   signPdfFile,
 } from "./signer";
 import { t, getLanguage } from "./i18n";
+import { refreshMathPrintStyles } from "./math-print-styles";
 
 // Helper para setCssStyles seguro contra versiones de tipos antiguas
 const applyStyles = (el: HTMLElement, styles: Record<string, string>): void => {
@@ -221,6 +222,7 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
       file?: unknown;
       modalEl?: HTMLElement;
       printToPdf?: (opts: Record<string, unknown>) => Promise<unknown>;
+      print?: (container: HTMLElement, component: unknown, includeName: boolean) => Promise<HTMLElement>;
       _firmaPdfEnhanced?: boolean;
       contentEl: HTMLElement;
     };
@@ -287,6 +289,20 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
       });
 
     const originalPrintToPdf = targetModal.printToPdf;
+    const originalPrint = targetModal.print;
+    let renderingFailed = false;
+    if (originalPrint) {
+      targetModal.print = async (container, component, includeName) => {
+        try {
+          const rendered = await originalPrint.call(targetModal, container, component, includeName);
+          await refreshMathPrintStyles(targetModal.contentEl.ownerDocument, rendered);
+          return rendered;
+        } catch (error) {
+          renderingFailed = true;
+          throw error;
+        }
+      };
+    }
 
     targetModal.printToPdf = async (options: Record<string, unknown>) => {
       const exportSettings = { ...this.settings };
@@ -324,9 +340,10 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
         options.open = false;
       }
 
+      renderingFailed = false;
       const result = await originalPrintToPdf.call(targetModal, options);
 
-      if (shouldSignCryptographically && options && typeof options.filepath === "string") {
+      if (!renderingFailed && shouldSignCryptographically && options && typeof options.filepath === "string") {
         this.scheduleSigning(options.filepath, exportSettings);
       }
 
@@ -334,6 +351,7 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
     };
     this.register(() => {
       targetModal.printToPdf = originalPrintToPdf;
+      targetModal.print = originalPrint;
       targetModal._firmaPdfEnhanced = false;
       settingContainer.remove();
     });

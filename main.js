@@ -49920,6 +49920,24 @@ var PdfSignatureSettingTab = class extends import_obsidian2.PluginSettingTab {
   }
 };
 
+// src/math-print-styles.ts
+async function refreshMathPrintStyles(source, rendered) {
+  const destination = rendered.ownerDocument;
+  if (source === destination || !rendered.querySelector('mjx-container[jax="CHTML"]')) return;
+  const sourceStyle = source.getElementById("MJX-CHTML-styles");
+  if (!sourceStyle?.sheet) return;
+  const css = Array.from(sourceStyle.sheet.cssRules, (rule) => rule.cssText).join("\n");
+  let target = destination.getElementById(sourceStyle.id);
+  if (!target) {
+    target = destination.createElement("style");
+    target.id = sourceStyle.id;
+    destination.head.appendChild(target);
+  }
+  target.textContent = css;
+  rendered.getBoundingClientRect();
+  await destination.fonts.ready;
+}
+
 // src/main.ts
 var applyStyles2 = (el, styles) => {
   const setStyles = obsidian2.setCssStyles;
@@ -50116,6 +50134,20 @@ var PdfDigitalSignaturePlugin = class extends import_obsidian3.Plugin {
       });
     });
     const originalPrintToPdf = targetModal.printToPdf;
+    const originalPrint = targetModal.print;
+    let renderingFailed = false;
+    if (originalPrint) {
+      targetModal.print = async (container, component, includeName) => {
+        try {
+          const rendered = await originalPrint.call(targetModal, container, component, includeName);
+          await refreshMathPrintStyles(targetModal.contentEl.ownerDocument, rendered);
+          return rendered;
+        } catch (error) {
+          renderingFailed = true;
+          throw error;
+        }
+      };
+    }
     targetModal.printToPdf = async (options) => {
       const exportSettings = { ...this.settings };
       const shouldSignCryptographically = this.settings.firmarCriptograficamente;
@@ -50145,14 +50177,16 @@ var PdfDigitalSignaturePlugin = class extends import_obsidian3.Plugin {
       if (shouldSignCryptographically && options && this.settings.openAfterSigning) {
         options.open = false;
       }
+      renderingFailed = false;
       const result = await originalPrintToPdf.call(targetModal, options);
-      if (shouldSignCryptographically && options && typeof options.filepath === "string") {
+      if (!renderingFailed && shouldSignCryptographically && options && typeof options.filepath === "string") {
         this.scheduleSigning(options.filepath, exportSettings);
       }
       return result;
     };
     this.register(() => {
       targetModal.printToPdf = originalPrintToPdf;
+      targetModal.print = originalPrint;
       targetModal._firmaPdfEnhanced = false;
       settingContainer.remove();
     });
