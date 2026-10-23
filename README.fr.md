@@ -39,7 +39,7 @@ Le chemin du certificat peut être relatif au coffre ou absolu. Le nom, le motif
 
 ## Limites du certificat et de la signature
 
-La signature permet de détecter les modifications du contenu signé ; elle n’empêche pas l’édition du PDF. La confiance dans le signataire dépend du certificat et du lecteur : un certificat autosigné n’est pas automatiquement approuvé. Un mot de passe aléatoire est généré au premier lancement et peut être modifié avant la création du certificat ; un mot de passe vide est refusé pour les nouveaux certificats. Le plugin conserve le mot de passe en clair dans ses paramètres locaux ; protégez le coffre et ses sauvegardes. Les certificats expirés ou pas encore valides ne peuvent pas être utilisés pour signer.
+La signature permet de détecter les modifications du contenu signé ; elle n’empêche pas l’édition du PDF. La confiance dans le signataire dépend du certificat et du lecteur : un certificat autosigné n’est pas automatiquement approuvé. Un mot de passe aléatoire est généré au premier lancement et peut être modifié avant la création du certificat ; un mot de passe vide est refusé pour les nouveaux certificats. Obsidian 1.11.5 ou une version ultérieure est requis. Le mot de passe est conservé dans le SecretStorage local, hors de `data.json` ; les anciens mots de passe sont migrés au chargement du plugin. Il doit être configuré séparément sur chaque appareil. Les certificats expirés ou pas encore valides ne peuvent pas être utilisés pour signer.
 
 Les PDF déjà signés sont refusés, car le plugin réécrit le document au lieu d’ajouter une signature incrémentale. Il utilise `adbe.pkcs7.detached` ; aucune conformité complète aux profils PAdES, aucun horodatage de confiance ni aucune validation à long terme ne sont revendiqués.
 
