@@ -3,6 +3,7 @@ import * as obsidian from "obsidian";
 import type PdfDigitalSignaturePlugin from "./main";
 import { t, getLanguage } from "./i18n";
 import { getCertificateInfo } from "./signer";
+import { certificateLocation } from "./certificate-location";
 import { getJurisdictionGuidance, normalizeJurisdiction, normalizeSignatureMode, type Jurisdiction, type SignatureMode } from "./signing-policy";
 
 // Helper para setCssStyles seguro contra versiones antiguas de tipos
@@ -23,12 +24,14 @@ export interface PdfSignatureSettings {
   nombreFirmante: string;
   mostrarNumeroPagina: boolean;
   delaySeconds: number;
+  exportTimeoutSeconds: number;
   certPath: string;
   certPassword: string;
   motivo: string;
   ubicacion: string;
   openAfterSigning: boolean;
   signatureMode: SignatureMode;
+  signatureModeChosen: boolean;
   jurisdiction: Jurisdiction;
   lastExpiryAlertTimestamp?: number;
 }
@@ -40,12 +43,14 @@ export const DEFAULT_SETTINGS: PdfSignatureSettings = {
   nombreFirmante: "Nombre del Firmante",
   mostrarNumeroPagina: true,
   delaySeconds: 5,
-  certPath: "Scripts/certificado.pfx",
+  exportTimeoutSeconds: 15,
+  certPath: "",
   certPassword: "",
   motivo: "Firma Digital",
   ubicacion: "Ciudad, País",
   openAfterSigning: true,
-  signatureMode: "certify",
+  signatureMode: "approval",
+  signatureModeChosen: false,
   jurisdiction: "international",
 };
 
@@ -125,16 +130,16 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
           })
       );
 
-    // 5. Demora antes de firmar
+    // 5. Plazo máximo para completar y validar la exportación
     new Setting(containerEl)
       .setName(t("settings_delay_name"))
       .setDesc(t("settings_delay_desc"))
       .addSlider((slider) =>
         slider
-          .setLimits(1, 15, 1)
-          .setValue(this.plugin.settings.delaySeconds)
+          .setLimits(5, 60, 1)
+          .setValue(this.plugin.settings.exportTimeoutSeconds)
           .onChange(async (val) => {
-            this.plugin.settings.delaySeconds = val;
+            this.plugin.settings.exportTimeoutSeconds = val;
             await this.plugin.saveSettings();
           })
       );
@@ -163,7 +168,7 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
       .setDesc(t("settings_cert_path_desc"))
       .addText((text) =>
         text
-          .setPlaceholder("Scripts/default_certificate.pfx")
+          .setPlaceholder(t("cert_private_path"))
           .setValue(this.plugin.settings.certPath)
           .onChange(async (val) => {
             this.plugin.settings.certPath = val.trim();
@@ -320,6 +325,11 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
     if (info.issuer) statusEl.createEl("p", { text: t("verify_issuer", { issuer: info.issuer }) });
     if (info.fingerprint) statusEl.createEl("p", { text: t("verify_fingerprint", { fingerprint: info.fingerprint }) });
     if (info.selfSigned !== undefined) statusEl.createEl("p", { text: t(info.selfSigned ? "verify_self_signed" : "certificate_self_signed_no") });
+    const location = certificateLocation(this.plugin.getVaultBasePath(), certPath);
+    if (location === "inside" || location === "unknown") statusEl.createEl("p", {
+      cls: "setting-item-description",
+      text: t(location === "inside" ? "cert_location_inside" : "cert_location_unknown"),
+    });
   }
 }
 
@@ -328,11 +338,13 @@ export function renderSigningPolicySettings(containerEl: HTMLElement, plugin: Pd
       .setName(t("settings_signature_mode_name"))
       .setDesc(t("settings_signature_mode_desc"))
       .addDropdown((dropdown) => dropdown
+        .addOption("", t("signature_mode_choose"))
         .addOption("approval", t("signature_mode_approval"))
         .addOption("certify", t("signature_mode_certify"))
-        .setValue(plugin.settings.signatureMode)
+        .setValue(plugin.settings.signatureModeChosen === false ? "" : plugin.settings.signatureMode)
         .onChange(async (value) => {
-          plugin.settings.signatureMode = normalizeSignatureMode(value);
+          plugin.settings.signatureModeChosen = value !== "";
+          if (value !== "") plugin.settings.signatureMode = normalizeSignatureMode(value);
           await plugin.saveSettings();
         }));
 

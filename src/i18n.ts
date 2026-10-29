@@ -1,6 +1,27 @@
 import { getLanguage as getObsidianLanguage } from "obsidian";
 
 export type TranslationKey =
+  | "cert_location_inside"
+  | "cert_location_unknown"
+  | "cert_private_path"
+  | "signature_mode_choose"
+  | "signature_choice_required"
+  | "export_integration_unavailable"
+  | "export_waiting"
+  | "export_validating"
+  | "export_timeout"
+  | "export_invalid"
+  | "export_cancelled"
+  | "phase_verifying"
+  | "verify_revision_valid"
+  | "verify_revision_invalid"
+  | "verify_revision_unknown"
+  | "verify_coverage_full"
+  | "verify_coverage_partial"
+  | "verify_coverage_unknown"
+  | "verify_trust_not_checked"
+  | "verify_revocation_not_checked"
+  | "verify_timestamp_not_checked"
   | "error_file_too_large"
   | "error_ambiguous_cert"
   | "error_weak_rsa"
@@ -120,6 +141,27 @@ export type TranslationKey =
   | "settings_btn_generate_desc";
 
 const en: Record<TranslationKey, string> = {
+  cert_location_inside: "This certificate is inside the vault or linked into it; it may be copied by sync and backups. Choose an external path if you want to avoid this.",
+  cert_location_unknown: "The certificate location could not be confirmed. Choose a local path outside the vault and check any links, sync and backup settings.",
+  cert_private_path: "Local path outside the vault",
+  signature_mode_choose: "Choose how to sign…",
+  signature_choice_required: "Choose a signature mode before signing.",
+  export_integration_unavailable: "Automatic PDF export integration is unavailable in this Obsidian version. You can still use the manual PDF signing and checking commands.",
+  export_waiting: "Waiting for PDF export: {name}",
+  export_validating: "Validating exported PDF: {name}",
+  export_timeout: "The PDF export did not finish within the allowed time. Check the exported file and try again.",
+  export_invalid: "The exported file is incomplete or could not be validated as a supported PDF. No signature was applied.",
+  export_cancelled: "PDF signing was cancelled.",
+  phase_verifying: "Checking the generated signature: {name}",
+  verify_revision_valid: "Signed revision: cryptographic signature verified.",
+  verify_revision_invalid: "Signed revision: cryptographic signature verification failed.",
+  verify_revision_unknown: "Signed revision: could not be checked.",
+  verify_coverage_full: "Coverage: the signature covers the complete current file.",
+  verify_coverage_partial: "Coverage: the current file contains data beyond the signed revision.",
+  verify_coverage_unknown: "Coverage: could not be established.",
+  verify_trust_not_checked: "Certificate trust: not checked.",
+  verify_revocation_not_checked: "Certificate revocation: not checked.",
+  verify_timestamp_not_checked: "Trusted timestamps: not checked.",
   error_file_too_large: "File too large. The maximum input size is 64 MiB for PDFs and 4 MiB for PKCS#12 certificates.",
   error_ambiguous_cert: "The certificate file contains multiple signing keys or matching certificates. Use an unambiguous signing identity.",
   error_weak_rsa: "RSA signing keys must have at least 2048 bits.",
@@ -219,8 +261,8 @@ const en: Record<TranslationKey, string> = {
   settings_signer_name_desc: "Name displayed at the bottom-left of every page.",
   settings_page_number_name: "Display page number",
   settings_page_number_desc: "Show 'page / total' on the bottom-right of every page.",
-  settings_delay_name: "Delay before signing (seconds)",
-  settings_delay_desc: "Time to wait after file creation before applying the digital signature.",
+  settings_delay_name: "Maximum export wait (seconds)",
+  settings_delay_desc: "Maximum time to wait for a complete, stable PDF before validation and signing. This is a deadline, not a fixed delay.",
   settings_open_after_name: "Open PDF after signing",
   settings_open_after_desc: "Automatically open the signed PDF in your default viewer.",
   settings_cert_section_title: "Digital Certificate (.pfx / .p12)",
@@ -241,6 +283,27 @@ const en: Record<TranslationKey, string> = {
 };
 
 const es: Record<TranslationKey, string> = {
+  cert_location_inside: "Este certificado está dentro de la bóveda o enlazado a ella; puede copiarse con sincronizaciones y respaldos. Elige una ruta externa si deseas evitarlo.",
+  cert_location_unknown: "No se pudo confirmar la ubicación del certificado. Elige una ruta local fuera de la bóveda y revisa los enlaces y la configuración de sincronizaciones y respaldos.",
+  cert_private_path: "Ruta local fuera de la bóveda",
+  signature_mode_choose: "Elige cómo firmar…",
+  signature_choice_required: "Elige un modo de firma antes de firmar.",
+  export_integration_unavailable: "La integración automática con la exportación PDF no está disponible en esta versión de Obsidian. Puedes usar los comandos manuales para firmar y comprobar PDFs.",
+  export_waiting: "Esperando la exportación PDF: {name}",
+  export_validating: "Validando el PDF exportado: {name}",
+  export_timeout: "La exportación PDF no terminó dentro del plazo permitido. Revisa el archivo exportado e inténtalo de nuevo.",
+  export_invalid: "El archivo exportado está incompleto o no pudo validarse como PDF compatible. No se aplicó ninguna firma.",
+  export_cancelled: "Se canceló la firma del PDF.",
+  phase_verifying: "Comprobando la firma generada: {name}",
+  verify_revision_valid: "Revisión firmada: firma criptográfica verificada.",
+  verify_revision_invalid: "Revisión firmada: falló la verificación de la firma criptográfica.",
+  verify_revision_unknown: "Revisión firmada: no se pudo comprobar.",
+  verify_coverage_full: "Cobertura: la firma abarca el archivo actual completo.",
+  verify_coverage_partial: "Cobertura: el archivo actual contiene datos posteriores a la revisión firmada.",
+  verify_coverage_unknown: "Cobertura: no se pudo determinar.",
+  verify_trust_not_checked: "Confianza en el certificado: no comprobada.",
+  verify_revocation_not_checked: "Revocación del certificado: no comprobada.",
+  verify_timestamp_not_checked: "Sellos de tiempo de confianza: no comprobados.",
   error_file_too_large: "Archivo demasiado grande. El máximo de entrada es 64 MiB para PDFs y 4 MiB para certificados PKCS#12.",
   error_ambiguous_cert: "El archivo del certificado contiene varias claves firmantes o certificados coincidentes. Usa una identidad firmante inequívoca.",
   error_weak_rsa: "Las claves RSA de firma deben tener al menos 2048 bits.",
@@ -340,8 +403,8 @@ const es: Record<TranslationKey, string> = {
   settings_signer_name_desc: "Texto que aparecerá en el pie de página a la izquierda de todas las hojas.",
   settings_page_number_name: "Mostrar número de página",
   settings_page_number_desc: "Muestra 'página / total' a la derecha en el pie de página.",
-  settings_delay_name: "Demora antes de firmar (segundos)",
-  settings_delay_desc: "Tiempo de espera tras el guardado del archivo antes de ejecutar el proceso criptográfico.",
+  settings_delay_name: "Espera máxima de exportación (segundos)",
+  settings_delay_desc: "Plazo máximo para esperar un PDF completo y estable antes de validarlo y firmarlo. Es un límite de espera, no una demora fija.",
   settings_open_after_name: "Abrir PDF tras firmar",
   settings_open_after_desc: "Abre el archivo PDF en tu visor predeterminado una vez finalizada la firma criptográfica.",
   settings_cert_section_title: "Certificado Digital (.pfx / .p12)",
@@ -362,6 +425,27 @@ const es: Record<TranslationKey, string> = {
 };
 
 const pt: Record<TranslationKey, string> = {
+  cert_location_inside: "Este certificado está dentro do cofre ou vinculado a ele; pode ser copiado pela sincronização e por backups. Escolha um caminho externo para evitar isso.",
+  cert_location_unknown: "Não foi possível confirmar a localização do certificado. Escolha um caminho local fora do cofre e verifique os vínculos e as configurações de sincronização e backup.",
+  cert_private_path: "Caminho local fora do cofre",
+  signature_mode_choose: "Escolha como assinar…",
+  signature_choice_required: "Escolha um modo de assinatura antes de assinar.",
+  export_integration_unavailable: "A integração automática com a exportação PDF não está disponível nesta versão do Obsidian. Você pode usar os comandos manuais para assinar e verificar PDFs.",
+  export_waiting: "Aguardando a exportação PDF: {name}",
+  export_validating: "Validando o PDF exportado: {name}",
+  export_timeout: "A exportação PDF não terminou dentro do prazo permitido. Verifique o arquivo exportado e tente novamente.",
+  export_invalid: "O arquivo exportado está incompleto ou não pôde ser validado como PDF compatível. Nenhuma assinatura foi aplicada.",
+  export_cancelled: "A assinatura do PDF foi cancelada.",
+  phase_verifying: "Verificando a assinatura gerada: {name}",
+  verify_revision_valid: "Revisão assinada: assinatura criptográfica verificada.",
+  verify_revision_invalid: "Revisão assinada: falha na verificação da assinatura criptográfica.",
+  verify_revision_unknown: "Revisão assinada: não foi possível verificar.",
+  verify_coverage_full: "Cobertura: a assinatura abrange o arquivo atual inteiro.",
+  verify_coverage_partial: "Cobertura: o arquivo atual contém dados posteriores à revisão assinada.",
+  verify_coverage_unknown: "Cobertura: não foi possível determinar.",
+  verify_trust_not_checked: "Confiança no certificado: não verificada.",
+  verify_revocation_not_checked: "Revogação do certificado: não verificada.",
+  verify_timestamp_not_checked: "Carimbos de tempo confiáveis: não verificados.",
   error_file_too_large: "Arquivo muito grande. O tamanho máximo de entrada é de 64 MiB para PDFs e 4 MiB para certificados PKCS#12.",
   error_ambiguous_cert: "O arquivo do certificado contém várias chaves de assinatura ou certificados correspondentes. Use uma identidade de assinatura inequívoca.",
   error_weak_rsa: "As chaves RSA de assinatura devem ter pelo menos 2048 bits.",
@@ -461,8 +545,8 @@ const pt: Record<TranslationKey, string> = {
   settings_signer_name_desc: "Texto exibido no rodapé à esquerda em todas as páginas.",
   settings_page_number_name: "Exibir número da página",
   settings_page_number_desc: "Exibe 'página / total' no rodapé à direita.",
-  settings_delay_name: "Atraso antes de assinar (segundos)",
-  settings_delay_desc: "Tempo de espera após salvar o arquivo antes de aplicar a assinatura digital.",
+  settings_delay_name: "Espera máxima da exportação (segundos)",
+  settings_delay_desc: "Tempo máximo de espera por um PDF completo e estável antes de validar e assinar. É um prazo, não um atraso fixo.",
   settings_open_after_name: "Abrir PDF após assinar",
   settings_open_after_desc: "Abre o arquivo PDF no leitor padrão após a conclusão da assinatura.",
   settings_cert_section_title: "Certificado Digital (.pfx / .p12)",
@@ -483,6 +567,27 @@ const pt: Record<TranslationKey, string> = {
 };
 
 const it: Record<TranslationKey, string> = {
+  cert_location_inside: "Questo certificato si trova nella cassaforte o è collegato ad essa; sincronizzazione e backup possono copiarlo. Scegli un percorso esterno per evitarlo.",
+  cert_location_unknown: "Impossibile confermare la posizione del certificato. Scegli un percorso locale fuori dalla cassaforte e verifica collegamenti e impostazioni di sincronizzazione e backup.",
+  cert_private_path: "Percorso locale fuori dalla cassaforte",
+  signature_mode_choose: "Scegli come firmare…",
+  signature_choice_required: "Scegli una modalità di firma prima di firmare.",
+  export_integration_unavailable: "L’integrazione automatica con l’esportazione PDF non è disponibile in questa versione di Obsidian. Puoi usare i comandi manuali per firmare e verificare i PDF.",
+  export_waiting: "In attesa dell’esportazione PDF: {name}",
+  export_validating: "Validazione del PDF esportato: {name}",
+  export_timeout: "L’esportazione PDF non è terminata entro il tempo consentito. Controlla il file esportato e riprova.",
+  export_invalid: "Il file esportato è incompleto o non è stato validato come PDF compatibile. Nessuna firma è stata applicata.",
+  export_cancelled: "La firma del PDF è stata annullata.",
+  phase_verifying: "Verifica della firma generata: {name}",
+  verify_revision_valid: "Revisione firmata: firma crittografica verificata.",
+  verify_revision_invalid: "Revisione firmata: verifica della firma crittografica non riuscita.",
+  verify_revision_unknown: "Revisione firmata: impossibile verificare.",
+  verify_coverage_full: "Copertura: la firma copre l’intero file attuale.",
+  verify_coverage_partial: "Copertura: il file attuale contiene dati successivi alla revisione firmata.",
+  verify_coverage_unknown: "Copertura: impossibile determinarla.",
+  verify_trust_not_checked: "Fiducia nel certificato: non verificata.",
+  verify_revocation_not_checked: "Revoca del certificato: non verificata.",
+  verify_timestamp_not_checked: "Marche temporali attendibili: non verificate.",
   error_file_too_large: "File troppo grande. La dimensione massima in ingresso è di 64 MiB per i PDF e 4 MiB per i certificati PKCS#12.",
   error_ambiguous_cert: "Il file del certificato contiene più chiavi di firma o certificati corrispondenti. Usa un’identità di firma univoca.",
   error_weak_rsa: "Le chiavi RSA di firma devono avere almeno 2048 bit.",
@@ -582,8 +687,8 @@ const it: Record<TranslationKey, string> = {
   settings_signer_name_desc: "Testo visualizzato in basso a sinistra su tutte le pagine.",
   settings_page_number_name: "Mostra numero di pagina",
   settings_page_number_desc: "Mostra 'pagina / totale' in basso a destra.",
-  settings_delay_name: "Ritardo prima della firma (secondi)",
-  settings_delay_desc: "Tempo di attesa dopo il salvataggio del file prima dell'applicazione della firma digitale.",
+  settings_delay_name: "Attesa massima dell’esportazione (secondi)",
+  settings_delay_desc: "Tempo massimo per attendere un PDF completo e stabile prima di validarlo e firmarlo. È un limite, non un ritardo fisso.",
   settings_open_after_name: "Apri PDF dopo la firma",
   settings_open_after_desc: "Apre automaticamente il file PDF nel visualizzatore predefinito dopo la firma.",
   settings_cert_section_title: "Certificato Digitale (.pfx / .p12)",
@@ -604,6 +709,27 @@ const it: Record<TranslationKey, string> = {
 };
 
 const fr: Record<TranslationKey, string> = {
+  cert_location_inside: "Ce certificat est dans le coffre ou lui est lié ; la synchronisation et les sauvegardes peuvent le copier. Choisissez un chemin externe pour éviter cela.",
+  cert_location_unknown: "La localisation du certificat n’a pas pu être confirmée. Choisissez un chemin local hors du coffre et vérifiez les liens et les paramètres de synchronisation et de sauvegarde.",
+  cert_private_path: "Chemin local hors du coffre",
+  signature_mode_choose: "Choisissez comment signer…",
+  signature_choice_required: "Choisissez un mode de signature avant de signer.",
+  export_integration_unavailable: "L’intégration automatique à l’exportation PDF n’est pas disponible dans cette version d’Obsidian. Vous pouvez utiliser les commandes manuelles pour signer et vérifier les PDF.",
+  export_waiting: "En attente de l’exportation PDF : {name}",
+  export_validating: "Validation du PDF exporté : {name}",
+  export_timeout: "L’exportation PDF n’a pas terminé dans le délai autorisé. Vérifiez le fichier exporté et réessayez.",
+  export_invalid: "Le fichier exporté est incomplet ou n’a pas pu être validé comme PDF compatible. Aucune signature n’a été appliquée.",
+  export_cancelled: "La signature du PDF a été annulée.",
+  phase_verifying: "Vérification de la signature créée : {name}",
+  verify_revision_valid: "Révision signée : signature cryptographique vérifiée.",
+  verify_revision_invalid: "Révision signée : échec de la vérification de la signature cryptographique.",
+  verify_revision_unknown: "Révision signée : vérification impossible.",
+  verify_coverage_full: "Couverture : la signature couvre le fichier actuel entier.",
+  verify_coverage_partial: "Couverture : le fichier actuel contient des données après la révision signée.",
+  verify_coverage_unknown: "Couverture : impossible à déterminer.",
+  verify_trust_not_checked: "Confiance dans le certificat : non vérifiée.",
+  verify_revocation_not_checked: "Révocation du certificat : non vérifiée.",
+  verify_timestamp_not_checked: "Horodatages de confiance : non vérifiés.",
   error_file_too_large: "Fichier trop volumineux. La taille maximale en entrée est de 64 MiB pour les PDF et de 4 MiB pour les certificats PKCS#12.",
   error_ambiguous_cert: "Le fichier du certificat contient plusieurs clés de signature ou certificats correspondants. Utilisez une identité de signature non ambiguë.",
   error_weak_rsa: "Les clés RSA de signature doivent comporter au moins 2048 bits.",
@@ -684,8 +810,8 @@ const fr: Record<TranslationKey, string> = {
   settings_signer_name_desc: "Texte affiché en bas à gauche de chaque page.",
   settings_page_number_name: "Afficher le numéro de page",
   settings_page_number_desc: "Afficher « page / total » en bas à droite de chaque page.",
-  settings_delay_name: "Délai avant la signature (secondes)",
-  settings_delay_desc: "Temps d’attente après l’enregistrement du fichier avant la signature numérique.",
+  settings_delay_name: "Attente maximale de l’exportation (secondes)",
+  settings_delay_desc: "Délai maximal pour attendre un PDF complet et stable avant validation et signature. Il s’agit d’une limite, pas d’une attente fixe.",
   settings_open_after_name: "Ouvrir le PDF après la signature",
   settings_open_after_desc: "Ouvrir automatiquement le PDF signé dans le lecteur par défaut.",
   settings_cert_section_title: "Certificat numérique (.pfx / .p12)",

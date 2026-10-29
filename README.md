@@ -1,5 +1,16 @@
 # PDF Digital Signature for Obsidian
 
+## Changes in 1.2.0
+
+On a new installation, explicitly choose Integrity signature or Certify before signing; the choice is remembered. Existing saved choices are preserved. Certify requests no later changes under DocMDP P=1; compatible readers evaluate that policy, but software can still edit a PDF.
+
+New self-signed certificates use a local directory outside the vault, separated by vault. Existing certificate paths are preserved and files are not moved. Settings warn if a certificate is inside the vault, linked into it, or its location cannot be established. Review sync and backup exposure even when a path appears external. New PKCS#12 files encrypt the private key with AES-256/PBES2, PBKDF2 with SHA-256 PRF and 100,000 iterations. The node-forge writer still uses HMAC-SHA1 for the container MAC; this limitation is disclosed without claiming a modern MAC.
+
+Export signing waits for a stable, complete PDF and validates it instead of sleeping for a fixed delay. The default deadline is 15 seconds, configurable from 5 to 60. Export integration is isolated in an adapter; when unsupported, manual PDF commands remain available. Verification presents signed-revision integrity and current-file coverage separately; trust, revocation and trusted timestamps are explicitly not checked.
+
+Interoperability fixtures include synthetic PDFs generated independently with pyHanko and independently verified expected results. A real PDF containing two digital signatures is reported as unsupported by this limited checker. This is not a claim of universal interoperability, certificate trust or legal sufficiency. Incremental signing, TSA services and trust-list validation are not supported.
+
+
 ## Signing and checking in 1.1.1
 
 Use the PDF file's context menu or the commands for the active PDF to sign or check it. Signing an existing PDF opens a review of the file, certificate and signature mode, then creates a new .signed.pdf copy (with a unique suffix if needed); the original is preserved. Exported PDFs are signed after export. If a file changes while waiting in the signing queue, the job is refused so the current document is not signed with stale settings. If Windows blocks replacement of an exported PDF, the plugin creates a signed .signed.pdf copy without forcing a write to the locked file; the displayed filename and the PDF opened afterwards refer to that copy.
@@ -11,7 +22,7 @@ Input limits are 64 MiB per PDF and 4 MiB per PKCS#12 certificate. Signed output
 
 ## Choosing how to sign
 
-- **Certify — no changes allowed** is the default: it adds a DocMDP certification policy with permission `P=1`. Compatible readers can reject later changes against that policy. Software that ignores it can still edit the PDF.
+- **Certify — no changes allowed** is an explicit choice: it adds a DocMDP certification policy with permission `P=1`. Compatible readers can reject later changes against that policy. Software that ignores it can still edit the PDF.
 - **Integrity signature** signs the current revision without certification. A reader may report the original signature as cryptographically valid while also reporting later revisions; inspect the current document's modification status.
 - **Country or legal context** changes guidance only, not your certificate, identity, format or legal status. Check the recipient's requirements.
 
@@ -57,7 +68,7 @@ The signature allows a PDF reader to check whether the signed content has change
 - 🎛️ **Native Integration:**
   Hooks directly into Obsidian's built-in **"Export to PDF"** dialog with three independent controls that remember your preferences.
 - ⏱️ **Automated Post-Processing:**
-  Optionally waits a customizable delay (default: 5 seconds) after export to ensure safe disk writes, applies the signature, and opens the signed PDF in your default viewer.
+  Waits for a stable, complete PDF within the configured deadline (15 seconds by default), validates and signs it, and opens the result when enabled.
 - 🔑 **Built-in Certificate Generator:**
   Don't have a commercial certificate yet? Generate a self-signed 3-year certificate with 1 click directly in the plugin settings.
 - 🛡️ **100% Private & Offline:**
@@ -72,7 +83,7 @@ The signature allows a PDF reader to check whether the signed content has change
 3. Click **Export to PDF** and select your destination.
 4. The plugin automatically:
    - Prints the note with your name on the footer of every page.
-   - Waits the configured delay (e.g. 5 seconds) and displays a progress notice.
+   - Waits for and validates the completed PDF, displaying its current phase.
    - Seals the document with your `.pfx` certificate.
    - Opens the signed PDF in your default viewer when enabled.
 
@@ -109,9 +120,9 @@ In Obsidian's **Settings** ➔ **PDF Digital Signature**:
 | **Show signer name by default** | Whether the signer name appears at the bottom-left. | `true` |
 | **Signer name (Running footer)** | The text displayed when the signer-name option is enabled. | `Name of Signer` |
 | **Display page number** | Displays `page / total` on the bottom-right. | `true` |
-| **Delay before signing** | Seconds to wait before applying the signature. | `5` seconds |
+| **Maximum export wait** | Deadline for a complete, stable PDF; configurable from 5 to 60 seconds. | 15 seconds |
 | **Open PDF after signing** | Automatically opens your default PDF viewer once signed. | `true` |
-| **Certificate file path** | Relative or absolute path to your `.pfx` or `.p12` file. | `Scripts/certificado.pfx` |
+| **Certificate file path** | Existing paths are retained; new certificates use a local directory outside the vault. | Per-vault local path outside the vault |
 | **Certificate password** | Password used to decrypt your certificate. | Randomly generated on first load |
 | **Reason / Location** | Signature metadata displayed in Adobe Acrobat. | Generic placeholders |
 

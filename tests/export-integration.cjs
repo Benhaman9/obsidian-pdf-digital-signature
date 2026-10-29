@@ -44,7 +44,7 @@ test('production plugin exports and signs real Chromium PDFs in all control comb
     };
     const module = { exports: {} };
     vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../main.js'), 'utf8'), {
-      module, exports: module.exports, Buffer, Uint8Array, ArrayBuffer, DataView, Date, console, process, global, setTimeout, clearTimeout,
+      module, exports: module.exports, AbortController, Buffer, Uint8Array, ArrayBuffer, DataView, Date, console, process, global, setTimeout, clearTimeout,
       window: { setTimeout, require: () => ({ shell: { async openPath(file) { opened.push(file); return ''; } } }) },
       require: (id) => id === 'obsidian' ? mock : require(id),
     });
@@ -67,7 +67,7 @@ test('production plugin exports and signs real Chromium PDFs in all control comb
     const results = [];
     for (const [name, sign, signerName, numbers] of cases) {
       plugin.settings = {
-        ...plugin.settings, firmarCriptograficamente: sign, mostrarNombreFirmante: signerName,
+        ...plugin.settings, signatureModeChosen: true, firmarCriptograficamente: sign, mostrarNombreFirmante: signerName,
         mostrarNumeroPagina: numbers, nombreFirmante: 'François & María <tests>',
         certPath: 'integration.pfx', delaySeconds: 1, openAfterSigning: true,
       };
@@ -91,7 +91,7 @@ test('production plugin exports and signs real Chromium PDFs in all control comb
       if (completion) {
         let timeout;
         try {
-          await Promise.race([completion, new Promise((_, reject) => { timeout = setTimeout(() => reject(new Error('Signing timed out')), 15000); })]);
+          await Promise.race([completion, new Promise((_, reject) => { timeout = setTimeout(() => reject(new Error('Signing timed out')), 30000); })]);
         } finally { clearTimeout(timeout); }
       }
       const pdf = fs.readFileSync(file);

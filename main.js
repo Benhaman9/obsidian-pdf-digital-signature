@@ -17919,11 +17919,11 @@ function __metadata(metadataKey, metadataValue) {
 }
 function __awaiter(thisArg, _arguments, P, generator) {
   function adopt(value) {
-    return value instanceof P ? value : new P(function(resolve2) {
-      resolve2(value);
+    return value instanceof P ? value : new P(function(resolve3) {
+      resolve3(value);
     });
   }
-  return new (P || (P = Promise))(function(resolve2, reject) {
+  return new (P || (P = Promise))(function(resolve3, reject) {
     function fulfilled(value) {
       try {
         step(generator.next(value));
@@ -17939,7 +17939,7 @@ function __awaiter(thisArg, _arguments, P, generator) {
       }
     }
     function step(result) {
-      result.done ? resolve2(result.value) : adopt(result.value).then(fulfilled, rejected);
+      result.done ? resolve3(result.value) : adopt(result.value).then(fulfilled, rejected);
     }
     step((generator = generator.apply(thisArg, _arguments || [])).next());
   });
@@ -18117,14 +18117,14 @@ function __asyncValues(o) {
   }, i);
   function verb(n) {
     i[n] = o[n] && function(v) {
-      return new Promise(function(resolve2, reject) {
-        v = o[n](v), settle(resolve2, reject, v.done, v.value);
+      return new Promise(function(resolve3, reject) {
+        v = o[n](v), settle(resolve3, reject, v.done, v.value);
       });
     };
   }
-  function settle(resolve2, reject, d, v) {
+  function settle(resolve3, reject, d, v) {
     Promise.resolve(v).then(function(v2) {
-      resolve2({ value: v2, done: d });
+      resolve3({ value: v2, done: d });
     }, reject);
   }
 }
@@ -18543,9 +18543,9 @@ var require_async = __commonJS({
     Object.defineProperty(exports2, "__esModule", { value: true });
     exports2.waitForTick = void 0;
     exports2.waitForTick = function() {
-      return new Promise(function(resolve2) {
+      return new Promise(function(resolve3) {
         setTimeout(function() {
-          return resolve2();
+          return resolve3();
         }, 0);
       });
     };
@@ -32168,38 +32168,38 @@ var require_PDFInvalidObject = __commonJS({
     Object.defineProperty(exports2, "__esModule", { value: true });
     var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
     var PDFObject_1 = tslib_1.__importDefault(require_PDFObject());
-    var PDFInvalidObject2 = (
+    var PDFInvalidObject3 = (
       /** @class */
       function(_super) {
-        tslib_1.__extends(PDFInvalidObject3, _super);
-        function PDFInvalidObject3(data) {
+        tslib_1.__extends(PDFInvalidObject4, _super);
+        function PDFInvalidObject4(data) {
           var _this = _super.call(this) || this;
           _this.data = data;
           return _this;
         }
-        PDFInvalidObject3.prototype.clone = function() {
-          return PDFInvalidObject3.of(this.data.slice());
+        PDFInvalidObject4.prototype.clone = function() {
+          return PDFInvalidObject4.of(this.data.slice());
         };
-        PDFInvalidObject3.prototype.toString = function() {
+        PDFInvalidObject4.prototype.toString = function() {
           return "PDFInvalidObject(" + this.data.length + " bytes)";
         };
-        PDFInvalidObject3.prototype.sizeInBytes = function() {
+        PDFInvalidObject4.prototype.sizeInBytes = function() {
           return this.data.length;
         };
-        PDFInvalidObject3.prototype.copyBytesInto = function(buffer, offset) {
+        PDFInvalidObject4.prototype.copyBytesInto = function(buffer, offset) {
           var length = this.data.length;
           for (var idx = 0; idx < length; idx++) {
             buffer[offset++] = this.data[idx];
           }
           return length;
         };
-        PDFInvalidObject3.of = function(data) {
-          return new PDFInvalidObject3(data);
+        PDFInvalidObject4.of = function(data) {
+          return new PDFInvalidObject4(data);
         };
-        return PDFInvalidObject3;
+        return PDFInvalidObject4;
       }(PDFObject_1.default)
     );
-    exports2.default = PDFInvalidObject2;
+    exports2.default = PDFInvalidObject3;
   }
 });
 
@@ -33209,12 +33209,12 @@ var require_CustomFontSubsetEmbedder = __commonJS({
         };
         CustomFontSubsetEmbedder2.prototype.serializeFont = function() {
           var _this = this;
-          return new Promise(function(resolve2, reject) {
+          return new Promise(function(resolve3, reject) {
             var parts = [];
             _this.subset.encodeStream().on("data", function(bytes) {
               return parts.push(bytes);
             }).on("end", function() {
-              return resolve2(utils_1.mergeUint8Arrays(parts));
+              return resolve3(utils_1.mergeUint8Arrays(parts));
             }).on("error", function(err) {
               return reject(err);
             });
@@ -42941,14 +42941,14 @@ var require_svgPath = __commonJS({
       ["Z", 0],
       ["z", 0]
     ]);
-    var parse2 = function(path3) {
+    var parse2 = function(path4) {
       var cmd;
       var ret = [];
       var args = [];
       var curArg = "";
       var foundDecimal = false;
       var params = 0;
-      for (var _i = 0, path_1 = path3; _i < path_1.length; _i++) {
+      for (var _i = 0, path_1 = path4; _i < path_1.length; _i++) {
         var c = path_1[_i];
         if (parameters.has(c)) {
           params = parameters.get(c);
@@ -43262,8 +43262,8 @@ var require_svgPath = __commonJS({
       ];
       return result;
     };
-    exports2.svgPathToOperators = function(path3) {
-      return apply(parse2(path3));
+    exports2.svgPathToOperators = function(path4) {
+      return apply(parse2(path4));
     };
   }
 });
@@ -43446,7 +43446,7 @@ var require_operations = __commonJS({
         operators_1.popGraphicsState()
       ]).filter(Boolean);
     };
-    exports2.drawSvgPath = function(path3, options) {
+    exports2.drawSvgPath = function(path4, options) {
       var _a, _b, _c;
       return tslib_1.__spreadArrays([
         operators_1.pushGraphicsState(),
@@ -43460,7 +43460,7 @@ var require_operations = __commonJS({
         options.borderWidth && operators_1.setLineWidth(options.borderWidth),
         options.borderLineCap && operators_1.setLineCap(options.borderLineCap),
         operators_1.setDashPattern((_b = options.borderDashArray) !== null && _b !== void 0 ? _b : [], (_c = options.borderDashPhase) !== null && _c !== void 0 ? _c : 0)
-      ], svgPath_1.svgPathToOperators(path3), [
+      ], svgPath_1.svgPathToOperators(path4), [
         // prettier-ignore
         options.color && options.borderWidth ? operators_1.fillAndStroke() : options.color ? operators_1.fill() : options.borderColor ? operators_1.stroke() : operators_1.closePath(),
         operators_1.popGraphicsState()
@@ -46669,10 +46669,10 @@ var require_PDFDocument = __commonJS({
     var PDFEmbeddedFile_1 = tslib_1.__importDefault(require_PDFEmbeddedFile());
     var PDFJavaScript_1 = tslib_1.__importDefault(require_PDFJavaScript());
     var JavaScriptEmbedder_1 = tslib_1.__importDefault(require_JavaScriptEmbedder());
-    var PDFDocument2 = (
+    var PDFDocument3 = (
       /** @class */
       function() {
-        function PDFDocument3(context, ignoreEncryption, updateMetadata) {
+        function PDFDocument4(context, ignoreEncryption, updateMetadata) {
           var _this = this;
           this.defaultWordBreaks = [" "];
           this.computePages = function() {
@@ -46711,7 +46711,7 @@ var require_PDFDocument = __commonJS({
           if (updateMetadata)
             this.updateInfoDict();
         }
-        PDFDocument3.load = function(pdf, options) {
+        PDFDocument4.load = function(pdf, options) {
           if (options === void 0) {
             options = {};
           }
@@ -46729,12 +46729,12 @@ var require_PDFDocument = __commonJS({
                   return [4, core_1.PDFParser.forBytesWithOptions(bytes, parseSpeed, throwOnInvalidObject, capNumbers).parseDocument()];
                 case 1:
                   context = _f.sent();
-                  return [2, new PDFDocument3(context, ignoreEncryption, updateMetadata)];
+                  return [2, new PDFDocument4(context, ignoreEncryption, updateMetadata)];
               }
             });
           });
         };
-        PDFDocument3.create = function(options) {
+        PDFDocument4.create = function(options) {
           if (options === void 0) {
             options = {};
           }
@@ -46747,14 +46747,14 @@ var require_PDFDocument = __commonJS({
               pageTreeRef = context.register(pageTree);
               catalog = core_1.PDFCatalog.withContextAndPages(context, pageTreeRef);
               context.trailerInfo.Root = context.register(catalog);
-              return [2, new PDFDocument3(context, false, updateMetadata)];
+              return [2, new PDFDocument4(context, false, updateMetadata)];
             });
           });
         };
-        PDFDocument3.prototype.registerFontkit = function(fontkit) {
+        PDFDocument4.prototype.registerFontkit = function(fontkit) {
           this.fontkit = fontkit;
         };
-        PDFDocument3.prototype.getForm = function() {
+        PDFDocument4.prototype.getForm = function() {
           var form = this.formCache.access();
           if (form.hasXFA()) {
             console.warn("Removing XFA form data as pdf-lib does not support reading or writing XFA");
@@ -46762,63 +46762,63 @@ var require_PDFDocument = __commonJS({
           }
           return form;
         };
-        PDFDocument3.prototype.getTitle = function() {
+        PDFDocument4.prototype.getTitle = function() {
           var title = this.getInfoDict().lookup(core_1.PDFName.Title);
           if (!title)
             return void 0;
           assertIsLiteralOrHexString(title);
           return title.decodeText();
         };
-        PDFDocument3.prototype.getAuthor = function() {
+        PDFDocument4.prototype.getAuthor = function() {
           var author = this.getInfoDict().lookup(core_1.PDFName.Author);
           if (!author)
             return void 0;
           assertIsLiteralOrHexString(author);
           return author.decodeText();
         };
-        PDFDocument3.prototype.getSubject = function() {
+        PDFDocument4.prototype.getSubject = function() {
           var subject = this.getInfoDict().lookup(core_1.PDFName.Subject);
           if (!subject)
             return void 0;
           assertIsLiteralOrHexString(subject);
           return subject.decodeText();
         };
-        PDFDocument3.prototype.getKeywords = function() {
+        PDFDocument4.prototype.getKeywords = function() {
           var keywords = this.getInfoDict().lookup(core_1.PDFName.Keywords);
           if (!keywords)
             return void 0;
           assertIsLiteralOrHexString(keywords);
           return keywords.decodeText();
         };
-        PDFDocument3.prototype.getCreator = function() {
+        PDFDocument4.prototype.getCreator = function() {
           var creator = this.getInfoDict().lookup(core_1.PDFName.Creator);
           if (!creator)
             return void 0;
           assertIsLiteralOrHexString(creator);
           return creator.decodeText();
         };
-        PDFDocument3.prototype.getProducer = function() {
+        PDFDocument4.prototype.getProducer = function() {
           var producer = this.getInfoDict().lookup(core_1.PDFName.Producer);
           if (!producer)
             return void 0;
           assertIsLiteralOrHexString(producer);
           return producer.decodeText();
         };
-        PDFDocument3.prototype.getCreationDate = function() {
+        PDFDocument4.prototype.getCreationDate = function() {
           var creationDate = this.getInfoDict().lookup(core_1.PDFName.CreationDate);
           if (!creationDate)
             return void 0;
           assertIsLiteralOrHexString(creationDate);
           return creationDate.decodeDate();
         };
-        PDFDocument3.prototype.getModificationDate = function() {
+        PDFDocument4.prototype.getModificationDate = function() {
           var modificationDate = this.getInfoDict().lookup(core_1.PDFName.ModDate);
           if (!modificationDate)
             return void 0;
           assertIsLiteralOrHexString(modificationDate);
           return modificationDate.decodeDate();
         };
-        PDFDocument3.prototype.setTitle = function(title, options) {
+        PDFDocument4.prototype.setTitle = function(title, options) {
           utils_1.assertIs(title, "title", ["string"]);
           var key = core_1.PDFName.of("Title");
           this.getInfoDict().set(key, core_1.PDFHexString.fromText(title));
@@ -46827,63 +46827,63 @@ var require_PDFDocument = __commonJS({
             prefs.setDisplayDocTitle(true);
           }
         };
-        PDFDocument3.prototype.setAuthor = function(author) {
+        PDFDocument4.prototype.setAuthor = function(author) {
           utils_1.assertIs(author, "author", ["string"]);
           var key = core_1.PDFName.of("Author");
           this.getInfoDict().set(key, core_1.PDFHexString.fromText(author));
         };
-        PDFDocument3.prototype.setSubject = function(subject) {
+        PDFDocument4.prototype.setSubject = function(subject) {
           utils_1.assertIs(subject, "author", ["string"]);
           var key = core_1.PDFName.of("Subject");
           this.getInfoDict().set(key, core_1.PDFHexString.fromText(subject));
         };
-        PDFDocument3.prototype.setKeywords = function(keywords) {
+        PDFDocument4.prototype.setKeywords = function(keywords) {
           utils_1.assertIs(keywords, "keywords", [Array]);
           var key = core_1.PDFName.of("Keywords");
           this.getInfoDict().set(key, core_1.PDFHexString.fromText(keywords.join(" ")));
         };
-        PDFDocument3.prototype.setCreator = function(creator) {
+        PDFDocument4.prototype.setCreator = function(creator) {
           utils_1.assertIs(creator, "creator", ["string"]);
           var key = core_1.PDFName.of("Creator");
           this.getInfoDict().set(key, core_1.PDFHexString.fromText(creator));
         };
-        PDFDocument3.prototype.setProducer = function(producer) {
+        PDFDocument4.prototype.setProducer = function(producer) {
           utils_1.assertIs(producer, "creator", ["string"]);
           var key = core_1.PDFName.of("Producer");
           this.getInfoDict().set(key, core_1.PDFHexString.fromText(producer));
         };
-        PDFDocument3.prototype.setLanguage = function(language) {
+        PDFDocument4.prototype.setLanguage = function(language) {
           utils_1.assertIs(language, "language", ["string"]);
           var key = core_1.PDFName.of("Lang");
           this.catalog.set(key, core_1.PDFString.of(language));
         };
-        PDFDocument3.prototype.setCreationDate = function(creationDate) {
+        PDFDocument4.prototype.setCreationDate = function(creationDate) {
           utils_1.assertIs(creationDate, "creationDate", [[Date, "Date"]]);
           var key = core_1.PDFName.of("CreationDate");
           this.getInfoDict().set(key, core_1.PDFString.fromDate(creationDate));
         };
-        PDFDocument3.prototype.setModificationDate = function(modificationDate) {
+        PDFDocument4.prototype.setModificationDate = function(modificationDate) {
           utils_1.assertIs(modificationDate, "modificationDate", [[Date, "Date"]]);
           var key = core_1.PDFName.of("ModDate");
           this.getInfoDict().set(key, core_1.PDFString.fromDate(modificationDate));
         };
-        PDFDocument3.prototype.getPageCount = function() {
+        PDFDocument4.prototype.getPageCount = function() {
           if (this.pageCount === void 0)
             this.pageCount = this.getPages().length;
           return this.pageCount;
         };
-        PDFDocument3.prototype.getPages = function() {
+        PDFDocument4.prototype.getPages = function() {
           return this.pageCache.access();
         };
-        PDFDocument3.prototype.getPage = function(index) {
+        PDFDocument4.prototype.getPage = function(index) {
           var pages = this.getPages();
           utils_1.assertRange(index, "index", 0, pages.length - 1);
           return pages[index];
         };
-        PDFDocument3.prototype.getPageIndices = function() {
+        PDFDocument4.prototype.getPageIndices = function() {
           return utils_1.range(0, this.getPageCount());
         };
-        PDFDocument3.prototype.removePage = function(index) {
+        PDFDocument4.prototype.removePage = function(index) {
           var pageCount = this.getPageCount();
           if (this.pageCount === 0)
             throw new errors_1.RemovePageFromEmptyDocumentError();
@@ -46891,11 +46891,11 @@ var require_PDFDocument = __commonJS({
           this.catalog.removeLeafNode(index);
           this.pageCount = pageCount - 1;
         };
-        PDFDocument3.prototype.addPage = function(page) {
+        PDFDocument4.prototype.addPage = function(page) {
           utils_1.assertIs(page, "page", ["undefined", [PDFPage_1.default, "PDFPage"], Array]);
           return this.insertPage(this.getPageCount(), page);
         };
-        PDFDocument3.prototype.insertPage = function(index, page) {
+        PDFDocument4.prototype.insertPage = function(index, page) {
           var pageCount = this.getPageCount();
           utils_1.assertRange(index, "index", 0, pageCount);
           utils_1.assertIs(page, "page", ["undefined", [PDFPage_1.default, "PDFPage"], Array]);
@@ -46913,13 +46913,13 @@ var require_PDFDocument = __commonJS({
           this.pageCount = pageCount + 1;
           return page;
         };
-        PDFDocument3.prototype.copyPages = function(srcDoc, indices) {
+        PDFDocument4.prototype.copyPages = function(srcDoc, indices) {
           return tslib_1.__awaiter(this, void 0, void 0, function() {
             var copier, srcPages, copiedPages, idx, len, srcPage, copiedPage, ref;
             return tslib_1.__generator(this, function(_a) {
               switch (_a.label) {
                 case 0:
-                  utils_1.assertIs(srcDoc, "srcDoc", [[PDFDocument3, "PDFDocument"]]);
+                  utils_1.assertIs(srcDoc, "srcDoc", [[PDFDocument4, "PDFDocument"]]);
                   utils_1.assertIs(indices, "indices", [Array]);
                   return [4, srcDoc.flush()];
                 case 1:
@@ -46938,13 +46938,13 @@ var require_PDFDocument = __commonJS({
             });
           });
         };
-        PDFDocument3.prototype.copy = function() {
+        PDFDocument4.prototype.copy = function() {
           return tslib_1.__awaiter(this, void 0, void 0, function() {
             var pdfCopy, contentPages, idx, len;
             return tslib_1.__generator(this, function(_a) {
               switch (_a.label) {
                 case 0:
-                  return [4, PDFDocument3.create()];
+                  return [4, PDFDocument4.create()];
                 case 1:
                   pdfCopy = _a.sent();
                   return [4, pdfCopy.copyPages(this, this.getPageIndices())];
@@ -46980,7 +46980,7 @@ var require_PDFDocument = __commonJS({
             });
           });
         };
-        PDFDocument3.prototype.addJavaScript = function(name, script) {
+        PDFDocument4.prototype.addJavaScript = function(name, script) {
           utils_1.assertIs(name, "name", ["string"]);
           utils_1.assertIs(script, "script", ["string"]);
           var embedder = JavaScriptEmbedder_1.default.for(script, name);
@@ -46988,7 +46988,7 @@ var require_PDFDocument = __commonJS({
           var javaScript = PDFJavaScript_1.default.of(ref, this, embedder);
           this.javaScripts.push(javaScript);
         };
-        PDFDocument3.prototype.attach = function(attachment, name, options) {
+        PDFDocument4.prototype.attach = function(attachment, name, options) {
           if (options === void 0) {
             options = {};
           }
@@ -47016,7 +47016,7 @@ var require_PDFDocument = __commonJS({
             });
           });
         };
-        PDFDocument3.prototype.embedFont = function(font, options) {
+        PDFDocument4.prototype.embedFont = function(font, options) {
           if (options === void 0) {
             options = {};
           }
@@ -47059,7 +47059,7 @@ var require_PDFDocument = __commonJS({
             });
           });
         };
-        PDFDocument3.prototype.embedStandardFont = function(font, customName) {
+        PDFDocument4.prototype.embedStandardFont = function(font, customName) {
           utils_1.assertIs(font, "font", ["string"]);
           if (!utils_1.isStandardFont(font)) {
             throw new TypeError("`font` must be one of type `StandardFonts`");
@@ -47070,7 +47070,7 @@ var require_PDFDocument = __commonJS({
           this.fonts.push(pdfFont);
           return pdfFont;
         };
-        PDFDocument3.prototype.embedJpg = function(jpg) {
+        PDFDocument4.prototype.embedJpg = function(jpg) {
           return tslib_1.__awaiter(this, void 0, void 0, function() {
             var bytes, embedder, ref, pdfImage;
             return tslib_1.__generator(this, function(_a) {
@@ -47089,7 +47089,7 @@ var require_PDFDocument = __commonJS({
             });
           });
         };
-        PDFDocument3.prototype.embedPng = function(png) {
+        PDFDocument4.prototype.embedPng = function(png) {
           return tslib_1.__awaiter(this, void 0, void 0, function() {
             var bytes, embedder, ref, pdfImage;
             return tslib_1.__generator(this, function(_a) {
@@ -47108,7 +47108,7 @@ var require_PDFDocument = __commonJS({
             });
           });
         };
-        PDFDocument3.prototype.embedPdf = function(pdf, indices) {
+        PDFDocument4.prototype.embedPdf = function(pdf, indices) {
           if (indices === void 0) {
             indices = [0];
           }
@@ -47121,14 +47121,14 @@ var require_PDFDocument = __commonJS({
                     "string",
                     Uint8Array,
                     ArrayBuffer,
-                    [PDFDocument3, "PDFDocument"]
+                    [PDFDocument4, "PDFDocument"]
                   ]);
                   utils_1.assertIs(indices, "indices", [Array]);
-                  if (!(pdf instanceof PDFDocument3)) return [3, 1];
+                  if (!(pdf instanceof PDFDocument4)) return [3, 1];
                   _a = pdf;
                   return [3, 3];
                 case 1:
-                  return [4, PDFDocument3.load(pdf)];
+                  return [4, PDFDocument4.load(pdf)];
                 case 2:
                   _a = _b.sent();
                   _b.label = 3;
@@ -47140,7 +47140,7 @@ var require_PDFDocument = __commonJS({
             });
           });
         };
-        PDFDocument3.prototype.embedPage = function(page, boundingBox, transformationMatrix) {
+        PDFDocument4.prototype.embedPage = function(page, boundingBox, transformationMatrix) {
           return tslib_1.__awaiter(this, void 0, void 0, function() {
             var embeddedPage;
             return tslib_1.__generator(this, function(_a) {
@@ -47155,7 +47155,7 @@ var require_PDFDocument = __commonJS({
             });
           });
         };
-        PDFDocument3.prototype.embedPages = function(pages, boundingBoxes, transformationMatrices) {
+        PDFDocument4.prototype.embedPages = function(pages, boundingBoxes, transformationMatrices) {
           if (boundingBoxes === void 0) {
             boundingBoxes = [];
           }
@@ -47205,7 +47205,7 @@ var require_PDFDocument = __commonJS({
             });
           });
         };
-        PDFDocument3.prototype.flush = function() {
+        PDFDocument4.prototype.flush = function() {
           return tslib_1.__awaiter(this, void 0, void 0, function() {
             return tslib_1.__generator(this, function(_a) {
               switch (_a.label) {
@@ -47233,7 +47233,7 @@ var require_PDFDocument = __commonJS({
             });
           });
         };
-        PDFDocument3.prototype.save = function(options) {
+        PDFDocument4.prototype.save = function(options) {
           if (options === void 0) {
             options = {};
           }
@@ -47263,7 +47263,7 @@ var require_PDFDocument = __commonJS({
             });
           });
         };
-        PDFDocument3.prototype.saveAsBase64 = function(options) {
+        PDFDocument4.prototype.saveAsBase64 = function(options) {
           if (options === void 0) {
             options = {};
           }
@@ -47283,7 +47283,7 @@ var require_PDFDocument = __commonJS({
             });
           });
         };
-        PDFDocument3.prototype.findPageForAnnotationRef = function(ref) {
+        PDFDocument4.prototype.findPageForAnnotationRef = function(ref) {
           var pages = this.getPages();
           for (var idx = 0, len = pages.length; idx < len; idx++) {
             var page = pages[idx];
@@ -47294,7 +47294,7 @@ var require_PDFDocument = __commonJS({
           }
           return void 0;
         };
-        PDFDocument3.prototype.embedAll = function(embeddables) {
+        PDFDocument4.prototype.embedAll = function(embeddables) {
           return tslib_1.__awaiter(this, void 0, void 0, function() {
             var idx, len;
             return tslib_1.__generator(this, function(_a) {
@@ -47320,7 +47320,7 @@ var require_PDFDocument = __commonJS({
             });
           });
         };
-        PDFDocument3.prototype.updateInfoDict = function() {
+        PDFDocument4.prototype.updateInfoDict = function() {
           var pdfLib = "pdf-lib (https://github.com/Hopding/pdf-lib)";
           var now = /* @__PURE__ */ new Date();
           var info = this.getInfoDict();
@@ -47331,7 +47331,7 @@ var require_PDFDocument = __commonJS({
           if (!info.get(core_1.PDFName.of("CreationDate")))
             this.setCreationDate(now);
         };
-        PDFDocument3.prototype.getInfoDict = function() {
+        PDFDocument4.prototype.getInfoDict = function() {
           var existingInfo = this.context.lookup(this.context.trailerInfo.Info);
           if (existingInfo instanceof core_1.PDFDict)
             return existingInfo;
@@ -47339,15 +47339,15 @@ var require_PDFDocument = __commonJS({
           this.context.trailerInfo.Info = this.context.register(newInfo);
           return newInfo;
         };
-        PDFDocument3.prototype.assertFontkit = function() {
+        PDFDocument4.prototype.assertFontkit = function() {
           if (!this.fontkit)
             throw new errors_1.FontkitNotRegisteredError();
           return this.fontkit;
         };
-        return PDFDocument3;
+        return PDFDocument4;
       }()
     );
-    exports2.default = PDFDocument2;
+    exports2.default = PDFDocument3;
     function assertIsLiteralOrHexString(pdfObject) {
       if (!(pdfObject instanceof core_1.PDFHexString) && !(pdfObject instanceof core_1.PDFString)) {
         throw new core_1.UnexpectedObjectTypeError([core_1.PDFHexString, core_1.PDFString], pdfObject);
@@ -47758,12 +47758,12 @@ var require_PDFPage = __commonJS({
             graphicsState: graphicsStateKey
           }));
         };
-        PDFPage2.prototype.drawSvgPath = function(path3, options) {
+        PDFPage2.prototype.drawSvgPath = function(path4, options) {
           var _a, _b, _c, _d, _e, _f, _g, _h, _j;
           if (options === void 0) {
             options = {};
           }
-          utils_1.assertIs(path3, "path", ["string"]);
+          utils_1.assertIs(path4, "path", ["string"]);
           utils_1.assertOrUndefined(options.x, "options.x", ["number"]);
           utils_1.assertOrUndefined(options.y, "options.y", ["number"]);
           utils_1.assertOrUndefined(options.scale, "options.scale", ["number"]);
@@ -47792,7 +47792,7 @@ var require_PDFPage = __commonJS({
             options.borderColor = colors_1.rgb(0, 0, 0);
           }
           var contentStream = this.getContentStream();
-          contentStream.push.apply(contentStream, operations_1.drawSvgPath(path3, {
+          contentStream.push.apply(contentStream, operations_1.drawSvgPath(path4, {
             x: (_a = options.x) !== null && _a !== void 0 ? _a : this.x,
             y: (_b = options.y) !== null && _b !== void 0 ? _b : this.y,
             scale: options.scale,
@@ -49113,11 +49113,10 @@ __export(main_exports, {
   default: () => PdfDigitalSignaturePlugin
 });
 module.exports = __toCommonJS(main_exports);
-var import_obsidian3 = require("obsidian");
-var obsidian2 = __toESM(require("obsidian"));
-var path2 = __toESM(require("path"));
-var fs3 = __toESM(require("fs"));
-var import_crypto4 = require("crypto");
+var import_obsidian4 = require("obsidian");
+var path3 = __toESM(require("path"));
+var fs5 = __toESM(require("fs"));
+var import_crypto6 = require("crypto");
 
 // src/settings.ts
 var import_obsidian2 = require("obsidian");
@@ -49126,6 +49125,27 @@ var obsidian = __toESM(require("obsidian"));
 // src/i18n.ts
 var import_obsidian = require("obsidian");
 var en = {
+  cert_location_inside: "This certificate is inside the vault or linked into it; it may be copied by sync and backups. Choose an external path if you want to avoid this.",
+  cert_location_unknown: "The certificate location could not be confirmed. Choose a local path outside the vault and check any links, sync and backup settings.",
+  cert_private_path: "Local path outside the vault",
+  signature_mode_choose: "Choose how to sign\u2026",
+  signature_choice_required: "Choose a signature mode before signing.",
+  export_integration_unavailable: "Automatic PDF export integration is unavailable in this Obsidian version. You can still use the manual PDF signing and checking commands.",
+  export_waiting: "Waiting for PDF export: {name}",
+  export_validating: "Validating exported PDF: {name}",
+  export_timeout: "The PDF export did not finish within the allowed time. Check the exported file and try again.",
+  export_invalid: "The exported file is incomplete or could not be validated as a supported PDF. No signature was applied.",
+  export_cancelled: "PDF signing was cancelled.",
+  phase_verifying: "Checking the generated signature: {name}",
+  verify_revision_valid: "Signed revision: cryptographic signature verified.",
+  verify_revision_invalid: "Signed revision: cryptographic signature verification failed.",
+  verify_revision_unknown: "Signed revision: could not be checked.",
+  verify_coverage_full: "Coverage: the signature covers the complete current file.",
+  verify_coverage_partial: "Coverage: the current file contains data beyond the signed revision.",
+  verify_coverage_unknown: "Coverage: could not be established.",
+  verify_trust_not_checked: "Certificate trust: not checked.",
+  verify_revocation_not_checked: "Certificate revocation: not checked.",
+  verify_timestamp_not_checked: "Trusted timestamps: not checked.",
   error_file_too_large: "File too large. The maximum input size is 64 MiB for PDFs and 4 MiB for PKCS#12 certificates.",
   error_ambiguous_cert: "The certificate file contains multiple signing keys or matching certificates. Use an unambiguous signing identity.",
   error_weak_rsa: "RSA signing keys must have at least 2048 bits.",
@@ -49224,8 +49244,8 @@ var en = {
   settings_signer_name_desc: "Name displayed at the bottom-left of every page.",
   settings_page_number_name: "Display page number",
   settings_page_number_desc: "Show 'page / total' on the bottom-right of every page.",
-  settings_delay_name: "Delay before signing (seconds)",
-  settings_delay_desc: "Time to wait after file creation before applying the digital signature.",
+  settings_delay_name: "Maximum export wait (seconds)",
+  settings_delay_desc: "Maximum time to wait for a complete, stable PDF before validation and signing. This is a deadline, not a fixed delay.",
   settings_open_after_name: "Open PDF after signing",
   settings_open_after_desc: "Automatically open the signed PDF in your default viewer.",
   settings_cert_section_title: "Digital Certificate (.pfx / .p12)",
@@ -49245,6 +49265,27 @@ var en = {
   settings_btn_generate_desc: "Creates a new self-signed certificate. If the configured file exists, a different file is created and the previous certificate is preserved. This does not renew a provider-issued certificate."
 };
 var es = {
+  cert_location_inside: "Este certificado est\xE1 dentro de la b\xF3veda o enlazado a ella; puede copiarse con sincronizaciones y respaldos. Elige una ruta externa si deseas evitarlo.",
+  cert_location_unknown: "No se pudo confirmar la ubicaci\xF3n del certificado. Elige una ruta local fuera de la b\xF3veda y revisa los enlaces y la configuraci\xF3n de sincronizaciones y respaldos.",
+  cert_private_path: "Ruta local fuera de la b\xF3veda",
+  signature_mode_choose: "Elige c\xF3mo firmar\u2026",
+  signature_choice_required: "Elige un modo de firma antes de firmar.",
+  export_integration_unavailable: "La integraci\xF3n autom\xE1tica con la exportaci\xF3n PDF no est\xE1 disponible en esta versi\xF3n de Obsidian. Puedes usar los comandos manuales para firmar y comprobar PDFs.",
+  export_waiting: "Esperando la exportaci\xF3n PDF: {name}",
+  export_validating: "Validando el PDF exportado: {name}",
+  export_timeout: "La exportaci\xF3n PDF no termin\xF3 dentro del plazo permitido. Revisa el archivo exportado e int\xE9ntalo de nuevo.",
+  export_invalid: "El archivo exportado est\xE1 incompleto o no pudo validarse como PDF compatible. No se aplic\xF3 ninguna firma.",
+  export_cancelled: "Se cancel\xF3 la firma del PDF.",
+  phase_verifying: "Comprobando la firma generada: {name}",
+  verify_revision_valid: "Revisi\xF3n firmada: firma criptogr\xE1fica verificada.",
+  verify_revision_invalid: "Revisi\xF3n firmada: fall\xF3 la verificaci\xF3n de la firma criptogr\xE1fica.",
+  verify_revision_unknown: "Revisi\xF3n firmada: no se pudo comprobar.",
+  verify_coverage_full: "Cobertura: la firma abarca el archivo actual completo.",
+  verify_coverage_partial: "Cobertura: el archivo actual contiene datos posteriores a la revisi\xF3n firmada.",
+  verify_coverage_unknown: "Cobertura: no se pudo determinar.",
+  verify_trust_not_checked: "Confianza en el certificado: no comprobada.",
+  verify_revocation_not_checked: "Revocaci\xF3n del certificado: no comprobada.",
+  verify_timestamp_not_checked: "Sellos de tiempo de confianza: no comprobados.",
   error_file_too_large: "Archivo demasiado grande. El m\xE1ximo de entrada es 64 MiB para PDFs y 4 MiB para certificados PKCS#12.",
   error_ambiguous_cert: "El archivo del certificado contiene varias claves firmantes o certificados coincidentes. Usa una identidad firmante inequ\xEDvoca.",
   error_weak_rsa: "Las claves RSA de firma deben tener al menos 2048 bits.",
@@ -49343,8 +49384,8 @@ var es = {
   settings_signer_name_desc: "Texto que aparecer\xE1 en el pie de p\xE1gina a la izquierda de todas las hojas.",
   settings_page_number_name: "Mostrar n\xFAmero de p\xE1gina",
   settings_page_number_desc: "Muestra 'p\xE1gina / total' a la derecha en el pie de p\xE1gina.",
-  settings_delay_name: "Demora antes de firmar (segundos)",
-  settings_delay_desc: "Tiempo de espera tras el guardado del archivo antes de ejecutar el proceso criptogr\xE1fico.",
+  settings_delay_name: "Espera m\xE1xima de exportaci\xF3n (segundos)",
+  settings_delay_desc: "Plazo m\xE1ximo para esperar un PDF completo y estable antes de validarlo y firmarlo. Es un l\xEDmite de espera, no una demora fija.",
   settings_open_after_name: "Abrir PDF tras firmar",
   settings_open_after_desc: "Abre el archivo PDF en tu visor predeterminado una vez finalizada la firma criptogr\xE1fica.",
   settings_cert_section_title: "Certificado Digital (.pfx / .p12)",
@@ -49364,6 +49405,27 @@ var es = {
   settings_btn_generate_desc: "Crea un certificado autofirmado nuevo. Si el archivo configurado existe, se crea otro y se conserva el certificado anterior. Esto no renueva un certificado emitido por un proveedor."
 };
 var pt = {
+  cert_location_inside: "Este certificado est\xE1 dentro do cofre ou vinculado a ele; pode ser copiado pela sincroniza\xE7\xE3o e por backups. Escolha um caminho externo para evitar isso.",
+  cert_location_unknown: "N\xE3o foi poss\xEDvel confirmar a localiza\xE7\xE3o do certificado. Escolha um caminho local fora do cofre e verifique os v\xEDnculos e as configura\xE7\xF5es de sincroniza\xE7\xE3o e backup.",
+  cert_private_path: "Caminho local fora do cofre",
+  signature_mode_choose: "Escolha como assinar\u2026",
+  signature_choice_required: "Escolha um modo de assinatura antes de assinar.",
+  export_integration_unavailable: "A integra\xE7\xE3o autom\xE1tica com a exporta\xE7\xE3o PDF n\xE3o est\xE1 dispon\xEDvel nesta vers\xE3o do Obsidian. Voc\xEA pode usar os comandos manuais para assinar e verificar PDFs.",
+  export_waiting: "Aguardando a exporta\xE7\xE3o PDF: {name}",
+  export_validating: "Validando o PDF exportado: {name}",
+  export_timeout: "A exporta\xE7\xE3o PDF n\xE3o terminou dentro do prazo permitido. Verifique o arquivo exportado e tente novamente.",
+  export_invalid: "O arquivo exportado est\xE1 incompleto ou n\xE3o p\xF4de ser validado como PDF compat\xEDvel. Nenhuma assinatura foi aplicada.",
+  export_cancelled: "A assinatura do PDF foi cancelada.",
+  phase_verifying: "Verificando a assinatura gerada: {name}",
+  verify_revision_valid: "Revis\xE3o assinada: assinatura criptogr\xE1fica verificada.",
+  verify_revision_invalid: "Revis\xE3o assinada: falha na verifica\xE7\xE3o da assinatura criptogr\xE1fica.",
+  verify_revision_unknown: "Revis\xE3o assinada: n\xE3o foi poss\xEDvel verificar.",
+  verify_coverage_full: "Cobertura: a assinatura abrange o arquivo atual inteiro.",
+  verify_coverage_partial: "Cobertura: o arquivo atual cont\xE9m dados posteriores \xE0 revis\xE3o assinada.",
+  verify_coverage_unknown: "Cobertura: n\xE3o foi poss\xEDvel determinar.",
+  verify_trust_not_checked: "Confian\xE7a no certificado: n\xE3o verificada.",
+  verify_revocation_not_checked: "Revoga\xE7\xE3o do certificado: n\xE3o verificada.",
+  verify_timestamp_not_checked: "Carimbos de tempo confi\xE1veis: n\xE3o verificados.",
   error_file_too_large: "Arquivo muito grande. O tamanho m\xE1ximo de entrada \xE9 de 64 MiB para PDFs e 4 MiB para certificados PKCS#12.",
   error_ambiguous_cert: "O arquivo do certificado cont\xE9m v\xE1rias chaves de assinatura ou certificados correspondentes. Use uma identidade de assinatura inequ\xEDvoca.",
   error_weak_rsa: "As chaves RSA de assinatura devem ter pelo menos 2048 bits.",
@@ -49462,8 +49524,8 @@ var pt = {
   settings_signer_name_desc: "Texto exibido no rodap\xE9 \xE0 esquerda em todas as p\xE1ginas.",
   settings_page_number_name: "Exibir n\xFAmero da p\xE1gina",
   settings_page_number_desc: "Exibe 'p\xE1gina / total' no rodap\xE9 \xE0 direita.",
-  settings_delay_name: "Atraso antes de assinar (segundos)",
-  settings_delay_desc: "Tempo de espera ap\xF3s salvar o arquivo antes de aplicar a assinatura digital.",
+  settings_delay_name: "Espera m\xE1xima da exporta\xE7\xE3o (segundos)",
+  settings_delay_desc: "Tempo m\xE1ximo de espera por um PDF completo e est\xE1vel antes de validar e assinar. \xC9 um prazo, n\xE3o um atraso fixo.",
   settings_open_after_name: "Abrir PDF ap\xF3s assinar",
   settings_open_after_desc: "Abre o arquivo PDF no leitor padr\xE3o ap\xF3s a conclus\xE3o da assinatura.",
   settings_cert_section_title: "Certificado Digital (.pfx / .p12)",
@@ -49483,6 +49545,27 @@ var pt = {
   settings_btn_generate_desc: "Cria um novo certificado autoassinado. Se o arquivo configurado existir, outro arquivo ser\xE1 criado e o certificado anterior ser\xE1 preservado. Isso n\xE3o renova um certificado emitido por um prestador."
 };
 var it = {
+  cert_location_inside: "Questo certificato si trova nella cassaforte o \xE8 collegato ad essa; sincronizzazione e backup possono copiarlo. Scegli un percorso esterno per evitarlo.",
+  cert_location_unknown: "Impossibile confermare la posizione del certificato. Scegli un percorso locale fuori dalla cassaforte e verifica collegamenti e impostazioni di sincronizzazione e backup.",
+  cert_private_path: "Percorso locale fuori dalla cassaforte",
+  signature_mode_choose: "Scegli come firmare\u2026",
+  signature_choice_required: "Scegli una modalit\xE0 di firma prima di firmare.",
+  export_integration_unavailable: "L\u2019integrazione automatica con l\u2019esportazione PDF non \xE8 disponibile in questa versione di Obsidian. Puoi usare i comandi manuali per firmare e verificare i PDF.",
+  export_waiting: "In attesa dell\u2019esportazione PDF: {name}",
+  export_validating: "Validazione del PDF esportato: {name}",
+  export_timeout: "L\u2019esportazione PDF non \xE8 terminata entro il tempo consentito. Controlla il file esportato e riprova.",
+  export_invalid: "Il file esportato \xE8 incompleto o non \xE8 stato validato come PDF compatibile. Nessuna firma \xE8 stata applicata.",
+  export_cancelled: "La firma del PDF \xE8 stata annullata.",
+  phase_verifying: "Verifica della firma generata: {name}",
+  verify_revision_valid: "Revisione firmata: firma crittografica verificata.",
+  verify_revision_invalid: "Revisione firmata: verifica della firma crittografica non riuscita.",
+  verify_revision_unknown: "Revisione firmata: impossibile verificare.",
+  verify_coverage_full: "Copertura: la firma copre l\u2019intero file attuale.",
+  verify_coverage_partial: "Copertura: il file attuale contiene dati successivi alla revisione firmata.",
+  verify_coverage_unknown: "Copertura: impossibile determinarla.",
+  verify_trust_not_checked: "Fiducia nel certificato: non verificata.",
+  verify_revocation_not_checked: "Revoca del certificato: non verificata.",
+  verify_timestamp_not_checked: "Marche temporali attendibili: non verificate.",
   error_file_too_large: "File troppo grande. La dimensione massima in ingresso \xE8 di 64 MiB per i PDF e 4 MiB per i certificati PKCS#12.",
   error_ambiguous_cert: "Il file del certificato contiene pi\xF9 chiavi di firma o certificati corrispondenti. Usa un\u2019identit\xE0 di firma univoca.",
   error_weak_rsa: "Le chiavi RSA di firma devono avere almeno 2048 bit.",
@@ -49581,8 +49664,8 @@ var it = {
   settings_signer_name_desc: "Testo visualizzato in basso a sinistra su tutte le pagine.",
   settings_page_number_name: "Mostra numero di pagina",
   settings_page_number_desc: "Mostra 'pagina / totale' in basso a destra.",
-  settings_delay_name: "Ritardo prima della firma (secondi)",
-  settings_delay_desc: "Tempo di attesa dopo il salvataggio del file prima dell'applicazione della firma digitale.",
+  settings_delay_name: "Attesa massima dell\u2019esportazione (secondi)",
+  settings_delay_desc: "Tempo massimo per attendere un PDF completo e stabile prima di validarlo e firmarlo. \xC8 un limite, non un ritardo fisso.",
   settings_open_after_name: "Apri PDF dopo la firma",
   settings_open_after_desc: "Apre automaticamente il file PDF nel visualizzatore predefinito dopo la firma.",
   settings_cert_section_title: "Certificato Digitale (.pfx / .p12)",
@@ -49602,6 +49685,27 @@ var it = {
   settings_btn_generate_desc: "Crea un nuovo certificato autofirmato. Se il file configurato esiste, viene creato un altro file e il certificato precedente viene conservato. Non rinnova un certificato emesso da un prestatore."
 };
 var fr = {
+  cert_location_inside: "Ce certificat est dans le coffre ou lui est li\xE9 ; la synchronisation et les sauvegardes peuvent le copier. Choisissez un chemin externe pour \xE9viter cela.",
+  cert_location_unknown: "La localisation du certificat n\u2019a pas pu \xEAtre confirm\xE9e. Choisissez un chemin local hors du coffre et v\xE9rifiez les liens et les param\xE8tres de synchronisation et de sauvegarde.",
+  cert_private_path: "Chemin local hors du coffre",
+  signature_mode_choose: "Choisissez comment signer\u2026",
+  signature_choice_required: "Choisissez un mode de signature avant de signer.",
+  export_integration_unavailable: "L\u2019int\xE9gration automatique \xE0 l\u2019exportation PDF n\u2019est pas disponible dans cette version d\u2019Obsidian. Vous pouvez utiliser les commandes manuelles pour signer et v\xE9rifier les PDF.",
+  export_waiting: "En attente de l\u2019exportation PDF : {name}",
+  export_validating: "Validation du PDF export\xE9 : {name}",
+  export_timeout: "L\u2019exportation PDF n\u2019a pas termin\xE9 dans le d\xE9lai autoris\xE9. V\xE9rifiez le fichier export\xE9 et r\xE9essayez.",
+  export_invalid: "Le fichier export\xE9 est incomplet ou n\u2019a pas pu \xEAtre valid\xE9 comme PDF compatible. Aucune signature n\u2019a \xE9t\xE9 appliqu\xE9e.",
+  export_cancelled: "La signature du PDF a \xE9t\xE9 annul\xE9e.",
+  phase_verifying: "V\xE9rification de la signature cr\xE9\xE9e : {name}",
+  verify_revision_valid: "R\xE9vision sign\xE9e : signature cryptographique v\xE9rifi\xE9e.",
+  verify_revision_invalid: "R\xE9vision sign\xE9e : \xE9chec de la v\xE9rification de la signature cryptographique.",
+  verify_revision_unknown: "R\xE9vision sign\xE9e : v\xE9rification impossible.",
+  verify_coverage_full: "Couverture : la signature couvre le fichier actuel entier.",
+  verify_coverage_partial: "Couverture : le fichier actuel contient des donn\xE9es apr\xE8s la r\xE9vision sign\xE9e.",
+  verify_coverage_unknown: "Couverture : impossible \xE0 d\xE9terminer.",
+  verify_trust_not_checked: "Confiance dans le certificat : non v\xE9rifi\xE9e.",
+  verify_revocation_not_checked: "R\xE9vocation du certificat : non v\xE9rifi\xE9e.",
+  verify_timestamp_not_checked: "Horodatages de confiance : non v\xE9rifi\xE9s.",
   error_file_too_large: "Fichier trop volumineux. La taille maximale en entr\xE9e est de 64 MiB pour les PDF et de 4 MiB pour les certificats PKCS#12.",
   error_ambiguous_cert: "Le fichier du certificat contient plusieurs cl\xE9s de signature ou certificats correspondants. Utilisez une identit\xE9 de signature non ambigu\xEB.",
   error_weak_rsa: "Les cl\xE9s RSA de signature doivent comporter au moins 2048 bits.",
@@ -49682,8 +49786,8 @@ var fr = {
   settings_signer_name_desc: "Texte affich\xE9 en bas \xE0 gauche de chaque page.",
   settings_page_number_name: "Afficher le num\xE9ro de page",
   settings_page_number_desc: "Afficher \xAB page / total \xBB en bas \xE0 droite de chaque page.",
-  settings_delay_name: "D\xE9lai avant la signature (secondes)",
-  settings_delay_desc: "Temps d\u2019attente apr\xE8s l\u2019enregistrement du fichier avant la signature num\xE9rique.",
+  settings_delay_name: "Attente maximale de l\u2019exportation (secondes)",
+  settings_delay_desc: "D\xE9lai maximal pour attendre un PDF complet et stable avant validation et signature. Il s\u2019agit d\u2019une limite, pas d\u2019une attente fixe.",
   settings_open_after_name: "Ouvrir le PDF apr\xE8s la signature",
   settings_open_after_desc: "Ouvrir automatiquement le PDF sign\xE9 dans le lecteur par d\xE9faut.",
   settings_cert_section_title: "Certificat num\xE9rique (.pfx / .p12)",
@@ -49901,31 +50005,42 @@ function structuralText(input) {
   return masked.toString("latin1");
 }
 function inspectPdfSignature(buffer) {
-  const unsupported = (detail) => ({ status: "unsupported", detail });
+  const unverified = {
+    scope: "local-integrity",
+    signatureSyntax: "unsupported",
+    signedRevisionIntegrity: "unknown",
+    currentFileCoverage: "unknown",
+    certificateTrust: "not-checked",
+    revocationStatus: "not-checked",
+    timestampStatus: "not-checked"
+  };
+  const unsupported = (detail, signatureSyntax = "unsupported") => ({ ...unverified, status: "unsupported", signatureSyntax, detail });
   if (!Buffer.isBuffer(buffer) || buffer.length > 64 * 1024 * 1024) return unsupported("size-limit");
   const text = buffer.toString("latin1");
-  if (!text.startsWith("%PDF-")) return unsupported("not-a-pdf");
+  if (!text.startsWith("%PDF-")) return unsupported("not-a-pdf", "invalid");
   const structure = structuralText(buffer);
   if (structure === void 0) return unsupported("unsupported-pdf-tokenization");
   const rangePattern = /\/ByteRange\b/g;
   const firstRange = rangePattern.exec(structure);
-  if (!firstRange) return /\/Type\s*\/Sig\b|\/FT\s*\/Sig\b|\/Type\s*\/ObjStm\b/.test(structure) ? unsupported("signature-without-byte-range") : { status: "unsigned" };
+  if (!firstRange) return /\/Type\s*\/Sig\b|\/FT\s*\/Sig\b|\/Type\s*\/ObjStm\b/.test(structure) ? unsupported("signature-without-byte-range") : { ...unverified, status: "unsigned" };
   if (rangePattern.exec(structure)) return unsupported("multiple-signatures");
   try {
     const rangePosition = firstRange.index;
     const match = /^\/ByteRange\s*\[\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s*\]/.exec(structure.slice(rangePosition));
-    if (!match) return unsupported("invalid-byte-range");
+    if (!match) return unsupported("invalid-byte-range", "invalid");
     const [start, firstLength, secondStart, secondLength] = match.slice(1).map(Number);
     const end = secondStart + secondLength;
-    if (![start, firstLength, secondStart, secondLength, end].every(Number.isSafeInteger) || start !== 0 || firstLength <= rangePosition || secondStart <= firstLength || secondLength <= 0 || end > buffer.length || secondStart - firstLength > 1024 * 1024) {
-      return unsupported("invalid-byte-range");
+    const rangeIsSigned = rangePosition + match[0].length <= firstLength || rangePosition >= secondStart && rangePosition + match[0].length <= end;
+    if (![start, firstLength, secondStart, secondLength, end].every(Number.isSafeInteger) || start !== 0 || !rangeIsSigned || secondStart <= firstLength || secondLength <= 0 || end > buffer.length) {
+      return unsupported("invalid-byte-range", "invalid");
     }
-    if (!/\/Contents\s*$/.test(structure.slice(Math.max(0, firstLength - 30), firstLength))) return unsupported("invalid-contents-gap");
+    if (secondStart - firstLength > 1024 * 1024) return unsupported("signature-size-limit");
+    if (!/\/Contents\s*$/.test(structure.slice(Math.max(0, firstLength - 30), firstLength))) return unsupported("invalid-contents-gap", "invalid");
     const gap = text.slice(firstLength, secondStart);
-    if (!/^<[0-9a-fA-F]+>$/.test(gap) || (gap.length - 2) % 2) return unsupported("invalid-contents-gap");
+    if (!/^<[0-9a-fA-F]+>$/.test(gap) || (gap.length - 2) % 2) return unsupported("invalid-contents-gap", "invalid");
     const objectStart = structure.lastIndexOf(" obj", rangePosition);
     const objectEnd = structure.indexOf("endobj", rangePosition);
-    if (objectStart < 0 || objectEnd < secondStart || objectEnd >= end) return unsupported("invalid-signature-object");
+    if (objectStart < 0 || objectEnd < secondStart || objectEnd >= end) return unsupported("invalid-signature-object", "invalid");
     const dictionary = structure.slice(objectStart, objectEnd);
     const exactlyOne = (pattern) => !!pattern.exec(dictionary) && !pattern.exec(dictionary);
     if (!/\/SubFilter\s*\/adbe\.pkcs7\.detached\b/.test(dictionary) || !exactlyOne(/\/Contents\b/g) || !exactlyOne(/\/SubFilter\b/g)) return unsupported("signature-format");
@@ -49934,7 +50049,7 @@ function inspectPdfSignature(buffer) {
     const reader = f.util.createBuffer(raw.toString("binary"));
     const parseDer = f.asn1.fromDer;
     const cms = parseDer(reader, { parseAllBytes: false });
-    if (!/^\x00*$/.test(reader.getBytes())) return unsupported("nonzero-signature-padding");
+    if (!/^\x00*$/.test(reader.getBytes())) return unsupported("nonzero-signature-padding", "invalid");
     const children = (node) => {
       if (!Array.isArray(node.value)) throw new Error("ASN.1 sequence expected");
       return node.value;
@@ -49952,7 +50067,7 @@ function inspectPdfSignature(buffer) {
     const signerInfos = children(data[data.length - 1]);
     if (signerInfos.length !== 1) return unsupported("multiple-cms-signers");
     const info = children(signerInfos[0]);
-    if (info.length !== 6 || oid(children(info[2])[0]) !== "2.16.840.1.101.3.4.2.1" || oid(children(info[4])[0]) !== "1.2.840.113549.1.1.1" || info[3].tagClass !== f.asn1.Class.CONTEXT_SPECIFIC || info[3].type !== 0) {
+    if (info.length !== 6 || oid(children(info[2])[0]) !== "2.16.840.1.101.3.4.2.1" || !["1.2.840.113549.1.1.1", "1.2.840.113549.1.1.11"].includes(oid(children(info[4])[0])) || info[3].tagClass !== f.asn1.Class.CONTEXT_SPECIFIC || info[3].type !== 0) {
       return unsupported("cms-algorithm");
     }
     const identity = children(info[1]);
@@ -49984,6 +50099,10 @@ function inspectPdfSignature(buffer) {
     const appendedBytes = buffer.length - end;
     const now = Date.now();
     return {
+      ...unverified,
+      signatureSyntax: "supported",
+      signedRevisionIntegrity: cryptographicIntegrity ? "valid" : "invalid",
+      currentFileCoverage: appendedBytes === 0 ? "entire-file" : "signed-revision-only",
       status: cryptographicIntegrity && appendedBytes === 0 ? "intact" : "modified",
       cryptographicIntegrity,
       signer: certificate.subject,
@@ -50110,11 +50229,18 @@ function createSelfSignedCertificate(signerName, password, organization = "", co
     }
   ]);
   cert.sign(keys.privateKey, f.md.sha256.create());
-  const p12Asn1 = f.pkcs12.toPkcs12Asn1(keys.privateKey, cert, password, {
+  const protection = {
     generateLocalKeyId: true,
     friendlyName: signerName,
-    algorithm: "3des"
-  });
+    algorithm: "aes256",
+    prfAlgorithm: "sha256",
+    count: 1e5,
+    saltSize: 16,
+    // Forge's PKCS#12 writer supports HMAC-SHA1 only; retain its authenticated
+    // container with the same explicit iteration count. PDF signing uses SHA256.
+    useMac: true
+  };
+  const p12Asn1 = f.pkcs12.toPkcs12Asn1(keys.privateKey, cert, password, protection);
   const p12Der = f.asn1.toDer(p12Asn1).getBytes();
   return Buffer.from(p12Der, "binary");
 }
@@ -50122,6 +50248,9 @@ async function signPdfBuffer(pdfBuffer, p12Buffer, password, metadata) {
   if (!Buffer.isBuffer(pdfBuffer) || !Buffer.isBuffer(p12Buffer)) throw new TypeError("PDF and certificate must be Buffers");
   if (pdfBuffer.length > MAX_SIGNING_PDF_BYTES || p12Buffer.length > MAX_CERTIFICATE_BYTES) {
     throw new Error(t("error_file_too_large"));
+  }
+  if (metadata.expectedFingerprint !== void 0 && (0, import_crypto2.createHash)("sha256").update(pdfBuffer).digest("hex") !== metadata.expectedFingerprint) {
+    throw new Error(t("error_pdf_changed"));
   }
   const certificateInfo = inspectCertificate(p12Buffer, password);
   if (!certificateInfo.valid) {
@@ -50181,6 +50310,7 @@ async function signPdfBuffer(pdfBuffer, p12Buffer, password, metadata) {
     Buffer.from(rawBytesWithPlaceholder),
     signer
   );
+  metadata.onVerifying?.();
   if (inspectPdfSignature(signedBuffer).status !== "intact") {
     throw new Error(t("error_signing_verification"));
   }
@@ -50243,6 +50373,61 @@ async function signPdfCopy(filePath, certPath, password, metadata) {
   }
 }
 
+// src/certificate-location.ts
+var fs2 = __toESM(require("fs"));
+var os = __toESM(require("os"));
+var path2 = __toESM(require("path"));
+var import_crypto3 = require("crypto");
+function isWithin(root, candidate) {
+  const relative2 = path2.relative(root, candidate);
+  return relative2 === "" || relative2 !== ".." && !relative2.startsWith(`..${path2.sep}`) && !path2.isAbsolute(relative2);
+}
+function canonicalPath(candidate) {
+  let current = candidate;
+  const suffix = [];
+  while (true) {
+    try {
+      return path2.resolve(fs2.realpathSync(current), ...suffix);
+    } catch (error) {
+      if (error.code !== "ENOENT") return void 0;
+      try {
+        fs2.lstatSync(current);
+        return void 0;
+      } catch (statError) {
+        if (statError.code !== "ENOENT") return void 0;
+      }
+      const parent = path2.dirname(current);
+      if (parent === current) return void 0;
+      suffix.unshift(path2.basename(current));
+      current = parent;
+    }
+  }
+}
+function certificateLocation(vaultPath, candidate) {
+  if (!vaultPath || !candidate || !path2.isAbsolute(vaultPath) || vaultPath.includes("\0") || candidate.includes("\0")) return "unknown";
+  const vault = path2.resolve(vaultPath);
+  const certificate = path2.resolve(vault, candidate);
+  if (isWithin(vault, certificate)) return "inside";
+  const canonicalVault = canonicalPath(vault);
+  const canonicalCertificate = canonicalPath(certificate);
+  if (!canonicalVault || !canonicalCertificate) return "unknown";
+  return isWithin(canonicalVault, canonicalCertificate) ? "inside" : "outside";
+}
+function defaultCertificatePath(vaultPath) {
+  if (!vaultPath || !path2.isAbsolute(vaultPath) || vaultPath.includes("\0")) throw new Error("An absolute vault path is required");
+  const home = os.homedir();
+  const bases = process.platform === "win32" ? [process.env.LOCALAPPDATA, path2.join(home, "AppData", "Local")] : process.platform === "darwin" ? [path2.join(home, "Library", "Application Support")] : [process.env.XDG_DATA_HOME, path2.join(home, ".local", "share")];
+  const resolvedVault = path2.resolve(vaultPath);
+  const identity = process.platform === "win32" ? resolvedVault.toLowerCase() : resolvedVault;
+  const vaultId = (0, import_crypto3.createHash)("sha256").update(identity).digest("hex");
+  for (const base of bases) {
+    if (!base || !path2.isAbsolute(base)) continue;
+    const candidate = path2.join(base, "obsidian-pdf-digital-signature", vaultId, "certificate.pfx");
+    if (certificateLocation(vaultPath, candidate) === "outside") return candidate;
+  }
+  throw new Error("Cannot determine a local certificate location outside this vault");
+}
+
 // src/signing-policy.ts
 function normalizeSignatureMode(value) {
   return value === "approval" ? "approval" : "certify";
@@ -50277,12 +50462,14 @@ var DEFAULT_SETTINGS = {
   nombreFirmante: "Nombre del Firmante",
   mostrarNumeroPagina: true,
   delaySeconds: 5,
-  certPath: "Scripts/certificado.pfx",
+  exportTimeoutSeconds: 15,
+  certPath: "",
   certPassword: "",
   motivo: "Firma Digital",
   ubicacion: "Ciudad, Pa\xEDs",
   openAfterSigning: true,
-  signatureMode: "certify",
+  signatureMode: "approval",
+  signatureModeChosen: false,
   jurisdiction: "international"
 };
 var PdfSignatureSettingTab = class extends import_obsidian2.PluginSettingTab {
@@ -50325,8 +50512,8 @@ var PdfSignatureSettingTab = class extends import_obsidian2.PluginSettingTab {
       })
     );
     new import_obsidian2.Setting(containerEl).setName(t("settings_delay_name")).setDesc(t("settings_delay_desc")).addSlider(
-      (slider) => slider.setLimits(1, 15, 1).setValue(this.plugin.settings.delaySeconds).onChange(async (val) => {
-        this.plugin.settings.delaySeconds = val;
+      (slider) => slider.setLimits(5, 60, 1).setValue(this.plugin.settings.exportTimeoutSeconds).onChange(async (val) => {
+        this.plugin.settings.exportTimeoutSeconds = val;
         await this.plugin.saveSettings();
       })
     );
@@ -50339,7 +50526,7 @@ var PdfSignatureSettingTab = class extends import_obsidian2.PluginSettingTab {
     new import_obsidian2.Setting(containerEl).setName(t("settings_cert_section_title")).setHeading();
     this.renderCertificateStatus(containerEl);
     new import_obsidian2.Setting(containerEl).setName(t("settings_cert_path_name")).setDesc(t("settings_cert_path_desc")).addText(
-      (text) => text.setPlaceholder("Scripts/default_certificate.pfx").setValue(this.plugin.settings.certPath).onChange(async (val) => {
+      (text) => text.setPlaceholder(t("cert_private_path")).setValue(this.plugin.settings.certPath).onChange(async (val) => {
         this.plugin.settings.certPath = val.trim();
         this.scheduleCertificateStatusRefresh(containerEl);
         await this.plugin.saveSettings();
@@ -50460,11 +50647,17 @@ var PdfSignatureSettingTab = class extends import_obsidian2.PluginSettingTab {
     if (info.issuer) statusEl.createEl("p", { text: t("verify_issuer", { issuer: info.issuer }) });
     if (info.fingerprint) statusEl.createEl("p", { text: t("verify_fingerprint", { fingerprint: info.fingerprint }) });
     if (info.selfSigned !== void 0) statusEl.createEl("p", { text: t(info.selfSigned ? "verify_self_signed" : "certificate_self_signed_no") });
+    const location = certificateLocation(this.plugin.getVaultBasePath(), certPath);
+    if (location === "inside" || location === "unknown") statusEl.createEl("p", {
+      cls: "setting-item-description",
+      text: t(location === "inside" ? "cert_location_inside" : "cert_location_unknown")
+    });
   }
 };
 function renderSigningPolicySettings(containerEl, plugin, compact = false) {
-  new import_obsidian2.Setting(containerEl).setName(t("settings_signature_mode_name")).setDesc(t("settings_signature_mode_desc")).addDropdown((dropdown) => dropdown.addOption("approval", t("signature_mode_approval")).addOption("certify", t("signature_mode_certify")).setValue(plugin.settings.signatureMode).onChange(async (value) => {
-    plugin.settings.signatureMode = normalizeSignatureMode(value);
+  new import_obsidian2.Setting(containerEl).setName(t("settings_signature_mode_name")).setDesc(t("settings_signature_mode_desc")).addDropdown((dropdown) => dropdown.addOption("", t("signature_mode_choose")).addOption("approval", t("signature_mode_approval")).addOption("certify", t("signature_mode_certify")).setValue(plugin.settings.signatureModeChosen === false ? "" : plugin.settings.signatureMode).onChange(async (value) => {
+    plugin.settings.signatureModeChosen = value !== "";
+    if (value !== "") plugin.settings.signatureMode = normalizeSignatureMode(value);
     await plugin.saveSettings();
   }));
   if (compact) return;
@@ -50477,31 +50670,9 @@ function renderSigningPolicySettings(containerEl, plugin, compact = false) {
   containerEl.createEl("p", { cls: "setting-item-description", text: t("settings_signature_levels_desc") });
 }
 
-// src/file-snapshot.ts
-var fs2 = __toESM(require("fs"));
-var import_crypto3 = require("crypto");
-function fileFingerprint(filepath) {
-  const file = fs2.openSync(filepath, "r");
-  try {
-    const before = fs2.fstatSync(file);
-    if (!before.isFile() || before.size > 64 * 1024 * 1024) throw new Error("PDF size limit: 64 MiB");
-    const hash = (0, import_crypto3.createHash)("sha256");
-    const chunk = Buffer.alloc(64 * 1024);
-    let total = 0, count;
-    while ((count = fs2.readSync(file, chunk, 0, chunk.length, null)) > 0) {
-      total += count;
-      if (total > 64 * 1024 * 1024) throw new Error("PDF size limit: 64 MiB");
-      hash.update(chunk.subarray(0, count));
-    }
-    const after = fs2.fstatSync(file);
-    if (total !== before.size || before.size !== after.size || before.mtimeMs !== after.mtimeMs || before.ctimeMs !== after.ctimeMs) {
-      throw new Error("PDF changed while being read");
-    }
-    return hash.digest("hex");
-  } finally {
-    fs2.closeSync(file);
-  }
-}
+// src/obsidian-export-adapter.ts
+var import_obsidian3 = require("obsidian");
+var obsidian2 = __toESM(require("obsidian"));
 
 // src/math-print-styles.ts
 async function refreshMathPrintStyles(source, rendered) {
@@ -50521,7 +50692,7 @@ async function refreshMathPrintStyles(source, rendered) {
   await destination.fonts.ready;
 }
 
-// src/main.ts
+// src/obsidian-export-adapter.ts
 var applyStyles2 = (el, styles) => {
   const setStyles = obsidian2.setCssStyles;
   if (typeof setStyles === "function") {
@@ -50530,6 +50701,358 @@ var applyStyles2 = (el, styles) => {
     Object.assign(el.style, styles);
   }
 };
+var ObsidianExportAdapter = class {
+  constructor(plugin) {
+    this.plugin = plugin;
+    this.disabled = false;
+    this.cleanups = /* @__PURE__ */ new WeakMap();
+    this.compatibility = "unchecked";
+  }
+  disable() {
+    if (this.disabled) return;
+    this.disabled = true;
+    this.compatibility = "unavailable";
+    new import_obsidian3.Notice(t("export_integration_unavailable"), 12e3);
+  }
+  install() {
+    const plugin = this.plugin;
+    const adapter = this;
+    if (typeof import_obsidian3.Modal.prototype.open !== "function") {
+      this.disable();
+      return;
+    }
+    const originalModalOpen = import_obsidian3.Modal.prototype.open;
+    let active = true;
+    const enhancedOpen = /* @__PURE__ */ ((plugin2) => {
+      return function() {
+        const res = originalModalOpen.call(this);
+        try {
+          if (active && !adapter.disabled) adapter.enhance(this);
+        } catch {
+          adapter.disable();
+        }
+        return res;
+      };
+    })(plugin);
+    try {
+      import_obsidian3.Modal.prototype.open = enhancedOpen;
+    } catch {
+      this.disable();
+      return;
+    }
+    plugin.register(() => {
+      active = false;
+      if (import_obsidian3.Modal.prototype.open === enhancedOpen) import_obsidian3.Modal.prototype.open = originalModalOpen;
+    });
+  }
+  enhance(modal) {
+    if (this.disabled) return;
+    try {
+      this.enhanceSupported(modal);
+    } catch {
+      try {
+        if (modal && typeof modal === "object") this.cleanups.get(modal)?.();
+      } catch {
+      }
+      this.disable();
+    }
+  }
+  enhanceSupported(modal) {
+    const plugin = this.plugin;
+    if (this.disabled) return;
+    const targetModal = modal;
+    if (targetModal && typeof targetModal.printToPdf === "function" && targetModal.file && (!targetModal.modalEl || !targetModal.contentEl || typeof targetModal.contentEl.createDiv !== "function" || !targetModal.modalEl.classList?.contains("mod-narrow"))) {
+      this.disable();
+      return;
+    }
+    if (!targetModal || !targetModal.file || !targetModal.modalEl || !targetModal.modalEl.classList.contains("mod-narrow") || typeof targetModal.printToPdf !== "function") {
+      return;
+    }
+    if (targetModal._firmaPdfEnhanced) return;
+    const originalPrintToPdf = targetModal.printToPdf;
+    const originalPrint = targetModal.print;
+    let settingContainer;
+    let restoreLayout;
+    const cleanup = () => {
+      targetModal.printToPdf = originalPrintToPdf;
+      targetModal.print = originalPrint;
+      targetModal._firmaPdfEnhanced = false;
+      restoreLayout?.();
+      settingContainer?.remove?.();
+    };
+    this.cleanups.set(targetModal, cleanup);
+    plugin.register(cleanup);
+    targetModal._firmaPdfEnhanced = true;
+    this.compatibility = "available";
+    if (plugin.settings.firmarCriptograficamente) {
+      plugin.checkCertificateExpirationAlert();
+    }
+    settingContainer = targetModal.contentEl.createDiv({
+      cls: "firma-pdf-modal-toggle-container"
+    });
+    applyStyles2(settingContainer, {
+      marginTop: "14px",
+      paddingTop: "10px",
+      borderTop: "1px solid var(--background-modifier-border)"
+    });
+    settingContainer.createEl("h3", { text: t("modal_options_title") });
+    new import_obsidian3.Setting(settingContainer).setName(t("modal_crypto_name")).setDesc(t("modal_crypto_desc")).addToggle((toggle) => {
+      toggle.setValue(plugin.settings.firmarCriptograficamente);
+      toggle.onChange(async (val) => {
+        plugin.settings.firmarCriptograficamente = val;
+        await plugin.saveSettings();
+      });
+    });
+    renderSigningPolicySettings(settingContainer, plugin, true);
+    new import_obsidian3.Setting(settingContainer).setName(t("modal_signer_name")).setDesc(t("modal_signer_desc")).addToggle((toggle) => {
+      toggle.setValue(plugin.settings.mostrarNombreFirmante);
+      toggle.onChange(async (val) => {
+        plugin.settings.mostrarNombreFirmante = val;
+        await plugin.saveSettings();
+      });
+    });
+    new import_obsidian3.Setting(settingContainer).setName(t("modal_page_number_name")).setDesc(t("modal_page_number_desc")).addToggle((toggle) => {
+      toggle.setValue(plugin.settings.mostrarNumeroPagina);
+      toggle.onChange(async (val) => {
+        plugin.settings.mostrarNumeroPagina = val;
+        await plugin.saveSettings();
+      });
+    });
+    let renderingFailed = false;
+    if (originalPrint) {
+      targetModal.print = async (container, component, includeName) => {
+        try {
+          const rendered = await originalPrint.call(targetModal, container, component, includeName);
+          await refreshMathPrintStyles(targetModal.contentEl.ownerDocument, rendered);
+          return rendered;
+        } catch (error) {
+          renderingFailed = true;
+          throw error;
+        }
+      };
+    }
+    let exporting = false;
+    targetModal.printToPdf = async (options) => {
+      if (exporting || this.disabled) return;
+      if (plugin.settings.firmarCriptograficamente && plugin.settings.signatureModeChosen === false) {
+        new import_obsidian3.Notice(t("signature_choice_required"));
+        return;
+      }
+      exporting = true;
+      try {
+        const exportSettings = { ...plugin.settings };
+        const shouldSignCryptographically = plugin.settings.firmarCriptograficamente;
+        const shouldAddFooter = plugin.settings.mostrarNombreFirmante || plugin.settings.mostrarNumeroPagina;
+        if (shouldAddFooter && options) {
+          options.displayHeaderFooter = true;
+          options.headerTemplate = "<div></div>";
+          const pageNumHtml = plugin.settings.mostrarNumeroPagina ? `<span style="margin-left: auto;"><span class="pageNumber"></span> / <span class="totalPages"></span></span>` : "";
+          const signerNameHtml = plugin.settings.mostrarNombreFirmante ? `<span>${plugin.settings.nombreFirmante.replace(/[&<>"']/g, (char) => ({
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;"
+          })[char])}</span>` : "";
+          options.footerTemplate = `
+          <div style="font-size: 7pt; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; width: 100%; padding: 0 15mm; display: flex; align-items: center; color: #999; -webkit-print-color-adjust: exact;">
+            ${signerNameHtml}
+            ${pageNumHtml}
+          </div>
+        `;
+          if (options.marginsType === 1 || options.marginsType === 2) {
+            options.marginsType = 0;
+            if (options.margins) delete options.margins;
+          }
+        }
+        if (shouldSignCryptographically && options && plugin.settings.openAfterSigning) {
+          options.open = false;
+        }
+        renderingFailed = false;
+        const result = await originalPrintToPdf.call(targetModal, options);
+        if (!renderingFailed && shouldSignCryptographically && options && typeof options.filepath === "string") {
+          plugin.scheduleSigning(options.filepath, exportSettings);
+        }
+        return result;
+      } finally {
+        exporting = false;
+      }
+    };
+  }
+};
+
+// src/export-readiness.ts
+var import_timers = require("timers");
+var fs3 = __toESM(require("fs"));
+var import_crypto4 = require("crypto");
+var import_pdf_lib2 = __toESM(require_cjs());
+var MAX_PDF_BYTES = 64 * 1024 * 1024;
+var ExportReadinessError = class extends Error {
+  constructor(code) {
+    super(code);
+    this.code = code;
+    this.name = "ExportReadinessError";
+  }
+};
+var bounded = (value, fallback, min, max) => Number.isFinite(value) ? Math.max(min, Math.min(max, Math.floor(value))) : fallback;
+function sameFile(a, b) {
+  return a.dev === b.dev && a.ino === b.ino && a.size === b.size && a.mtimeMs === b.mtimeMs && a.ctimeMs === b.ctimeMs;
+}
+function checkAbort(signal) {
+  if (signal?.aborted) throw new ExportReadinessError("EXPORT_ABORTED");
+}
+async function pause(ms, signal) {
+  checkAbort(signal);
+  await new Promise((resolve3, reject) => {
+    const abort = () => {
+      (0, import_timers.clearTimeout)(timer);
+      signal?.removeEventListener("abort", abort);
+      reject(new ExportReadinessError("EXPORT_ABORTED"));
+    };
+    const timer = (0, import_timers.setTimeout)(() => {
+      signal?.removeEventListener("abort", abort);
+      resolve3();
+    }, ms);
+    signal?.addEventListener("abort", abort, { once: true });
+    if (signal?.aborted) abort();
+  });
+}
+async function readCandidate(filepath, collect, signal) {
+  const handle = await fs3.promises.open(filepath, "r");
+  try {
+    const before = await handle.stat();
+    if (!before.isFile() || before.size > MAX_PDF_BYTES) throw new ExportReadinessError("EXPORT_TOO_LARGE");
+    const chunks = [];
+    const chunk = Buffer.alloc(64 * 1024);
+    const hash = (0, import_crypto4.createHash)("sha256");
+    let total = 0;
+    for (; ; ) {
+      checkAbort(signal);
+      const { bytesRead } = await handle.read(chunk, 0, chunk.length, null);
+      if (!bytesRead) break;
+      total += bytesRead;
+      if (total > MAX_PDF_BYTES) throw new ExportReadinessError("EXPORT_TOO_LARGE");
+      hash.update(chunk.subarray(0, bytesRead));
+      if (collect) chunks.push(Buffer.from(chunk.subarray(0, bytesRead)));
+    }
+    const after = await handle.stat();
+    const current = await fs3.promises.stat(filepath);
+    return {
+      fingerprint: hash.digest("hex"),
+      bytes: collect ? Buffer.concat(chunks, total) : Buffer.alloc(0),
+      stable: total === before.size && sameFile(before, after) && sameFile(after, current)
+    };
+  } finally {
+    await handle.close();
+  }
+}
+function hasCompleteEnvelope(bytes) {
+  if (!/^%PDF-\d\.\d/.test(bytes.subarray(0, 16).toString("latin1"))) return false;
+  const tail = bytes.subarray(Math.max(0, bytes.length - 4096)).toString("latin1");
+  const end = /startxref\s+(\d+)\s+%%EOF[\x00\x09\x0a\x0c\x0d\x20]*$/.exec(tail);
+  if (!end) return false;
+  const offset = Number(end[1]);
+  if (!Number.isSafeInteger(offset) || offset < 0 || offset >= bytes.length) return false;
+  const xref = bytes.subarray(offset, Math.min(bytes.length, offset + 2048)).toString("latin1");
+  return /^xref\s/.test(xref) || /^\d+\s+\d+\s+obj\b/.test(xref) && /\/Type\s*\/XRef\b/.test(xref.split("stream")[0]);
+}
+async function waitForExport(filepath, options = {}) {
+  const timeout = bounded(options.timeoutMs, 15e3, 50, 6e4);
+  const poll = bounded(options.pollMs, 200, 5, 1e3);
+  const checks = bounded(options.stableChecks, 3, 2, 10);
+  const deadline = Date.now() + timeout;
+  let previous, stableCount = 0, invalid = false, lastInvalidFingerprint;
+  options.onPhase?.("waiting");
+  for (; ; ) {
+    checkAbort(options.signal);
+    if (Date.now() >= deadline) throw new ExportReadinessError(invalid ? "EXPORT_INVALID" : "EXPORT_TIMEOUT");
+    try {
+      const stat = await fs3.promises.stat(filepath);
+      if (!stat.isFile() || stat.size > MAX_PDF_BYTES) throw new ExportReadinessError("EXPORT_TOO_LARGE");
+      stableCount = previous && sameFile(previous, stat) ? stableCount + 1 : 1;
+      previous = stat;
+      if (stat.size > 0 && stableCount >= checks) {
+        const candidate = await readCandidate(filepath, true, options.signal);
+        if (candidate.stable) {
+          if (options.expectedFingerprint && candidate.fingerprint !== options.expectedFingerprint) throw new ExportReadinessError("EXPORT_CHANGED");
+          if (candidate.fingerprint !== lastInvalidFingerprint && hasCompleteEnvelope(candidate.bytes)) {
+            options.onPhase?.("validating");
+            let valid = false;
+            try {
+              const doc = await withPdfDecodeBudget(() => import_pdf_lib2.PDFDocument.load(candidate.bytes, {
+                ignoreEncryption: false,
+                throwOnInvalidObject: true,
+                parseSpeed: 20
+              }));
+              valid = doc.getPageCount() > 0 && !doc.context.enumerateIndirectObjects().some(([, object]) => object instanceof import_pdf_lib2.PDFInvalidObject);
+            } catch {
+              checkAbort(options.signal);
+            }
+            checkAbort(options.signal);
+            if (Date.now() >= deadline) throw new ExportReadinessError("EXPORT_TIMEOUT");
+            if (valid) {
+              const after = await readCandidate(filepath, false, options.signal);
+              if (!after.stable || after.fingerprint !== candidate.fingerprint) throw new ExportReadinessError("EXPORT_CHANGED");
+              return candidate.fingerprint;
+            }
+          }
+          invalid = true;
+          lastInvalidFingerprint = candidate.fingerprint;
+        }
+      }
+    } catch (error) {
+      if (error instanceof ExportReadinessError) throw error;
+      if (error.code !== "ENOENT" && error.code !== "EBUSY" && error.code !== "EPERM") throw error;
+      previous = void 0;
+      stableCount = 0;
+    }
+    await pause(Math.min(poll, Math.max(1, deadline - Date.now())), options.signal);
+  }
+}
+
+// src/file-snapshot.ts
+var fs4 = __toESM(require("fs"));
+var import_crypto5 = require("crypto");
+function fileFingerprint(filepath) {
+  const file = fs4.openSync(filepath, "r");
+  try {
+    const before = fs4.fstatSync(file);
+    if (!before.isFile() || before.size > 64 * 1024 * 1024) throw new Error("PDF size limit: 64 MiB");
+    const hash = (0, import_crypto5.createHash)("sha256");
+    const chunk = Buffer.alloc(64 * 1024);
+    let total = 0, count;
+    while ((count = fs4.readSync(file, chunk, 0, chunk.length, null)) > 0) {
+      total += count;
+      if (total > 64 * 1024 * 1024) throw new Error("PDF size limit: 64 MiB");
+      hash.update(chunk.subarray(0, count));
+    }
+    const after = fs4.fstatSync(file);
+    if (total !== before.size || before.size !== after.size || before.mtimeMs !== after.mtimeMs || before.ctimeMs !== after.ctimeMs) {
+      throw new Error("PDF changed while being read");
+    }
+    return hash.digest("hex");
+  } finally {
+    fs4.closeSync(file);
+  }
+}
+function completeExportFingerprint(filepath) {
+  const file = fs4.openSync(filepath, "r");
+  try {
+    const size = fs4.fstatSync(file).size;
+    if (size > 64 * 1024 * 1024) throw new Error("PDF size limit: 64 MiB");
+    if (size < 12) return void 0;
+    const head = Buffer.alloc(5);
+    fs4.readSync(file, head, 0, 5, 0);
+    const tail = Buffer.alloc(Math.min(size, 2048));
+    fs4.readSync(file, tail, 0, tail.length, size - tail.length);
+    if (head.toString("ascii") !== "%PDF-" || !/%%EOF[\x00\x09\x0a\x0c\x0d\x20]*$/.test(tail.toString("latin1"))) return void 0;
+  } finally {
+    fs4.closeSync(file);
+  }
+  return fileFingerprint(filepath);
+}
+
+// src/main.ts
 function getElectron() {
   try {
     const win = window;
@@ -50538,12 +51061,14 @@ function getElectron() {
     return null;
   }
 }
-var PdfDigitalSignaturePlugin = class extends import_obsidian3.Plugin {
+var PdfDigitalSignaturePlugin = class extends import_obsidian4.Plugin {
   constructor() {
     super(...arguments);
     this.settings = { ...DEFAULT_SETTINGS };
     this.pendingSigning = /* @__PURE__ */ new Set();
     this.stopped = false;
+    this.signingControllers = /* @__PURE__ */ new Map();
+    this.exportAdapter = new ObsidianExportAdapter(this);
   }
   async onload() {
     this.stopped = false;
@@ -50556,7 +51081,7 @@ var PdfDigitalSignaturePlugin = class extends import_obsidian3.Plugin {
       callback: async () => {
         this.settings.firmarCriptograficamente = !this.settings.firmarCriptograficamente;
         await this.saveSettings();
-        new import_obsidian3.Notice(
+        new import_obsidian4.Notice(
           this.settings.firmarCriptograficamente ? t("notice_signature_toggled_on") : t("notice_signature_toggled_off")
         );
       }
@@ -50592,7 +51117,7 @@ var PdfDigitalSignaturePlugin = class extends import_obsidian3.Plugin {
       });
     }
     this.registerEvent(this.app.workspace.on("file-menu", (menu, file) => {
-      if (!(file instanceof import_obsidian3.TFile) || file.extension.toLowerCase() !== "pdf") return;
+      if (!(file instanceof import_obsidian4.TFile) || file.extension.toLowerCase() !== "pdf") return;
       menu.addItem((item) => item.setTitle(t("cmd_sign_existing")).setIcon("signature").onClick(() => {
         void this.reviewSignExistingPdf(this.resolveAbsolutePath(file.path));
       }));
@@ -50606,20 +51131,31 @@ var PdfDigitalSignaturePlugin = class extends import_obsidian3.Plugin {
   }
   onunload() {
     this.stopped = true;
+    for (const controller of this.signingControllers.values()) controller.abort();
+    this.signingControllers.clear();
     this.pendingSigning.clear();
   }
   async loadSettings() {
     const savedSettings = await this.loadData() || {};
     const secretId = "obsidian-pdf-digital-signature-certificate-password";
     const storedPassword = this.app.secretStorage.getSecret(secretId);
-    const password = storedPassword ?? savedSettings.certPassword ?? (0, import_crypto4.randomUUID)();
+    const password = storedPassword ?? savedSettings.certPassword ?? (0, import_crypto6.randomUUID)();
     if (storedPassword === null) this.app.secretStorage.setSecret(secretId, password);
     this.settings = Object.assign({}, DEFAULT_SETTINGS, {
       nombreFirmante: t("default_signer_name"),
       motivo: t("default_reason"),
       ubicacion: t("default_location")
     }, savedSettings, { certPassword: password });
-    this.settings.signatureMode = normalizeSignatureMode(savedSettings.signatureMode);
+    const newInstallation = Object.keys(savedSettings).length === 0;
+    this.settings.signatureMode = savedSettings.signatureMode === "approval" || savedSettings.signatureMode === "certify" ? savedSettings.signatureMode : newInstallation ? "approval" : "certify";
+    this.settings.signatureModeChosen = typeof savedSettings.signatureModeChosen === "boolean" ? savedSettings.signatureModeChosen : !newInstallation;
+    if (typeof savedSettings.certPath !== "string") {
+      try {
+        this.settings.certPath = defaultCertificatePath(this.getVaultBasePath());
+      } catch {
+        this.settings.certPath = "";
+      }
+    }
     this.settings.jurisdiction = normalizeJurisdiction(savedSettings.jurisdiction);
     if (!Object.prototype.hasOwnProperty.call(savedSettings, "firmarCriptograficamente")) {
       const legacyEnabled = Boolean(savedSettings.firmarPdf ?? DEFAULT_SETTINGS.firmarPdf);
@@ -50639,18 +51175,18 @@ var PdfDigitalSignaturePlugin = class extends import_obsidian3.Plugin {
     await this.saveSettings();
   }
   getVaultBasePath() {
-    const adapter = this.app.vault.adapter;
-    if (adapter instanceof import_obsidian3.FileSystemAdapter) {
+    const adapter = this.app.vault?.adapter;
+    if (adapter instanceof import_obsidian4.FileSystemAdapter) {
       return adapter.getBasePath();
     }
-    return adapter.basePath || "";
+    return adapter?.basePath || "";
   }
   resolveAbsolutePath(relOrAbsPath) {
     if (!relOrAbsPath.trim()) throw new Error(t("error_empty_cert_path"));
-    if (path2.isAbsolute(relOrAbsPath)) {
+    if (path3.isAbsolute(relOrAbsPath)) {
       return relOrAbsPath;
     }
-    return path2.join(this.getVaultBasePath(), relOrAbsPath);
+    return path3.join(this.getVaultBasePath(), relOrAbsPath);
   }
   checkCertificateExpirationAlert() {
     if (!this.settings.certPath.trim()) return;
@@ -50658,14 +51194,14 @@ var PdfDigitalSignaturePlugin = class extends import_obsidian3.Plugin {
     const info = getCertificateInfo(certPath, this.settings.certPassword);
     if (!info.exists || !info.valid && !info.isExpired) return;
     if (info.isExpired) {
-      new import_obsidian3.Notice(
+      new import_obsidian4.Notice(
         t("notice_cert_expired", {
           date: info.notAfter?.toLocaleDateString(getLanguage()) || "N/A"
         }),
         15e3
       );
     } else if (info.isExpiringSoon) {
-      new import_obsidian3.Notice(
+      new import_obsidian4.Notice(
         t("notice_cert_expiring_soon", {
           days: info.daysRemaining || 0,
           date: info.notAfter?.toLocaleDateString(getLanguage()) || "N/A"
@@ -50676,13 +51212,13 @@ var PdfDigitalSignaturePlugin = class extends import_obsidian3.Plugin {
   }
   async generateCertificate() {
     let certPath = this.resolveAbsolutePath(this.settings.certPath);
-    if (fs3.existsSync(certPath)) {
-      const ext = path2.extname(certPath);
-      certPath = certPath.slice(0, certPath.length - ext.length) + `.self-signed-${(0, import_crypto4.randomUUID)().slice(0, 8)}.pfx`;
+    if (fs5.existsSync(certPath)) {
+      const ext = path3.extname(certPath);
+      certPath = certPath.slice(0, certPath.length - ext.length) + `.self-signed-${(0, import_crypto6.randomUUID)().slice(0, 8)}.pfx`;
     }
     const p12Buffer = createSelfSignedCertificate(this.settings.nombreFirmante, this.settings.certPassword);
-    await fs3.promises.mkdir(path2.dirname(certPath), { recursive: true });
-    await fs3.promises.writeFile(certPath, p12Buffer, { flag: "wx", mode: 384 });
+    await fs5.promises.mkdir(path3.dirname(certPath), { recursive: true });
+    await fs5.promises.writeFile(certPath, p12Buffer, { flag: "wx", mode: 384 });
     if (this.settings.certPath !== certPath) {
       this.settings.certPath = certPath;
       await this.saveSettings();
@@ -50690,191 +51226,82 @@ var PdfDigitalSignaturePlugin = class extends import_obsidian3.Plugin {
     return certPath;
   }
   hookPdfModal() {
-    const originalModalOpen = import_obsidian3.Modal.prototype.open;
-    let active = true;
-    const enhancedOpen = /* @__PURE__ */ ((plugin) => {
-      return function() {
-        const res = originalModalOpen.call(this);
-        try {
-          if (active) plugin.inspectAndEnhanceModal(this);
-        } catch {
-        }
-        return res;
-      };
-    })(this);
-    import_obsidian3.Modal.prototype.open = enhancedOpen;
-    this.register(() => {
-      active = false;
-      if (import_obsidian3.Modal.prototype.open === enhancedOpen) import_obsidian3.Modal.prototype.open = originalModalOpen;
-    });
+    this.exportAdapter.install();
   }
   inspectAndEnhanceModal(modal) {
-    const targetModal = modal;
-    if (!targetModal || !targetModal.file || !targetModal.modalEl || !targetModal.modalEl.classList.contains("mod-narrow") || typeof targetModal.printToPdf !== "function") {
-      return;
-    }
-    if (targetModal._firmaPdfEnhanced) return;
-    targetModal._firmaPdfEnhanced = true;
-    if (this.settings.firmarCriptograficamente) {
-      this.checkCertificateExpirationAlert();
-    }
-    const settingContainer = targetModal.contentEl.createDiv({
-      cls: "firma-pdf-modal-toggle-container"
-    });
-    applyStyles2(settingContainer, {
-      marginTop: "14px",
-      paddingTop: "10px",
-      borderTop: "1px solid var(--background-modifier-border)"
-    });
-    settingContainer.createEl("h3", { text: t("modal_options_title") });
-    new import_obsidian3.Setting(settingContainer).setName(t("modal_crypto_name")).setDesc(t("modal_crypto_desc")).addToggle((toggle) => {
-      toggle.setValue(this.settings.firmarCriptograficamente);
-      toggle.onChange(async (val) => {
-        this.settings.firmarCriptograficamente = val;
-        await this.saveSettings();
-      });
-    });
-    renderSigningPolicySettings(settingContainer, this, true);
-    new import_obsidian3.Setting(settingContainer).setName(t("modal_signer_name")).setDesc(t("modal_signer_desc")).addToggle((toggle) => {
-      toggle.setValue(this.settings.mostrarNombreFirmante);
-      toggle.onChange(async (val) => {
-        this.settings.mostrarNombreFirmante = val;
-        await this.saveSettings();
-      });
-    });
-    new import_obsidian3.Setting(settingContainer).setName(t("modal_page_number_name")).setDesc(t("modal_page_number_desc")).addToggle((toggle) => {
-      toggle.setValue(this.settings.mostrarNumeroPagina);
-      toggle.onChange(async (val) => {
-        this.settings.mostrarNumeroPagina = val;
-        await this.saveSettings();
-      });
-    });
-    const originalPrintToPdf = targetModal.printToPdf;
-    const originalPrint = targetModal.print;
-    let renderingFailed = false;
-    if (originalPrint) {
-      targetModal.print = async (container, component, includeName) => {
-        try {
-          const rendered = await originalPrint.call(targetModal, container, component, includeName);
-          await refreshMathPrintStyles(targetModal.contentEl.ownerDocument, rendered);
-          return rendered;
-        } catch (error) {
-          renderingFailed = true;
-          throw error;
-        }
-      };
-    }
-    targetModal.printToPdf = async (options) => {
-      const exportSettings = { ...this.settings };
-      const shouldSignCryptographically = this.settings.firmarCriptograficamente;
-      const shouldAddFooter = this.settings.mostrarNombreFirmante || this.settings.mostrarNumeroPagina;
-      if (shouldAddFooter && options) {
-        options.displayHeaderFooter = true;
-        options.headerTemplate = "<div></div>";
-        const pageNumHtml = this.settings.mostrarNumeroPagina ? `<span style="margin-left: auto;"><span class="pageNumber"></span> / <span class="totalPages"></span></span>` : "";
-        const signerNameHtml = this.settings.mostrarNombreFirmante ? `<span>${this.settings.nombreFirmante.replace(/[&<>"']/g, (char) => ({
-          "&": "&amp;",
-          "<": "&lt;",
-          ">": "&gt;",
-          '"': "&quot;",
-          "'": "&#39;"
-        })[char])}</span>` : "";
-        options.footerTemplate = `
-          <div style="font-size: 7pt; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; width: 100%; padding: 0 15mm; display: flex; align-items: center; color: #999; -webkit-print-color-adjust: exact;">
-            ${signerNameHtml}
-            ${pageNumHtml}
-          </div>
-        `;
-        if (options.marginsType === 1 || options.marginsType === 2) {
-          options.marginsType = 0;
-          if (options.margins) delete options.margins;
-        }
-      }
-      if (shouldSignCryptographically && options && this.settings.openAfterSigning) {
-        options.open = false;
-      }
-      renderingFailed = false;
-      const result = await originalPrintToPdf.call(targetModal, options);
-      if (!renderingFailed && shouldSignCryptographically && options && typeof options.filepath === "string") {
-        this.scheduleSigning(options.filepath, exportSettings);
-      }
-      return result;
-    };
-    this.register(() => {
-      targetModal.printToPdf = originalPrintToPdf;
-      targetModal.print = originalPrint;
-      targetModal._firmaPdfEnhanced = false;
-      settingContainer.remove();
-    });
+    this.exportAdapter.enhance(modal);
   }
-  scheduleSigning(filepath, settings = this.settings, preserveOriginal = false) {
+  async scheduleSigning(filepath, settings = this.settings, preserveOriginal = false) {
     if (this.stopped) return;
-    const jobPath = path2.resolve(filepath);
+    const jobPath = path3.resolve(filepath);
     if (this.pendingSigning.has(jobPath)) {
-      new import_obsidian3.Notice(t("notice_already_pending"));
+      this.signingControllers.get(jobPath)?.abort();
+      new import_obsidian4.Notice(t("notice_pending_changed"));
       return;
     }
-    let fingerprint;
-    try {
-      fingerprint = fileFingerprint(filepath);
-    } catch (error) {
-      new import_obsidian3.Notice(t("notice_signing_error", { name: path2.basename(filepath), error: error instanceof Error ? error.message : String(error) }));
-      return;
-    }
+    const controller = new AbortController();
     this.pendingSigning.add(jobPath);
+    this.signingControllers.set(jobPath, controller);
     const jobSettings = { ...settings };
-    const delaySec = Math.min(15, Math.max(1, parseInt(String(jobSettings.delaySeconds), 10) || 5));
-    const delayMs = delaySec * 1e3;
-    const baseName = path2.basename(filepath);
-    new import_obsidian3.Notice(
-      t("notice_saved_countdown", { name: baseName, delay: delaySec }),
-      delayMs
-    );
-    this.registerInterval(window.setTimeout(() => {
-      if (this.stopped) {
-        this.pendingSigning.delete(jobPath);
-        return;
+    const baseName = path3.basename(filepath);
+    const status = new import_obsidian4.Notice(t("export_waiting", { name: baseName }), 0);
+    const update = (text) => {
+      status.setMessage?.(text);
+    };
+    try {
+      let expectedFingerprint;
+      try {
+        expectedFingerprint = preserveOriginal ? fileFingerprint(filepath) : completeExportFingerprint(filepath);
+      } catch (error) {
+        if (!["ENOENT", "EBUSY", "EPERM"].includes(error.code || "")) throw error;
       }
-      void (async () => {
-        const signingNotice = new import_obsidian3.Notice(
-          t("notice_signing_in_progress", { name: baseName }),
-          0
-        );
-        try {
-          if (fileFingerprint(filepath) !== fingerprint) throw new Error(t("notice_pending_changed"));
-          const signedPath = await this.executeDigitalSignature(filepath, jobSettings, preserveOriginal) || filepath;
-          signingNotice.hide();
-          new import_obsidian3.Notice(
-            t("notice_signing_success", { name: path2.basename(signedPath) }),
-            6e3
-          );
-          if (!this.stopped && jobSettings.openAfterSigning) {
-            const electron = getElectron();
-            if (electron?.shell) {
-              try {
-                const error = await electron.shell.openPath(signedPath);
-                if (error) new import_obsidian3.Notice(t("notice_open_error", { error }));
-              } catch (error) {
-                new import_obsidian3.Notice(t("notice_open_error", { error: error instanceof Error ? error.message : String(error) }));
-              }
-            }
+      const timeout = Math.max(5, Math.min(60, Number(jobSettings.exportTimeoutSeconds) || 15));
+      const fingerprint = await waitForExport(filepath, {
+        expectedFingerprint,
+        timeoutMs: timeout * 1e3,
+        signal: controller.signal,
+        onPhase: (phase) => update(t(phase === "validating" ? "export_validating" : "export_waiting", { name: baseName }))
+      });
+      if (this.stopped || controller.signal.aborted) return;
+      if (fileFingerprint(filepath) !== fingerprint) throw Object.assign(new Error(t("notice_pending_changed")), { code: "EXPORT_CHANGED" });
+      update(t("notice_signing_in_progress", { name: baseName }));
+      const signedPath = await this.executeDigitalSignature(
+        filepath,
+        jobSettings,
+        preserveOriginal,
+        () => update(t("phase_verifying", { name: baseName })),
+        fingerprint
+      ) || filepath;
+      if (this.stopped) return;
+      new import_obsidian4.Notice(t("notice_signing_success", { name: path3.basename(signedPath) }), 6e3);
+      if (jobSettings.openAfterSigning) {
+        const shell = getElectron()?.shell;
+        if (shell) {
+          try {
+            const error = await shell.openPath(signedPath);
+            if (error) new import_obsidian4.Notice(t("notice_open_error", { error }));
+          } catch (error) {
+            new import_obsidian4.Notice(t("notice_open_error", { error: error instanceof Error ? error.message : String(error) }));
           }
-        } catch (err) {
-          signingNotice.hide();
-          const msg = err instanceof Error ? err.message : String(err);
-          new import_obsidian3.Notice(
-            t("notice_signing_error", { name: baseName, error: msg }),
-            12e3
-          );
-        } finally {
-          this.pendingSigning.delete(jobPath);
         }
-      })();
-    }, delayMs));
+      }
+    } catch (error) {
+      if (!this.stopped) {
+        const code = error.code;
+        const message = code === "EXPORT_TIMEOUT" ? t("export_timeout") : code === "EXPORT_INVALID" ? t("export_invalid") : code === "EXPORT_ABORTED" ? t("export_cancelled") : code === "EXPORT_CHANGED" ? t("notice_pending_changed") : code === "EXPORT_TOO_LARGE" ? t("error_file_too_large") : error instanceof Error ? error.message : String(error);
+        new import_obsidian4.Notice(t("notice_signing_error", { name: baseName, error: message }), 12e3);
+      }
+    } finally {
+      status.hide();
+      this.pendingSigning.delete(jobPath);
+      this.signingControllers.delete(jobPath);
+    }
   }
-  async executeDigitalSignature(filepath, settings = this.settings, preserveOriginal = false) {
+  async executeDigitalSignature(filepath, settings = this.settings, preserveOriginal = false, onVerifying, expectedFingerprint) {
     const certPath = this.resolveAbsolutePath(settings.certPath);
     const metadata = {
+      onVerifying,
+      expectedFingerprint,
       signatureMode: normalizeSignatureMode(settings.signatureMode),
       signerName: settings.nombreFirmante,
       reason: settings.motivo,
@@ -50892,7 +51319,7 @@ var PdfDigitalSignaturePlugin = class extends import_obsidian3.Plugin {
   }
   async verifyPdf(filepath) {
     try {
-      const file = await fs3.promises.open(filepath, "r");
+      const file = await fs5.promises.open(filepath, "r");
       let bytes;
       try {
         if ((await file.stat()).size > 64 * 1024 * 1024) throw new Error(t("verify_unsupported"));
@@ -50901,14 +51328,16 @@ var PdfDigitalSignaturePlugin = class extends import_obsidian3.Plugin {
         await file.close();
       }
       const result = inspectPdfSignature(bytes);
-      const modal = new import_obsidian3.Modal(this.app);
+      const modal = new import_obsidian4.Modal(this.app);
       modal.titleEl.setText(t("verify_title"));
       modal.contentEl.style.overflowWrap = "anywhere";
-      modal.contentEl.createEl("p", { text: path2.basename(filepath) });
-      modal.contentEl.createEl("p", { text: t(`verify_${result.status}`) });
-      if (result.status === "modified" && result.cryptographicIntegrity !== void 0) modal.contentEl.createEl("p", {
-        text: t(result.cryptographicIntegrity ? "verify_crypto_intact" : "verify_crypto_failed")
-      });
+      modal.contentEl.createEl("p", { text: path3.basename(filepath) });
+      modal.contentEl.createEl("p", { text: t(result.signedRevisionIntegrity === "valid" ? "verify_revision_valid" : result.signedRevisionIntegrity === "invalid" ? "verify_revision_invalid" : "verify_revision_unknown") });
+      modal.contentEl.createEl("p", { text: t(result.currentFileCoverage === "entire-file" ? "verify_coverage_full" : result.currentFileCoverage === "signed-revision-only" ? "verify_coverage_partial" : "verify_coverage_unknown") });
+      if (result.status === "unsupported" || result.status === "unsigned") modal.contentEl.createEl("p", { text: t(`verify_${result.status}`) });
+      modal.contentEl.createEl("p", { text: t("verify_trust_not_checked") });
+      modal.contentEl.createEl("p", { text: t("verify_revocation_not_checked") });
+      modal.contentEl.createEl("p", { text: t("verify_timestamp_not_checked") });
       if (result.appendedBytes) modal.contentEl.createEl("p", { text: t("verify_appended", { bytes: result.appendedBytes }) });
       if (result.certificateIssuer) modal.contentEl.createEl("p", { text: t("verify_issuer", { issuer: result.certificateIssuer }) });
       if (result.certificateFingerprint) modal.contentEl.createEl("p", { text: t("verify_fingerprint", { fingerprint: result.certificateFingerprint }) });
@@ -50920,7 +51349,7 @@ var PdfDigitalSignaturePlugin = class extends import_obsidian3.Plugin {
       modal.contentEl.createEl("p", { text: t("verify_limits"), cls: "setting-item-description" });
       modal.open();
     } catch (error) {
-      new import_obsidian3.Notice(t("verify_error", { error: error instanceof Error ? error.message : String(error) }));
+      new import_obsidian4.Notice(t("verify_error", { error: error instanceof Error ? error.message : String(error) }));
     }
   }
   async promptVerifyExistingPdf() {
@@ -50937,20 +51366,26 @@ var PdfDigitalSignaturePlugin = class extends import_obsidian3.Plugin {
       });
       if (!result.canceled && result.filePaths.length) await this.verifyPdf(result.filePaths[0]);
     } catch (error) {
-      new import_obsidian3.Notice(t("verify_error", { error: error instanceof Error ? error.message : String(error) }));
+      new import_obsidian4.Notice(t("verify_error", { error: error instanceof Error ? error.message : String(error) }));
     }
   }
   async reviewSignExistingPdf(filepath) {
-    const modal = new import_obsidian3.Modal(this.app);
+    const modal = new import_obsidian4.Modal(this.app);
     modal.titleEl.setText(t("signing_review_title"));
-    modal.contentEl.createEl("p", { text: t("signing_review_file", { name: path2.basename(filepath) }) });
+    modal.contentEl.createEl("p", { text: t("signing_review_file", { name: path3.basename(filepath) }) });
     const certPath = this.settings.certPath.trim() ? this.resolveAbsolutePath(this.settings.certPath) : "";
     const info = getCertificateInfo(certPath, this.settings.certPassword);
     modal.contentEl.createEl("p", { text: t("signing_review_certificate", { name: info.commonName || t("settings_cert_status_not_found") }) });
     if (!info.valid) modal.contentEl.createEl("p", { text: info.error || t("error_invalid_cert") });
     renderSigningPolicySettings(modal.contentEl, this, true);
+    const location = certPath ? certificateLocation(this.getVaultBasePath(), certPath) : "unknown";
+    if (location !== "outside") modal.contentEl.createEl("p", { text: t(location === "inside" ? "cert_location_inside" : "cert_location_unknown") });
     modal.contentEl.createEl("p", { text: t("signing_review_copy") });
-    new import_obsidian3.Setting(modal.contentEl).addButton((button) => button.setButtonText(t("action_cancel")).onClick(() => modal.close())).addButton((button) => button.setButtonText(t("signing_review_action")).setCta().setDisabled(!info.valid).onClick(() => {
+    new import_obsidian4.Setting(modal.contentEl).addButton((button) => button.setButtonText(t("action_cancel")).onClick(() => modal.close())).addButton((button) => button.setButtonText(t("signing_review_action")).setCta().setDisabled(!info.valid).onClick(() => {
+      if (this.settings.signatureModeChosen === false) {
+        new import_obsidian4.Notice(t("signature_choice_required"));
+        return;
+      }
       button.setDisabled(true);
       modal.close();
       this.scheduleSigning(filepath, { ...this.settings }, true);
@@ -50974,11 +51409,11 @@ var PdfDigitalSignaturePlugin = class extends import_obsidian3.Plugin {
         await this.reviewSignExistingPdf(res.filePaths[0]);
       }
     } catch (error) {
-      new import_obsidian3.Notice(t("notice_dialog_error", { error: error instanceof Error ? error.message : String(error) }));
+      new import_obsidian4.Notice(t("notice_dialog_error", { error: error instanceof Error ? error.message : String(error) }));
     }
   }
 };
-var ExistingPdfModal = class extends import_obsidian3.SuggestModal {
+var ExistingPdfModal = class extends import_obsidian4.SuggestModal {
   constructor(plugin, verify2 = false) {
     super(plugin.app);
     this.plugin = plugin;

@@ -29,6 +29,33 @@ const cloneCertificate = () => forge.pki.certificateFromAsn1(forge.pki.certifica
 const makePfx = (certs, signingKey = key) => Buffer.from(forge.asn1.toDer(forge.pkcs12.toPkcs12Asn1(signingKey, certs, password, { algorithm: '3des' })).getBytes(), 'binary');
 async function pdfBytes() { const doc = await PDFDocument.create(); doc.addPage(); return Buffer.from(await doc.save()); }
 
+test('new PKCS#12 uses authenticated AES-256 PBES2 with explicit hardened derivation parameters', () => {
+  const container = forge.asn1.fromDer(original.toString('binary'));
+  const authenticatedSafe = forge.asn1.fromDer(container.value[1].value[1].value[0].value);
+  const safeBags = authenticatedSafe.value.flatMap(content => forge.asn1.fromDer(content.value[1].value[0].value).value);
+  assert.equal(safeBags.some(bag => forge.asn1.derToOid(bag.value[0].value) === forge.pki.oids.keyBag), false);
+  const encrypted = safeBags.find(bag => forge.asn1.derToOid(bag.value[0].value) === forge.pki.oids.pkcs8ShroudedKeyBag).value[1].value[0];
+  const algorithm = encrypted.value[0];
+  assert.equal(forge.asn1.derToOid(algorithm.value[0].value), '1.2.840.113549.1.5.13');
+  const [kdf, cipher] = algorithm.value[1].value;
+  assert.equal(forge.asn1.derToOid(kdf.value[0].value), '1.2.840.113549.1.5.12');
+  assert.equal(forge.asn1.derToInteger(kdf.value[1].value[1].value), 100000);
+  assert.equal(kdf.value[1].value[0].value.length, 16);
+  assert.equal(forge.asn1.derToOid(kdf.value[1].value.at(-1).value[0].value), '1.2.840.113549.2.9');
+  assert.equal(forge.asn1.derToOid(cipher.value[0].value), '2.16.840.1.101.3.4.1.42');
+  const mac = container.value[2];
+  assert.equal(forge.asn1.derToOid(mac.value[0].value[0].value[0].value), forge.pki.oids.sha1, 'Forge writer provides HMAC-SHA1; do not advertise a different MAC');
+  assert.equal(forge.asn1.derToInteger(mac.value[2].value), 100000);
+  assert.equal(mac.value[1].value.length, 16);
+});
+
+test('legacy 3DES certificates remain readable and usable alongside new AES-256 certificates', async () => {
+  const signed = await signer.signPdfBuffer(await pdfBytes(), makePfx(certificate), password, { signerName: 'Legacy compatibility' });
+  assert.equal(load('verifier').inspectPdfSignature(signed).status, 'intact');
+  const updated = await signer.signPdfBuffer(await pdfBytes(), original, password, { signerName: 'AES compatibility' });
+  assert.equal(load('verifier').inspectPdfSignature(updated).status, 'intact');
+});
+
 test('rejects ambiguous certificates sharing a key instead of checking one and signing another', async () => {
   const expired = cloneCertificate(); expired.serialNumber = '42';
   expired.validity.notAfter = new Date(Date.now() - 86400000);
@@ -177,4 +204,25 @@ test('certificate summary checks the file size before reading the PFX', () => {
     const info = signer.getCertificateInfo(cert, password);
     assert.equal(info.valid, false); assert.match(info.error, /large|limit/i); assert.equal(reads, 0);
   } finally { fs.statSync = originalStat; fs.readFileSync = originalRead; fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('review fingerprint binds signing to approved bytes before certificate parsing or output', async () => {
+  const reviewed = await PDFDocument.create(); reviewed.addPage(); reviewed.setTitle('Reviewed A');
+  const replacement = await PDFDocument.create(); replacement.addPage(); replacement.setTitle('Replacement B');
+  const bytesA = Buffer.from(await reviewed.save()); const bytesB = Buffer.from(await replacement.save());
+  const expectedA = crypto.createHash('sha256').update(bytesA).digest('hex');
+  const metadata = { signerName: 'Policy', expectedFingerprint: expectedA };
+  await assert.rejects(signer.signPdfBuffer(bytesB, Buffer.alloc(0), password, metadata), /changed/i);
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pdf-review-fingerprint-'));
+  try {
+    const source = path.join(dir, 'document.pdf'); const cert = path.join(dir, 'certificate.pfx');
+    fs.writeFileSync(source, bytesB); fs.writeFileSync(cert, Buffer.alloc(0));
+    for (const sign of [signer.signPdfFile, signer.signPdfCopy]) {
+      await assert.rejects(sign(source, cert, password, metadata), /changed/i);
+    }
+    assert.deepEqual(fs.readFileSync(source), bytesB);
+    assert.deepEqual(fs.readdirSync(dir).sort(), ['certificate.pfx', 'document.pdf']);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+  const signed = await signer.signPdfBuffer(bytesA, original, password, metadata);
+  assert.equal(load('verifier').inspectPdfSignature(signed).status, 'intact');
 });

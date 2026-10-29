@@ -1,5 +1,16 @@
 # Firma Digitale PDF per Obsidian
 
+## Novità della versione 1.2.0
+
+Una nuova installazione richiede di scegliere esplicitamente Firma di integrità o Certifica prima di firmare; la scelta viene ricordata. Le scelte già salvate vengono conservate. Certifica richiede che non vi siano modifiche successive secondo DocMDP P=1; i lettori compatibili valutano questa regola, ma altri programmi possono modificare il PDF.
+
+I nuovi certificati autofirmati usano una directory locale esterna alla cassaforte, separata per cassaforte. I percorsi esistenti vengono conservati senza spostare file. Le impostazioni avvertono se un certificato è nella cassaforte, vi è collegato o la sua posizione non è determinabile. Verifica l’esposizione a sincronizzazioni e backup anche se il percorso sembra esterno. I nuovi PKCS#12 cifrano la chiave privata con AES-256/PBES2, PBKDF2 con PRF SHA-256 e 100.000 iterazioni. Il generatore node-forge usa ancora HMAC-SHA1 per il MAC del contenitore; questa limitazione viene dichiarata senza affermare l’uso di un MAC moderno.
+
+La firma attende un PDF completo e stabile e lo valida invece di imporre un ritardo fisso. Il limite predefinito è di 15 secondi, regolabile da 5 a 60. L’integrazione dell’esportazione è isolata in un adattatore; se non compatibile, i comandi manuali rimangono disponibili. La verifica distingue l’integrità della revisione firmata dalla copertura del file attuale; fiducia, revoca e marche temporali attendibili sono esplicitamente non verificate.
+
+Le prove d’interoperabilità includono PDF sintetici generati indipendentemente con pyHanko e risultati attesi verificati indipendentemente. Un vero PDF con due firme digitali viene segnalato come non supportato da questo verificatore limitato. Non si affermano interoperabilità universale, fiducia nel certificato o sufficienza giuridica. Firma incrementale, servizi TSA e validazione di liste di fiducia non sono supportati.
+
+
 ## Firmare e verificare nella versione 1.1.1
 
 Usa il menu contestuale del file PDF o i comandi del PDF attivo per firmarlo o verificarlo. La firma di un PDF esistente mostra file, certificato e modalità da rivedere, poi crea una copia .signed.pdf (con suffisso univoco se necessario) conservando l'originale. I PDF esportati vengono firmati dopo l'esportazione. Se un file cambia nella coda di firma, l'operazione viene rifiutata per non usare impostazioni precedenti sul documento attuale. Se Windows blocca la sostituzione di un PDF esportato, il plugin crea una copia firmata .signed.pdf senza forzare la scrittura sul file bloccato; il nome mostrato e il PDF aperto in seguito corrispondono a quella copia.
@@ -11,7 +22,7 @@ I limiti d'ingresso sono 64 MiB per PDF e 4 MiB per certificato PKCS#12. Anche l
 
 ## Scegliere come firmare
 
-- **Certifica — nessuna modifica consentita**, opzione predefinita, aggiunge una regola DocMDP con permesso `P=1`. I lettori compatibili possono rifiutare modifiche successive secondo questa regola. I programmi che la ignorano possono comunque modificare il PDF.
+- **Certifica — nessuna modifica consentita**, scelta esplicita, aggiunge una regola DocMDP con permesso `P=1`. I lettori compatibili possono rifiutare modifiche successive secondo questa regola. I programmi che la ignorano possono comunque modificare il PDF.
 - **Firma di integrità** firma la revisione attuale senza certificazione. Un lettore può mostrare la firma originale come crittograficamente valida e segnalare revisioni successive; verifica lo stato delle modifiche del documento attuale.
 - **Paese o contesto giuridico** cambia solo l'orientamento, non il certificato, l'identità, il formato o lo status giuridico. Verifica i requisiti del destinatario.
 
@@ -57,7 +68,7 @@ La firma permette di verificare se il contenuto firmato è cambiato. La fiducia 
 - 🎛️ **Integrazione Nativa in Obsidian:**
   Appare con tre controlli indipendenti nella finestra ufficiale **«Esporta in PDF»** e ricorda la tua preferenza.
 - ⏱️ **Automazione Intelligente:**
-  Attende un intervallo configurabile (predefinito: 5 secondi) per la scrittura sicura su disco, applica la firma e apre il PDF firmato nel lettore predefinito.
+  Attende un PDF completo e stabile entro il limite configurato (15 secondi per impostazione predefinita), lo valida, firma e apre se abilitato.
 - 🔑 **Generatore di Certificati Integrato:**
   Genera un certificato autofirmato valido per 3 anni direttamente dalle impostazioni del plugin.
 - 🛡️ **100% Privato e Offline:**
@@ -72,7 +83,7 @@ La firma permette di verificare se il contenuto firmato è cambiato. La fiducia 
 3. Clicca su **Esporta in PDF** e scegli dove salvare il file.
 4. Il plugin automaticamente:
    - Esporta la nota con il tuo nome nel piè di pagina di ogni pagina.
-   - Mostra un conto alla rovescia di 5 secondi.
+   - Attende e valida il PDF completo, mostrando la fase attuale.
    - Applica la firma con il certificato `.pfx`.
    - Apre il PDF finale firmato se questa opzione è attiva.
 

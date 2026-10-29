@@ -7,7 +7,6 @@ import {
   SuggestModal,
   TFile,
 } from "obsidian";
-import * as obsidian from "obsidian";
 import * as path from "path";
 import * as fs from "fs";
 import { randomUUID } from "crypto";
@@ -25,19 +24,11 @@ import {
 } from "./signer";
 import { t, getLanguage } from "./i18n";
 import { normalizeSignatureMode, normalizeJurisdiction } from "./signing-policy";
-import { fileFingerprint } from "./file-snapshot";
+import { ObsidianExportAdapter } from "./obsidian-export-adapter";
+import { waitForExport } from "./export-readiness";
+import { defaultCertificatePath, certificateLocation } from "./certificate-location";
+import { completeExportFingerprint, fileFingerprint } from "./file-snapshot";
 import { inspectPdfSignature } from "./verifier";
-import { refreshMathPrintStyles } from "./math-print-styles";
-
-// Helper para setCssStyles seguro contra versiones de tipos antiguas
-const applyStyles = (el: HTMLElement, styles: Record<string, string>): void => {
-  const setStyles = (obsidian as { setCssStyles?: (e: HTMLElement, s: Record<string, string>) => void }).setCssStyles;
-  if (typeof setStyles === "function") {
-    setStyles(el, styles);
-  } else {
-    Object.assign(el.style, styles);
-  }
-};
 
 interface ElectronModule {
   shell?: { openPath: (path: string) => Promise<string> };
@@ -57,6 +48,7 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
   settings: PdfSignatureSettings = { ...DEFAULT_SETTINGS };
   private pendingSigning = new Set<string>();
   private stopped = false;
+  private signingControllers = new Map<string, AbortController>();
 
   async onload(): Promise<void> {
     this.stopped = false;
@@ -130,6 +122,8 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
 
   onunload(): void {
     this.stopped = true;
+    for (const controller of this.signingControllers.values()) controller.abort();
+    this.signingControllers.clear();
     this.pendingSigning.clear();
   }
 
@@ -143,7 +137,15 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
       nombreFirmante: t("default_signer_name"), motivo: t("default_reason"), ubicacion: t("default_location"),
     }, savedSettings, { certPassword: password });
 
-    this.settings.signatureMode = normalizeSignatureMode(savedSettings.signatureMode);
+    const newInstallation = Object.keys(savedSettings).length === 0;
+    this.settings.signatureMode = savedSettings.signatureMode === "approval" || savedSettings.signatureMode === "certify"
+      ? savedSettings.signatureMode : newInstallation ? "approval" : "certify";
+    this.settings.signatureModeChosen = typeof savedSettings.signatureModeChosen === "boolean"
+      ? savedSettings.signatureModeChosen : !newInstallation;
+    if (typeof savedSettings.certPath !== "string") {
+      try { this.settings.certPath = defaultCertificatePath(this.getVaultBasePath()); }
+      catch { this.settings.certPath = ""; }
+    }
     this.settings.jurisdiction = normalizeJurisdiction(savedSettings.jurisdiction);
 
     if (!Object.prototype.hasOwnProperty.call(savedSettings, "firmarCriptograficamente")) {
@@ -169,11 +171,11 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
   }
 
   getVaultBasePath(): string {
-    const adapter = this.app.vault.adapter;
+    const adapter = this.app.vault?.adapter;
     if (adapter instanceof FileSystemAdapter) {
       return adapter.getBasePath();
     }
-    return (adapter as unknown as { basePath?: string }).basePath || "";
+    return (adapter as unknown as { basePath?: string } | undefined)?.basePath || "";
   }
 
   resolveAbsolutePath(relOrAbsPath: string): string {
@@ -226,242 +228,77 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
     return certPath;
   }
 
-  hookPdfModal(): void {
-    const originalModalOpen = Modal.prototype.open;
-    let active = true;
+  private exportAdapter = new ObsidianExportAdapter(this);
+  hookPdfModal(): void { this.exportAdapter.install(); }
+  inspectAndEnhanceModal(modal: unknown): void { this.exportAdapter.enhance(modal); }
 
-    const enhancedOpen = ((plugin: PdfDigitalSignaturePlugin) => {
-      return function (this: Modal) {
-        const res = originalModalOpen.call(this);
-        try {
-          if (active) plugin.inspectAndEnhanceModal(this);
-        } catch {
-          // Ignorar errores de inspecciÃ³n
-        }
-        return res;
-      };
-    })(this);
-    Modal.prototype.open = enhancedOpen;
-
-    this.register(() => {
-      active = false;
-      if (Modal.prototype.open === enhancedOpen) Modal.prototype.open = originalModalOpen;
-    });
-  }
-
-  inspectAndEnhanceModal(modal: unknown): void {
-    const targetModal = modal as {
-      file?: unknown;
-      modalEl?: HTMLElement;
-      printToPdf?: (opts: Record<string, unknown>) => Promise<unknown>;
-      print?: (container: HTMLElement, component: unknown, includeName: boolean) => Promise<HTMLElement>;
-      _firmaPdfEnhanced?: boolean;
-      contentEl: HTMLElement;
-    };
-
-    if (
-      !targetModal ||
-      !targetModal.file ||
-      !targetModal.modalEl ||
-      !targetModal.modalEl.classList.contains("mod-narrow") ||
-      typeof targetModal.printToPdf !== "function"
-    ) {
-      return;
-    }
-
-    if (targetModal._firmaPdfEnhanced) return;
-    targetModal._firmaPdfEnhanced = true;
-
-    if (this.settings.firmarCriptograficamente) {
-      this.checkCertificateExpirationAlert();
-    }
-
-    const settingContainer = targetModal.contentEl.createDiv({
-      cls: "firma-pdf-modal-toggle-container",
-    });
-    applyStyles(settingContainer, {
-      marginTop: "14px",
-      paddingTop: "10px",
-      borderTop: "1px solid var(--background-modifier-border)",
-    });
-
-    settingContainer.createEl("h3", { text: t("modal_options_title") });
-
-    new Setting(settingContainer)
-      .setName(t("modal_crypto_name"))
-      .setDesc(t("modal_crypto_desc"))
-      .addToggle((toggle) => {
-        toggle.setValue(this.settings.firmarCriptograficamente);
-        toggle.onChange(async (val) => {
-          this.settings.firmarCriptograficamente = val;
-          await this.saveSettings();
-        });
-      });
-
-    renderSigningPolicySettings(settingContainer, this, true);
-
-    new Setting(settingContainer)
-      .setName(t("modal_signer_name"))
-      .setDesc(t("modal_signer_desc"))
-      .addToggle((toggle) => {
-        toggle.setValue(this.settings.mostrarNombreFirmante);
-        toggle.onChange(async (val) => {
-          this.settings.mostrarNombreFirmante = val;
-          await this.saveSettings();
-        });
-      });
-
-    new Setting(settingContainer)
-      .setName(t("modal_page_number_name"))
-      .setDesc(t("modal_page_number_desc"))
-      .addToggle((toggle) => {
-        toggle.setValue(this.settings.mostrarNumeroPagina);
-        toggle.onChange(async (val) => {
-          this.settings.mostrarNumeroPagina = val;
-          await this.saveSettings();
-        });
-      });
-
-    const originalPrintToPdf = targetModal.printToPdf;
-    const originalPrint = targetModal.print;
-    let renderingFailed = false;
-    if (originalPrint) {
-      targetModal.print = async (container, component, includeName) => {
-        try {
-          const rendered = await originalPrint.call(targetModal, container, component, includeName);
-          await refreshMathPrintStyles(targetModal.contentEl.ownerDocument, rendered);
-          return rendered;
-        } catch (error) {
-          renderingFailed = true;
-          throw error;
-        }
-      };
-    }
-
-    targetModal.printToPdf = async (options: Record<string, unknown>) => {
-      const exportSettings = { ...this.settings };
-      const shouldSignCryptographically = this.settings.firmarCriptograficamente;
-      const shouldAddFooter = this.settings.mostrarNombreFirmante || this.settings.mostrarNumeroPagina;
-
-      if (shouldAddFooter && options) {
-        options.displayHeaderFooter = true;
-        options.headerTemplate = "<div></div>";
-
-        const pageNumHtml = this.settings.mostrarNumeroPagina
-          ? `<span style="margin-left: auto;"><span class="pageNumber"></span> / <span class="totalPages"></span></span>`
-          : "";
-        const signerNameHtml = this.settings.mostrarNombreFirmante
-          ? `<span>${this.settings.nombreFirmante.replace(/[&<>"']/g, (char) => ({
-              "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
-            }[char]!))}</span>`
-          : "";
-
-        options.footerTemplate = `
-          <div style="font-size: 7pt; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; width: 100%; padding: 0 15mm; display: flex; align-items: center; color: #999; -webkit-print-color-adjust: exact;">
-            ${signerNameHtml}
-            ${pageNumHtml}
-          </div>
-        `;
-
-        if (options.marginsType === 1 || options.marginsType === 2) {
-          options.marginsType = 0;
-          if (options.margins) delete options.margins;
-        }
-
-      }
-
-      if (shouldSignCryptographically && options && this.settings.openAfterSigning) {
-        options.open = false;
-      }
-
-      renderingFailed = false;
-      const result = await originalPrintToPdf.call(targetModal, options);
-
-      if (!renderingFailed && shouldSignCryptographically && options && typeof options.filepath === "string") {
-        this.scheduleSigning(options.filepath, exportSettings);
-      }
-
-      return result;
-    };
-    this.register(() => {
-      targetModal.printToPdf = originalPrintToPdf;
-      targetModal.print = originalPrint;
-      targetModal._firmaPdfEnhanced = false;
-      settingContainer.remove();
-    });
-  }
-
-  scheduleSigning(filepath: string, settings = this.settings, preserveOriginal = false): void {
+  async scheduleSigning(filepath: string, settings = this.settings, preserveOriginal = false): Promise<void> {
     if (this.stopped) return;
     const jobPath = path.resolve(filepath);
     if (this.pendingSigning.has(jobPath)) {
-      new Notice(t("notice_already_pending"));
+      this.signingControllers.get(jobPath)?.abort();
+      new Notice(t("notice_pending_changed"));
       return;
     }
-    let fingerprint: string;
-    try { fingerprint = fileFingerprint(filepath); }
-    catch (error) {
-      new Notice(t("notice_signing_error", { name: path.basename(filepath), error: error instanceof Error ? error.message : String(error) }));
-      return;
-    }
+    const controller = new AbortController();
     this.pendingSigning.add(jobPath);
+    this.signingControllers.set(jobPath, controller);
     const jobSettings = { ...settings };
-    const delaySec = Math.min(15, Math.max(1, parseInt(String(jobSettings.delaySeconds), 10) || 5));
-    const delayMs = delaySec * 1000;
     const baseName = path.basename(filepath);
-
-    new Notice(
-      t("notice_saved_countdown", { name: baseName, delay: delaySec }),
-      delayMs
-    );
-
-    this.registerInterval(window.setTimeout(() => {
-      if (this.stopped) { this.pendingSigning.delete(jobPath); return; }
-      void (async () => {
-        const signingNotice = new Notice(
-          t("notice_signing_in_progress", { name: baseName }),
-          0
-        );
-
-        try {
-          if (fileFingerprint(filepath) !== fingerprint) throw new Error(t("notice_pending_changed"));
-          const signedPath = await this.executeDigitalSignature(filepath, jobSettings, preserveOriginal) || filepath;
-          signingNotice.hide();
-
-          new Notice(
-            t("notice_signing_success", { name: path.basename(signedPath) }),
-            6000
-          );
-
-          if (!this.stopped && jobSettings.openAfterSigning) {
-            const electron = getElectron();
-            if (electron?.shell) {
-              try {
-                const error = await electron.shell.openPath(signedPath);
-                if (error) new Notice(t("notice_open_error", { error }));
-              } catch (error) {
-                new Notice(t("notice_open_error", { error: error instanceof Error ? error.message : String(error) }));
-              }
-            }
+    const status = new Notice(t("export_waiting", { name: baseName }), 0);
+    const update = (text: string) => { status.setMessage?.(text); };
+    try {
+      // A complete existing revision is pinned immediately. Incomplete new exports
+      // can finish writing, but a second job for the same destination cancels this one.
+      let expectedFingerprint: string | undefined;
+      try { expectedFingerprint = preserveOriginal ? fileFingerprint(filepath) : completeExportFingerprint(filepath); }
+      catch (error) { if (!["ENOENT", "EBUSY", "EPERM"].includes((error as NodeJS.ErrnoException).code || "")) throw error; }
+      const timeout = Math.max(5, Math.min(60, Number(jobSettings.exportTimeoutSeconds) || 15));
+      const fingerprint = await waitForExport(filepath, {
+        expectedFingerprint, timeoutMs: timeout * 1000, signal: controller.signal,
+        onPhase: (phase) => update(t(phase === "validating" ? "export_validating" : "export_waiting", { name: baseName })),
+      });
+      if (this.stopped || controller.signal.aborted) return;
+      if (fileFingerprint(filepath) !== fingerprint) throw Object.assign(new Error(t("notice_pending_changed")), { code: "EXPORT_CHANGED" });
+      update(t("notice_signing_in_progress", { name: baseName }));
+      const signedPath = await this.executeDigitalSignature(filepath, jobSettings, preserveOriginal,
+        () => update(t("phase_verifying", { name: baseName })), fingerprint) || filepath;
+      if (this.stopped) return;
+      new Notice(t("notice_signing_success", { name: path.basename(signedPath) }), 6000);
+      if (jobSettings.openAfterSigning) {
+        const shell = getElectron()?.shell;
+        if (shell) {
+          try {
+            const error = await shell.openPath(signedPath);
+            if (error) new Notice(t("notice_open_error", { error }));
+          } catch (error) {
+            new Notice(t("notice_open_error", { error: error instanceof Error ? error.message : String(error) }));
           }
-        } catch (err) {
-          signingNotice.hide();
-          const msg = err instanceof Error ? err.message : String(err);
-          new Notice(
-            t("notice_signing_error", { name: baseName, error: msg }),
-            12000
-          );
-        } finally {
-          this.pendingSigning.delete(jobPath);
         }
-      })();
-    }, delayMs));
+      }
+    } catch (error) {
+      if (!this.stopped) {
+        const code = (error as NodeJS.ErrnoException).code;
+        const message = code === "EXPORT_TIMEOUT" ? t("export_timeout")
+          : code === "EXPORT_INVALID" ? t("export_invalid")
+          : code === "EXPORT_ABORTED" ? t("export_cancelled")
+          : code === "EXPORT_CHANGED" ? t("notice_pending_changed")
+          : code === "EXPORT_TOO_LARGE" ? t("error_file_too_large")
+          : error instanceof Error ? error.message : String(error);
+        new Notice(t("notice_signing_error", { name: baseName, error: message }), 12000);
+      }
+    } finally {
+      status.hide();
+      this.pendingSigning.delete(jobPath);
+      this.signingControllers.delete(jobPath);
+    }
   }
 
-  async executeDigitalSignature(filepath: string, settings = this.settings, preserveOriginal = false): Promise<string> {
+  async executeDigitalSignature(filepath: string, settings = this.settings, preserveOriginal = false, onVerifying?: () => void, expectedFingerprint?: string): Promise<string> {
     const certPath = this.resolveAbsolutePath(settings.certPath);
 
     const metadata = {
+      onVerifying, expectedFingerprint,
       signatureMode: normalizeSignatureMode(settings.signatureMode),
       signerName: settings.nombreFirmante,
       reason: settings.motivo,
@@ -493,10 +330,14 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
       modal.titleEl.setText(t("verify_title"));
       modal.contentEl.style.overflowWrap = "anywhere";
       modal.contentEl.createEl("p", { text: path.basename(filepath) });
-      modal.contentEl.createEl("p", { text: t(`verify_${result.status}`) });
-      if (result.status === "modified" && result.cryptographicIntegrity !== undefined) modal.contentEl.createEl("p", {
-        text: t(result.cryptographicIntegrity ? "verify_crypto_intact" : "verify_crypto_failed"),
-      });
+      modal.contentEl.createEl("p", { text: t(result.signedRevisionIntegrity === "valid" ? "verify_revision_valid"
+        : result.signedRevisionIntegrity === "invalid" ? "verify_revision_invalid" : "verify_revision_unknown") });
+      modal.contentEl.createEl("p", { text: t(result.currentFileCoverage === "entire-file" ? "verify_coverage_full"
+        : result.currentFileCoverage === "signed-revision-only" ? "verify_coverage_partial" : "verify_coverage_unknown") });
+      if (result.status === "unsupported" || result.status === "unsigned") modal.contentEl.createEl("p", { text: t(`verify_${result.status}`) });
+      modal.contentEl.createEl("p", { text: t("verify_trust_not_checked") });
+      modal.contentEl.createEl("p", { text: t("verify_revocation_not_checked") });
+      modal.contentEl.createEl("p", { text: t("verify_timestamp_not_checked") });
       if (result.appendedBytes) modal.contentEl.createEl("p", { text: t("verify_appended", { bytes: result.appendedBytes }) });
       if (result.certificateIssuer) modal.contentEl.createEl("p", { text: t("verify_issuer", { issuer: result.certificateIssuer }) });
       if (result.certificateFingerprint) modal.contentEl.createEl("p", { text: t("verify_fingerprint", { fingerprint: result.certificateFingerprint }) });
@@ -533,10 +374,13 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
     modal.contentEl.createEl("p", { text: t("signing_review_certificate", { name: info.commonName || t("settings_cert_status_not_found") }) });
     if (!info.valid) modal.contentEl.createEl("p", { text: info.error || t("error_invalid_cert") });
     renderSigningPolicySettings(modal.contentEl, this, true);
+    const location = certPath ? certificateLocation(this.getVaultBasePath(), certPath) : "unknown";
+    if (location !== "outside") modal.contentEl.createEl("p", { text: t(location === "inside" ? "cert_location_inside" : "cert_location_unknown") });
     modal.contentEl.createEl("p", { text: t("signing_review_copy") });
     new Setting(modal.contentEl)
       .addButton(button => button.setButtonText(t("action_cancel")).onClick(() => modal.close()))
       .addButton(button => button.setButtonText(t("signing_review_action")).setCta().setDisabled(!info.valid).onClick(() => {
+        if (this.settings.signatureModeChosen === false) { new Notice(t("signature_choice_required")); return; }
         button.setDisabled(true);
         modal.close();
         this.scheduleSigning(filepath, { ...this.settings }, true);

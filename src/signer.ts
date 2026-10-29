@@ -28,6 +28,8 @@ function getForge(): ForgeModule {
 
 export interface SignatureMetadata {
   signerName: string;
+  onVerifying?: () => void;
+  expectedFingerprint?: string;
   signatureMode?: "approval" | "certify";
   reason?: string;
   location?: string;
@@ -175,11 +177,18 @@ export function createSelfSignedCertificate(
 
   cert.sign(keys.privateKey, f.md.sha256.create());
 
-  const p12Asn1 = f.pkcs12.toPkcs12Asn1(keys.privateKey, cert, password, {
+  const protection = {
     generateLocalKeyId: true,
     friendlyName: signerName,
-    algorithm: "3des",
-  });
+    algorithm: "aes256" as const,
+    prfAlgorithm: "sha256" as const,
+    count: 100_000,
+    saltSize: 16,
+    // Forge's PKCS#12 writer supports HMAC-SHA1 only; retain its authenticated
+    // container with the same explicit iteration count. PDF signing uses SHA256.
+    useMac: true,
+  };
+  const p12Asn1 = f.pkcs12.toPkcs12Asn1(keys.privateKey, cert, password, protection);
 
   const p12Der = f.asn1.toDer(p12Asn1).getBytes();
   return Buffer.from(p12Der, "binary");
@@ -197,6 +206,10 @@ export async function signPdfBuffer(
   if (!Buffer.isBuffer(pdfBuffer) || !Buffer.isBuffer(p12Buffer)) throw new TypeError("PDF and certificate must be Buffers");
   if (pdfBuffer.length > MAX_SIGNING_PDF_BYTES || p12Buffer.length > MAX_CERTIFICATE_BYTES) {
     throw new Error(t("error_file_too_large"));
+  }
+  if (metadata.expectedFingerprint !== undefined &&
+      createHash("sha256").update(pdfBuffer).digest("hex") !== metadata.expectedFingerprint) {
+    throw new Error(t("error_pdf_changed"));
   }
   const certificateInfo = inspectCertificate(p12Buffer, password);
   if (!certificateInfo.valid) {
@@ -265,6 +278,7 @@ export async function signPdfBuffer(
     Buffer.from(rawBytesWithPlaceholder),
     signer
   );
+  metadata.onVerifying?.();
   if (inspectPdfSignature(signedBuffer).status !== "intact") {
     throw new Error(t("error_signing_verification"));
   }

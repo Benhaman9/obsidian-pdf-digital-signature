@@ -2,6 +2,13 @@ import * as forge from "node-forge";
 import { createHash, verify, X509Certificate } from "crypto";
 
 export interface SignatureInspection {
+  scope: "local-integrity";
+  signatureSyntax: "supported" | "unsupported" | "invalid";
+  signedRevisionIntegrity: "valid" | "invalid" | "unknown";
+  currentFileCoverage: "entire-file" | "signed-revision-only" | "unknown";
+  certificateTrust: "not-checked";
+  revocationStatus: "not-checked";
+  timestampStatus: "not-checked";
   status: "intact" | "modified" | "unsigned" | "unsupported";
   signer?: string;
   appendedBytes?: number;
@@ -94,35 +101,45 @@ function structuralText(input: Buffer): string | undefined {
  * Does not establish trust, revocation, legal status or safe PDF rendering.
  */
 export function inspectPdfSignature(buffer: Buffer): SignatureInspection {
-  const unsupported = (detail: string): SignatureInspection => ({ status: "unsupported", detail });
+  const unverified = {
+    scope: "local-integrity", signatureSyntax: "unsupported", signedRevisionIntegrity: "unknown",
+    currentFileCoverage: "unknown", certificateTrust: "not-checked", revocationStatus: "not-checked",
+    timestampStatus: "not-checked",
+  } as const;
+  const unsupported = (detail: string, signatureSyntax: "unsupported" | "invalid" = "unsupported"): SignatureInspection =>
+    ({ ...unverified, status: "unsupported", signatureSyntax, detail });
   if (!Buffer.isBuffer(buffer) || buffer.length > 64 * 1024 * 1024) return unsupported("size-limit");
   const text = buffer.toString("latin1");
-  if (!text.startsWith("%PDF-")) return unsupported("not-a-pdf");
+  if (!text.startsWith("%PDF-")) return unsupported("not-a-pdf", "invalid");
   const structure = structuralText(buffer);
   if (structure === undefined) return unsupported("unsupported-pdf-tokenization");
   const rangePattern = /\/ByteRange\b/g;
   const firstRange = rangePattern.exec(structure);
   if (!firstRange) return /\/Type\s*\/Sig\b|\/FT\s*\/Sig\b|\/Type\s*\/ObjStm\b/.test(structure)
-    ? unsupported("signature-without-byte-range") : { status: "unsigned" };
+    ? unsupported("signature-without-byte-range") : { ...unverified, status: "unsigned" };
   if (rangePattern.exec(structure)) return unsupported("multiple-signatures");
   try {
     const rangePosition = firstRange.index;
     const match = /^\/ByteRange\s*\[\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s*\]/.exec(structure.slice(rangePosition));
-    if (!match) return unsupported("invalid-byte-range");
+    if (!match) return unsupported("invalid-byte-range", "invalid");
     const [start, firstLength, secondStart, secondLength] = match.slice(1).map(Number);
     const end = secondStart + secondLength;
+    // PDF dictionaries are unordered: ByteRange can precede or follow Contents.
+    const rangeIsSigned = rangePosition + match[0].length <= firstLength ||
+      (rangePosition >= secondStart && rangePosition + match[0].length <= end);
     if (![start, firstLength, secondStart, secondLength, end].every(Number.isSafeInteger) ||
-        start !== 0 || firstLength <= rangePosition || secondStart <= firstLength ||
-        secondLength <= 0 || end > buffer.length || secondStart - firstLength > 1024 * 1024) {
-      return unsupported("invalid-byte-range");
+        start !== 0 || !rangeIsSigned || secondStart <= firstLength ||
+        secondLength <= 0 || end > buffer.length) {
+      return unsupported("invalid-byte-range", "invalid");
     }
+    if (secondStart - firstLength > 1024 * 1024) return unsupported("signature-size-limit");
     // The only unsigned bytes must be the signature's hex Contents value.
-    if (!/\/Contents\s*$/.test(structure.slice(Math.max(0, firstLength - 30), firstLength))) return unsupported("invalid-contents-gap");
+    if (!/\/Contents\s*$/.test(structure.slice(Math.max(0, firstLength - 30), firstLength))) return unsupported("invalid-contents-gap", "invalid");
     const gap = text.slice(firstLength, secondStart);
-    if (!/^<[0-9a-fA-F]+>$/.test(gap) || (gap.length - 2) % 2) return unsupported("invalid-contents-gap");
+    if (!/^<[0-9a-fA-F]+>$/.test(gap) || (gap.length - 2) % 2) return unsupported("invalid-contents-gap", "invalid");
     const objectStart = structure.lastIndexOf(" obj", rangePosition);
     const objectEnd = structure.indexOf("endobj", rangePosition);
-    if (objectStart < 0 || objectEnd < secondStart || objectEnd >= end) return unsupported("invalid-signature-object");
+    if (objectStart < 0 || objectEnd < secondStart || objectEnd >= end) return unsupported("invalid-signature-object", "invalid");
     const dictionary = structure.slice(objectStart, objectEnd);
     const exactlyOne = (pattern: RegExp): boolean => !!pattern.exec(dictionary) && !pattern.exec(dictionary);
     if (!/\/SubFilter\s*\/adbe\.pkcs7\.detached\b/.test(dictionary) ||
@@ -133,7 +150,7 @@ export function inspectPdfSignature(buffer: Buffer): SignatureInspection {
     // Forge supports this options object at runtime; its declaration only lists strict:boolean.
     const parseDer = f.asn1.fromDer as unknown as (input: typeof reader, options: { parseAllBytes: boolean }) => forge.asn1.Asn1;
     const cms = parseDer(reader, { parseAllBytes: false });
-    if (!/^\x00*$/.test(reader.getBytes())) return unsupported("nonzero-signature-padding");
+    if (!/^\x00*$/.test(reader.getBytes())) return unsupported("nonzero-signature-padding", "invalid");
     const children = (node: forge.asn1.Asn1): forge.asn1.Asn1[] => {
       if (!Array.isArray(node.value)) throw new Error("ASN.1 sequence expected");
       return node.value as forge.asn1.Asn1[];
@@ -153,7 +170,8 @@ export function inspectPdfSignature(buffer: Buffer): SignatureInspection {
     if (signerInfos.length !== 1) return unsupported("multiple-cms-signers");
     const info = children(signerInfos[0]);
     if (info.length !== 6 || oid(children(info[2])[0]) !== "2.16.840.1.101.3.4.2.1" ||
-        oid(children(info[4])[0]) !== "1.2.840.113549.1.1.1" || info[3].tagClass !== f.asn1.Class.CONTEXT_SPECIFIC || info[3].type !== 0) {
+        !["1.2.840.113549.1.1.1", "1.2.840.113549.1.1.11"].includes(oid(children(info[4])[0])) ||
+        info[3].tagClass !== f.asn1.Class.CONTEXT_SPECIFIC || info[3].type !== 0) {
       return unsupported("cms-algorithm");
     }
     const identity = children(info[1]);
@@ -187,6 +205,10 @@ export function inspectPdfSignature(buffer: Buffer): SignatureInspection {
     const appendedBytes = buffer.length - end;
     const now = Date.now();
     return {
+      ...unverified,
+      signatureSyntax: "supported",
+      signedRevisionIntegrity: cryptographicIntegrity ? "valid" : "invalid",
+      currentFileCoverage: appendedBytes === 0 ? "entire-file" : "signed-revision-only",
       status: cryptographicIntegrity && appendedBytes === 0 ? "intact" : "modified",
       cryptographicIntegrity,
       signer: certificate.subject,

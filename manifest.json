@@ -1,7 +1,7 @@
 {
   "id": "pdf-digital-signature",
   "name": "PDF Digital Signature",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "minAppVersion": "1.11.5",
   "description": "Offline cryptographic digital signing (PKCS#7) and custom running footer stamping for exported PDFs.",
   "author": "Benjamín Alcalde G.",

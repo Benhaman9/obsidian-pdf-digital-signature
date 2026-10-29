@@ -41,7 +41,7 @@ function load(name) {
   modules.set(name, module);
   const code = transformSync(fs.readFileSync(path.join(__dirname, '../src', name + '.ts'), 'utf8'), { loader: 'ts', format: 'cjs', target: 'es2020' }).code;
   vm.runInNewContext(code, {
-    module, exports: module.exports, Buffer, console,
+    module, exports: module.exports, Buffer, console, process, AbortController, setTimeout, clearTimeout,
     window: mockWindow,
     require(id) { return id === 'obsidian' ? mock : id.startsWith('./') ? load(id.slice(2)) : require(id); },
   }, { filename: name + '.ts' });
@@ -91,7 +91,7 @@ test('XRef parser rejects amplified counts and malformed widths before allocatio
   assert.equal((await PDFDocument.load(bytes, { throwOnInvalidObject: true })).getPageCount(), 1);
 });
 const PluginClass = load('main').default;
-const defaults = load('settings').DEFAULT_SETTINGS;
+const defaults = { ...load('settings').DEFAULT_SETTINGS, signatureModeChosen: true };
 
 test('all five translations have the same keys and interpolation parameters', () => {
   const source = fs.readFileSync(path.join(__dirname, '../src/i18n.ts'), 'utf8');
@@ -324,26 +324,22 @@ test('native math print hook refreshes after rendering, waits for fonts and rest
   assert.equal(modal.printToPdf,originalPrintToPdf);
 });
 
-test('signing jobs deduplicate and catch rejected file dialogs', async () => {
-  const plugin = new PluginClass();
-  plugin.settings = { ...defaults };
+test('a duplicate destination cancels pending signing and rejected file dialogs are handled', async () => {
+  const plugin = new PluginClass(); plugin.settings = { ...defaults };
   const queueDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pdf-queue-test-'));
-  const queued = path.join(queueDir, 'same.pdf'); fs.writeFileSync(queued, 'test PDF');
-  plugin.scheduleSigning(queued); plugin.scheduleSigning(queued);
-  assert.equal(timers.length, 1);
-  assert.ok(notices.includes('This PDF is already waiting to be signed.'));
-  // No global Electron remote is required for normal signing.
-  plugin.executeDigitalSignature = async () => {};
-  await timers[0]();
-  await new Promise((resolve) => setImmediate(resolve));
-  assert.equal(plugin.pendingSigning.size, 0);
-  mockWindow.require = () => ({ remote: { dialog: { showOpenDialog: async () => { throw new Error('dialog rejected'); } } } });
-  await plugin.promptSignExistingPdf();
-  assert.match(notices.at(-1), /Error opening the file picker: (Error: )?dialog rejected/);
-  delete mockWindow.require;
-  fs.rmSync(queueDir, { recursive: true, force: true });
+  try {
+    const queued = path.join(queueDir, 'same.pdf');
+    const pdf = await PDFDocument.create(); pdf.addPage(); fs.writeFileSync(queued, Buffer.from(await pdf.save()));
+    let signed = 0; plugin.executeDigitalSignature = async () => { signed++; return queued; };
+    const first = plugin.scheduleSigning(queued);
+    await plugin.scheduleSigning(queued); await first;
+    assert.equal(signed, 0); assert.equal(plugin.pendingSigning.size, 0);
+    assert.ok(notices.includes(i18n.t('notice_pending_changed')));
+    mockWindow.require = () => ({ remote: { dialog: { showOpenDialog: async () => { throw new Error('dialog rejected'); } } } });
+    await plugin.promptSignExistingPdf();
+    assert.match(notices.at(-1), /Error opening the file picker: (Error: )?dialog rejected/);
+  } finally { delete mockWindow.require; fs.rmSync(queueDir, { recursive: true, force: true }); }
 });
-
 
 test('a missing configured certificate never silently becomes a self-signed identity', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pdf-missing-cert-'));
@@ -377,20 +373,17 @@ test('signature policy migrates safely and keeps the selected legal context inde
 test('queued signing rejects a replacement PDF and unloading cancels pending work', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pdf-queue-replace-'));
   try {
-    const filename = path.join(dir, 'same.pdf'); fs.writeFileSync(filename, 'export A');
+    const pdf = await PDFDocument.create(); pdf.addPage();
+    const original = Buffer.from(await pdf.save()); pdf.addPage(); const replacement = Buffer.from(await pdf.save());
+    const filename = path.join(dir, 'same.pdf'); fs.writeFileSync(filename, original);
     const plugin = new PluginClass(); plugin.settings = { ...defaults };
-    let signed = 0; plugin.executeDigitalSignature = async () => { signed++; };
-    const before = timers.length;
-    plugin.scheduleSigning(filename);
-    fs.writeFileSync(filename, 'export B');
-    await timers[before](); await new Promise(resolve => setImmediate(resolve));
+    let signed = 0; plugin.executeDigitalSignature = async () => { signed++; return filename; };
+    const pending = plugin.scheduleSigning(filename);
+    fs.writeFileSync(filename, replacement); await pending;
     assert.equal(signed, 0);
     assert.ok(notices.some(message => message.includes(i18n.t('notice_pending_changed'))));
-    plugin.scheduleSigning(filename);
-    plugin.onunload();
-    await timers[before + 1](); await new Promise(resolve => setImmediate(resolve));
-    assert.equal(signed, 0);
-    assert.equal(plugin.pendingSigning.size, 0);
+    const cancelled = plugin.scheduleSigning(filename); plugin.onunload(); await cancelled;
+    assert.equal(signed, 0); assert.equal(plugin.pendingSigning.size, 0);
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
@@ -428,4 +421,49 @@ test('a locked Windows destination falls back to a signed copy only for rename a
     await assert.rejects(plugin.executeDigitalSignature(input), /cannot create/);
     assert.equal(fs.readdirSync(dir).filter(name => name.includes('.signed')).length, 1);
   } finally { fs.promises.rename = rename; fs.promises.writeFile = writeFile; fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+
+test('new installations require a mode choice while saved identity paths and modes are preserved', async () => {
+  const plugin = new PluginClass(); plugin.saveData = async () => {}; plugin.loadData = async () => ({});
+  plugin.getVaultBasePath = () => os.tmpdir();
+  await plugin.loadSettings();
+  assert.equal(plugin.settings.signatureModeChosen, false);
+  assert.equal(plugin.settings.signatureMode, 'approval');
+  assert.ok(path.isAbsolute(plugin.settings.certPath));
+  assert.notEqual(plugin.settings.certPath, 'Scripts/certificado.pfx');
+  plugin.loadData = async () => ({ firmarCriptograficamente: true, certPath: 'Scripts/old.pfx', signatureMode: 'certify' });
+  await plugin.loadSettings();
+  assert.equal(plugin.settings.signatureModeChosen, true);
+  assert.equal(plugin.settings.signatureMode, 'certify');
+  assert.equal(plugin.settings.certPath, 'Scripts/old.pfx');
+});
+
+
+test('first-use export requires an explicit mode and remains available without cryptographic signing', async () => {
+  const plugin = new PluginClass(); plugin.settings = { ...defaults, signatureModeChosen: false };
+  plugin.checkCertificateExpirationAlert = () => {};
+  const content = {createDiv(){return {style:{},createEl(){},remove(){}};}};
+  let printed = 0, signed = 0;
+  const modal = {file:{},modalEl:{classList:{contains:()=>true}},contentEl:content,async printToPdf(){printed++;}};
+  plugin.scheduleSigning = () => {signed++;}; plugin.inspectAndEnhanceModal(modal);
+  await modal.printToPdf({filepath:'test.pdf'});assert.equal(printed,0);assert.equal(signed,0);
+  plugin.settings.signatureModeChosen=true;
+  await modal.printToPdf({filepath:'test.pdf'});assert.equal(printed,1);assert.equal(signed,1);
+  plugin.settings.signatureModeChosen=false;plugin.settings.firmarCriptograficamente=false;
+  await modal.printToPdf({filepath:'test.pdf'});assert.equal(printed,2);assert.equal(signed,1);
+});
+
+
+test('a transient export lock enters readiness waiting instead of failing before validation', async () => {
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'pdf-transient-lock-'));
+  const open=fs.openSync;
+  try {
+    const filename=path.join(dir,'document.pdf');const pdf=await PDFDocument.create();pdf.addPage();
+    fs.writeFileSync(filename,Buffer.from(await pdf.save()));
+    const plugin=new PluginClass();plugin.settings={...defaults,openAfterSigning:false};
+    let signed=0;plugin.executeDigitalSignature=async()=>{signed++;return filename;};
+    let locked=true;fs.openSync=function(file,...args){if(file===filename && locked){locked=false;throw Object.assign(new Error('locked'),{code:'EBUSY'});}return open.call(this,file,...args);};
+    await plugin.scheduleSigning(filename);assert.equal(signed,1);assert.equal(plugin.pendingSigning.size,0);
+  } finally {fs.openSync=open;fs.rmSync(dir,{recursive:true,force:true});}
 });

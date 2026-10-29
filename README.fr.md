@@ -1,5 +1,16 @@
 # Signature numérique des PDF pour Obsidian
 
+## Changements de la version 1.2.0
+
+Une nouvelle installation demande de choisir explicitement Signature d’intégrité ou Certifier avant de signer ; ce choix est mémorisé. Les choix déjà enregistrés sont conservés. Certifier demande l’absence de modifications ultérieures selon DocMDP P=1 ; les lecteurs compatibles évaluent cette règle, mais d’autres logiciels peuvent modifier le PDF.
+
+Les nouveaux certificats autosignés utilisent un répertoire local hors du coffre, séparé par coffre. Les chemins existants sont conservés sans déplacer les fichiers. Les paramètres avertissent si un certificat se trouve dans le coffre, lui est lié ou si sa localisation ne peut pas être établie. Vérifiez l’exposition à la synchronisation et aux sauvegardes même pour un chemin apparemment externe. Les nouveaux PKCS#12 chiffrent la clé privée avec AES-256/PBES2, PBKDF2 à PRF SHA-256 et 100 000 itérations. Le générateur node-forge utilise encore HMAC-SHA1 pour le MAC du conteneur ; cette limite est déclarée sans prétendre utiliser un MAC moderne.
+
+La signature attend un PDF complet et stable puis le valide au lieu d’imposer une attente fixe. Le délai maximal par défaut est de 15 secondes, réglable de 5 à 60. L’intégration d’exportation est isolée dans un adaptateur ; si elle est incompatible, les commandes manuelles restent disponibles. La vérification distingue l’intégrité de la révision signée de la couverture du fichier actuel ; confiance, révocation et horodatages de confiance sont explicitement non vérifiés.
+
+Les tests d’interopérabilité comprennent des PDF synthétiques générés indépendamment avec pyHanko et des résultats attendus vérifiés indépendamment. Un vrai PDF contenant deux signatures numériques est signalé comme incompatible avec ce vérificateur limité. Cela n’établit ni interopérabilité universelle, ni confiance du certificat, ni suffisance juridique. La signature incrémentale, les services TSA et la validation des listes de confiance ne sont pas pris en charge.
+
+
 ## Signer et vérifier dans la version 1.1.1
 
 Utilisez le menu contextuel du fichier PDF ou les commandes du PDF actif pour le signer ou le vérifier. La signature d'un PDF existant affiche le fichier, le certificat et le mode à vérifier, puis crée une copie .signed.pdf (avec suffixe unique si nécessaire) en conservant l'original. Les PDF exportés sont signés après l'exportation. Si un fichier change dans la file d'attente, la tâche est refusée afin de ne pas le signer avec des paramètres anciens. Si Windows bloque le remplacement d’un PDF exporté, le plugin crée une copie signée .signed.pdf sans forcer l’écriture dans le fichier verrouillé ; le nom affiché et le PDF ouvert ensuite correspondent à cette copie.
@@ -11,7 +22,7 @@ Les limites d'entrée sont de 64 MiB par PDF et de 4 MiB par certificat PKCS#12.
 
 ## Choisir comment signer
 
-- **Certifier — aucune modification autorisée**, par défaut, ajoute une politique DocMDP avec permission `P=1`. Les lecteurs compatibles peuvent rejeter les modifications ultérieures selon cette règle. Les logiciels qui l'ignorent peuvent toujours modifier le PDF.
+- **Certifier — aucune modification autorisée**, choix explicite, ajoute une politique DocMDP avec permission `P=1`. Les lecteurs compatibles peuvent rejeter les modifications ultérieures selon cette règle. Les logiciels qui l'ignorent peuvent toujours modifier le PDF.
 - **Signature d'intégrité** signe la révision actuelle sans certification. Un lecteur peut indiquer que la signature originale reste cryptographiquement valide tout en signalant des révisions ultérieures ; vérifiez l'état de modification du document actuel.
 - **Pays ou contexte juridique** change uniquement l'orientation, pas votre certificat, identité, format ou statut juridique. Vérifiez les exigences du destinataire.
 
@@ -32,7 +43,7 @@ Références : [ETSI PAdES](https://www.etsi.org/deliver/etsi_EN/319100_319199/3
 - Trois options indépendantes : signature cryptographique, nom du signataire et numérotation « page / total ».
 - Certificats X.509 au format `.pfx` ou `.p12`, avec clé privée RSA chiffrée.
 - Création d’un certificat autosigné valable trois ans ; avertissement à l’approche de l’expiration.
-- Signature différée (1 à 15 secondes) et ouverture facultative dans le lecteur PDF par défaut.
+- Attente d’un PDF stable et complet avec délai maximal de 15 secondes par défaut (5 à 60), puis ouverture facultative.
 - Interface en anglais, espagnol, portugais, italien et français, selon la langue d’Obsidian.
 - Commande pour signer un PDF existant. Si le sélecteur système est indisponible, elle propose les PDF du coffre.
 
@@ -53,9 +64,9 @@ Téléchargez `main.js`, `manifest.json` et `styles.css` depuis les [versions pu
 | Signature cryptographique | Activée |
 | Nom du signataire dans le pied de page | Activé |
 | Numéro de page | Activé |
-| Délai avant la signature | 5 secondes |
+| Attente maximale de l’exportation | 15 secondes (réglable de 5 à 60) |
 | Ouverture après la signature | Activée |
-| Chemin du certificat | `Scripts/certificado.pfx` |
+| Chemin du certificat | Chemin local hors du coffre, séparé par coffre |
 | Mot de passe | Généré aléatoirement au premier lancement |
 
 Le chemin du certificat peut être relatif au coffre ou absolu. Le nom, le motif et le lieu de la signature sont configurables. La création d’un certificat autosigné n’écrase jamais le certificat configuré.

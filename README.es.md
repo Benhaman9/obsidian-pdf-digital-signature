@@ -1,5 +1,16 @@
 # Firma Digital PDF para Obsidian
 
+## Cambios en 1.2.0
+
+En una instalación nueva, elige expresamente Firma de integridad o Certificar antes de firmar; la elección se recuerda. Se conservan las elecciones ya guardadas. Certificar solicita que no se permitan cambios posteriores mediante DocMDP P=1; los lectores compatibles evalúan esa política, aunque otros programas pueden editar el PDF.
+
+Los certificados autofirmados nuevos usan un directorio local fuera de la bóveda, separado por bóveda. Se conservan las rutas existentes y no se mueven archivos. Ajustes advierte si un certificado está dentro de la bóveda, enlazado a ella o si no puede determinarse su ubicación. Revisa la exposición a sincronizaciones y respaldos aunque una ruta parezca externa. Los PKCS#12 nuevos cifran la clave privada con AES-256/PBES2, PBKDF2 con PRF SHA-256 y 100.000 iteraciones. El escritor de node-forge sigue usando HMAC-SHA1 para el MAC del contenedor; se declara esa limitación sin afirmar que utiliza un MAC moderno.
+
+La firma de exportaciones espera un PDF estable y completo y lo valida, en lugar de esperar una demora fija. El plazo predeterminado es de 15 segundos, configurable entre 5 y 60. La integración de exportación se aísla en un adaptador; si no es compatible, siguen disponibles los comandos manuales. La verificación presenta por separado la integridad de la revisión firmada y la cobertura del archivo actual; confianza, revocación y sellos de tiempo de confianza figuran expresamente como no comprobados.
+
+Las pruebas de interoperabilidad incluyen PDFs sintéticos generados independientemente con pyHanko y resultados esperados verificados de forma independiente. Un PDF real con dos firmas digitales se informa como no compatible con este comprobador limitado. Esto no afirma interoperabilidad universal, confianza del certificado ni suficiencia jurídica. No se admiten firma incremental, servicios TSA ni validación de listas de confianza.
+
+
 ## Firmar y comprobar en 1.1.1
 
 Usa el menú contextual del archivo PDF o los comandos para el PDF activo para firmarlo o comprobarlo. Al firmar un PDF existente se revisan el archivo, el certificado y el modo; después se crea una copia .signed.pdf (con sufijo único si hace falta) y se conserva el original. Los PDFs exportados se firman después de exportar. Si el archivo cambia mientras espera en la cola, se rechaza el trabajo para evitar firmar el documento actual con ajustes anteriores. Si Windows bloquea el reemplazo de un PDF exportado, el plugin crea una copia firmada .signed.pdf sin forzar la escritura sobre el archivo bloqueado; el nombre mostrado y el PDF que se abre después corresponden a esa copia.
@@ -11,7 +22,7 @@ La entrada admite hasta 64 MiB por PDF y 4 MiB por certificado PKCS#12. La salid
 
 ## Elegir cómo firmar
 
-- **Certificar — sin cambios permitidos** es la opción predeterminada: incorpora una política DocMDP con permiso `P=1`. Los lectores compatibles pueden rechazar cambios posteriores según esa política. Los programas que la ignoren siguen pudiendo editar el PDF.
+- **Certificar — sin cambios permitidos** es una elección expresa: incorpora una política DocMDP con permiso `P=1`. Los lectores compatibles pueden rechazar cambios posteriores según esa política. Los programas que la ignoren siguen pudiendo editar el PDF.
 - **Firma de integridad** firma la revisión actual sin certificación. Un lector puede mostrar la firma original como criptográficamente válida y advertir de revisiones posteriores; comprueba el estado de modificación del documento actual.
 - **País o contexto jurídico** solo cambia la orientación, no tu certificado, identidad, formato ni situación jurídica. Revisa los requisitos del destinatario.
 
@@ -57,7 +68,7 @@ La firma permite comprobar si el contenido firmado ha cambiado. La confianza en 
 - 🎛️ **Integración Nativa con Obsidian:**
   Aparece como tres controles independientes dentro de la ventana oficial de **«Exportar a PDF»** y recuerda tu preferencia para futuras exportaciones.
 - ⏱️ **Automatización Inteligente:**
-  Espera un tiempo configurable (por defecto 5 segundos) para asegurar el guardado en disco, aplica la firma criptográfica y abre el PDF firmado en tu lector predeterminado.
+  Espera un PDF estable y completo dentro del plazo configurado (15 segundos por defecto), lo valida, firma y abre si está activada esa opción.
 - 🔑 **Generador de Certificados Integrado:**
   ¿No tienes un certificado comercial? Crea un certificado autofirmado válido por 3 años directamente con un botón en los ajustes del plugin.
 - 🛡️ **100% Privado y Sin Conexión:**
@@ -72,7 +83,7 @@ La firma permite comprobar si el contenido firmado ha cambiado. La confianza en 
 3. Pulsa **Exportar a PDF** y elige dónde guardar el archivo.
 4. El plugin automáticamente:
    - Exporta la nota estampando tu nombre al pie de cada página.
-   - Muestra un aviso flotante con la cuenta regresiva de 5 segundos.
+   - Espera y valida el PDF completo, mostrando la fase actual.
    - Sella el archivo con tu certificado digital `.pfx`.
    - Abre el PDF final firmado en tu visor predeterminado si esa opción está activada.
 
@@ -109,9 +120,9 @@ En Obsidian: **Ajustes** ➔ **Firma Digital PDF**:
 | **Mostrar nombre por defecto** | Define si aparece el nombre del firmante abajo a la izquierda. | `true` |
 | **Nombre en el pie de página** | Texto utilizado cuando está activada la opción de mostrar el nombre. | `Nombre del Firmante` |
 | **Mostrar número de página** | Muestra el indicador `página / total` a la derecha. | `true` |
-| **Demora antes de firmar** | Segundos de espera tras el guardado antes de aplicar la firma. | `5` segundos |
+| **Espera máxima de exportación** | Plazo para obtener un PDF completo y estable; configurable entre 5 y 60 segundos. | 15 segundos |
 | **Abrir PDF tras firmar** | Abre el visor predeterminado automáticamente al terminar. | `true` |
-| **Ruta del certificado digital** | Ruta relativa a la bóveda o absoluta a tu archivo `.pfx` o `.p12`. | `Scripts/certificado.pfx` |
+| **Ruta del certificado digital** | Se conservan las rutas existentes; los certificados nuevos usan un directorio local externo. | Ruta local fuera de la bóveda, separada por bóveda |
 | **Contraseña del certificado** | Contraseña para descifrar la clave privada. | Aleatoria al iniciar por primera vez |
 | **Motivo / Ubicación** | Metadatos que figuran en el panel de firma de Adobe Acrobat. | Valores genéricos |
 

@@ -22,3 +22,18 @@ export function fileFingerprint(filepath: string): string {
     return hash.digest("hex");
   } finally { fs.closeSync(file); }
 }
+
+
+/** Only pin an existing complete revision, not a partially written export. */
+export function completeExportFingerprint(filepath: string): string | undefined {
+  const file = fs.openSync(filepath, "r");
+  try {
+    const size = fs.fstatSync(file).size;
+    if (size > 64 * 1024 * 1024) throw new Error("PDF size limit: 64 MiB");
+    if (size < 12) return undefined;
+    const head = Buffer.alloc(5); fs.readSync(file, head, 0, 5, 0);
+    const tail = Buffer.alloc(Math.min(size, 2048)); fs.readSync(file, tail, 0, tail.length, size - tail.length);
+    if (head.toString("ascii") !== "%PDF-" || !/%%EOF[\x00\x09\x0a\x0c\x0d\x20]*$/.test(tail.toString("latin1"))) return undefined;
+  } finally { fs.closeSync(file); }
+  return fileFingerprint(filepath);
+}

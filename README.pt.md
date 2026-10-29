@@ -1,5 +1,16 @@
 # Assinatura Digital de PDF para Obsidian
 
+## Alterações da versão 1.2.0
+
+Uma nova instalação exige escolher explicitamente Assinatura de integridade ou Certificar antes de assinar; a escolha é lembrada. Escolhas já salvas são preservadas. Certificar solicita ausência de alterações posteriores conforme DocMDP P=1; leitores compatíveis avaliam essa política, mas outros programas podem editar o PDF.
+
+Novos certificados autoassinados usam um diretório local fora do cofre, separado por cofre. Caminhos existentes são preservados e arquivos não são movidos. As configurações avisam se um certificado está dentro do cofre, vinculado a ele ou se sua localização não pode ser determinada. Revise a exposição à sincronização e aos backups mesmo quando o caminho parece externo. Novos PKCS#12 criptografam a chave privada com AES-256/PBES2, PBKDF2 com PRF SHA-256 e 100.000 iterações. O gerador node-forge ainda usa HMAC-SHA1 para o MAC do contêiner; essa limitação é declarada sem afirmar uso de um MAC moderno.
+
+A assinatura espera um PDF completo e estável e o valida em vez de aguardar um atraso fixo. O prazo padrão é de 15 segundos, configurável de 5 a 60. A integração de exportação está isolada em um adaptador; se não for compatível, os comandos manuais continuam disponíveis. A verificação distingue integridade da revisão assinada e cobertura do arquivo atual; confiança, revogação e carimbos de tempo confiáveis são explicitamente não verificados.
+
+Os testes de interoperabilidade incluem PDFs sintéticos gerados independentemente com pyHanko e resultados esperados verificados independentemente. Um PDF real com duas assinaturas digitais é informado como não suportado por este verificador limitado. Isso não afirma interoperabilidade universal, confiança no certificado ou suficiência jurídica. Assinatura incremental, serviços TSA e validação de listas de confiança não são suportados.
+
+
 ## Assinar e verificar na versão 1.1.1
 
 Use o menu de contexto do arquivo PDF ou os comandos do PDF ativo para assinar ou verificar. Ao assinar um PDF existente, são apresentados arquivo, certificado e modo para revisão; depois é criada uma cópia .signed.pdf (com sufixo único se necessário), preservando o original. PDFs exportados são assinados após a exportação. Se o arquivo mudar enquanto espera na fila, o trabalho será recusado para evitar assinar o documento atual com configurações anteriores. Se o Windows bloquear a substituição de um PDF exportado, o plugin cria uma cópia assinada .signed.pdf sem forçar a gravação no arquivo bloqueado; o nome exibido e o PDF aberto depois correspondem a essa cópia.
@@ -11,7 +22,7 @@ Os limites de entrada são 64 MiB por PDF e 4 MiB por certificado PKCS#12. A sa�
 
 ## Escolher como assinar
 
-- **Certificar — sem alterações permitidas**, opção padrão, adiciona uma política DocMDP com permissão `P=1`. Leitores compatíveis podem rejeitar alterações posteriores conforme essa política. Programas que a ignoram ainda podem editar o PDF.
+- **Certificar — sem alterações permitidas**, escolha explícita, adiciona uma política DocMDP com permissão `P=1`. Leitores compatíveis podem rejeitar alterações posteriores conforme essa política. Programas que a ignoram ainda podem editar o PDF.
 - **Assinatura de integridade** assina a revisão atual sem certificação. Um leitor pode mostrar a assinatura original como criptograficamente válida e informar revisões posteriores; verifique o estado de modificação do documento atual.
 - **País ou contexto jurídico** muda apenas a orientação, não seu certificado, identidade, formato ou situação jurídica. Verifique os requisitos do destinatário.
 
@@ -57,7 +68,7 @@ A assinatura permite verificar se o conteúdo assinado foi alterado. A confianç
 - 🎛️ **Integração Nativa com o Obsidian:**
   Aparece como três controles independentes na janela nativa **«Exportar para PDF»** e lembra sua preferência.
 - ⏱️ **Pós-processamento Automatizado:**
-  Aguarda um tempo configurável (padrão: 5 segundos) para gravação segura em disco, aplica a assinatura e abre o PDF assinado no seu leitor padrão.
+  Espera um PDF completo e estável dentro do prazo configurado (15 segundos por padrão), valida, assina e abre se habilitado.
 - 🔑 **Gerador de Certificados Integrado:**
   Crie um certificado autoassinado válido por 3 anos diretamente nas configurações do plugin.
 - 🛡️ **100% Privado e Offline:**
@@ -72,7 +83,7 @@ A assinatura permite verificar se o conteúdo assinado foi alterado. A confianç
 3. Clique em **Exportar para PDF** e escolha onde salvar o arquivo.
 4. O plugin automaticamente:
    - Exporta o documento com seu nome no rodapé de todas as páginas.
-   - Aguarda a contagem regressiva de 5 segundos.
+   - Espera e valida o PDF completo, mostrando a fase atual.
    - Sela o arquivo com seu certificado digital `.pfx`.
    - Abre o PDF assinado no visualizador quando essa opção está ativada.
 
