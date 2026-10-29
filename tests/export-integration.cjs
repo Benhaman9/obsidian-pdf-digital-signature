@@ -26,6 +26,7 @@ test('production plugin exports and signs real Chromium PDFs in all control comb
     class Plugin { register() {} registerInterval(id) { return id; } }
     class FileSystemAdapter { getBasePath() { return output; } }
     class Setting {
+      addDropdown(callback) { callback({ addOption() { return this; }, setValue() { return this; }, onChange() { return this; } }); return this; }
       setName(name) { controls.push(name); return this; }
       setDesc() { return this; }
       addToggle(callback) { callback({ setValue() {}, onChange() {} }); return this; }
@@ -70,6 +71,7 @@ test('production plugin exports and signs real Chromium PDFs in all control comb
         mostrarNumeroPagina: numbers, nombreFirmante: 'François & María <tests>',
         certPath: 'integration.pfx', delaySeconds: 1, openAfterSigning: true,
       };
+      if (sign && !fs.existsSync(path.join(output, "integration.pfx"))) await plugin.generateCertificate();
       const file = path.join(output, name + '.pdf');
       const contentEl = { createDiv() { return { style: {}, createEl() {}, remove() {} }; } };
       let optionsUsed;

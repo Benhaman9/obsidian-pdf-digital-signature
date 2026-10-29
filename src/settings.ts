@@ -3,6 +3,7 @@ import * as obsidian from "obsidian";
 import type PdfDigitalSignaturePlugin from "./main";
 import { t, getLanguage } from "./i18n";
 import { getCertificateInfo } from "./signer";
+import { getJurisdictionGuidance, normalizeJurisdiction, normalizeSignatureMode, type Jurisdiction, type SignatureMode } from "./signing-policy";
 
 // Helper para setCssStyles seguro contra versiones antiguas de tipos
 const applyStyles = (el: HTMLElement, styles: Record<string, string>): void => {
@@ -27,6 +28,8 @@ export interface PdfSignatureSettings {
   motivo: string;
   ubicacion: string;
   openAfterSigning: boolean;
+  signatureMode: SignatureMode;
+  jurisdiction: Jurisdiction;
   lastExpiryAlertTimestamp?: number;
 }
 
@@ -42,11 +45,14 @@ export const DEFAULT_SETTINGS: PdfSignatureSettings = {
   motivo: "Firma Digital",
   ubicacion: "Ciudad, País",
   openAfterSigning: true,
+  signatureMode: "certify",
+  jurisdiction: "international",
 };
 
 export class PdfSignatureSettingTab extends PluginSettingTab {
   plugin: PdfDigitalSignaturePlugin;
   private certificateStatusEl?: HTMLElement;
+  private certificateStatusTimer?: number;
 
   constructor(app: App, plugin: PdfDigitalSignaturePlugin) {
     super(app, plugin);
@@ -54,6 +60,7 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
   }
 
   display(): void {
+    this.cancelCertificateStatusRefresh();
     const { containerEl } = this;
     containerEl.empty();
 
@@ -75,6 +82,8 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
             await this.plugin.saveSettings();
           })
       );
+
+    renderSigningPolicySettings(containerEl, this.plugin);
 
     // 2. Mostrar nombre del firmante
     new Setting(containerEl)
@@ -158,8 +167,8 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
           .setValue(this.plugin.settings.certPath)
           .onChange(async (val) => {
             this.plugin.settings.certPath = val.trim();
+            this.scheduleCertificateStatusRefresh(containerEl);
             await this.plugin.saveSettings();
-            this.renderCertificateStatus(containerEl);
           })
       );
 
@@ -172,8 +181,9 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
         text
           .setValue(this.plugin.settings.certPassword)
           .onChange(async (val) => {
-            await this.plugin.setCertificatePassword(val);
-            this.renderCertificateStatus(containerEl);
+            const saving = this.plugin.setCertificatePassword(val);
+            this.scheduleCertificateStatusRefresh(containerEl);
+            await saving;
           });
       });
 
@@ -224,6 +234,23 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
       );
   }
 
+  hide(): void {
+    this.cancelCertificateStatusRefresh();
+  }
+
+  private cancelCertificateStatusRefresh(): void {
+    if (this.certificateStatusTimer !== undefined) window.clearTimeout(this.certificateStatusTimer);
+    this.certificateStatusTimer = undefined;
+  }
+
+  private scheduleCertificateStatusRefresh(containerEl: HTMLElement): void {
+    this.cancelCertificateStatusRefresh();
+    this.certificateStatusTimer = window.setTimeout(() => {
+      this.certificateStatusTimer = undefined;
+      this.renderCertificateStatus(containerEl);
+    }, 250);
+  }
+
   renderCertificateStatus(containerEl: HTMLElement): void {
     const certPath = this.plugin.settings.certPath.trim()
       ? this.plugin.resolveAbsolutePath(this.plugin.settings.certPath) : "";
@@ -238,6 +265,7 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
       marginBottom: "14px",
       borderRadius: "8px",
       fontSize: "var(--font-ui-smaller)",
+      overflowWrap: "anywhere",
     });
 
     if (!info.exists) {
@@ -288,5 +316,43 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
       });
       statusEl.setText(t("settings_cert_status_invalid", { error: info.error || t("error_invalid_cert") }));
     }
+    if (info.commonName) statusEl.createEl("p", { text: t("verify_signer", { name: info.commonName }) });
+    if (info.issuer) statusEl.createEl("p", { text: t("verify_issuer", { issuer: info.issuer }) });
+    if (info.fingerprint) statusEl.createEl("p", { text: t("verify_fingerprint", { fingerprint: info.fingerprint }) });
+    if (info.selfSigned !== undefined) statusEl.createEl("p", { text: t(info.selfSigned ? "verify_self_signed" : "certificate_self_signed_no") });
   }
+}
+
+export function renderSigningPolicySettings(containerEl: HTMLElement, plugin: PdfDigitalSignaturePlugin, compact = false): void {
+    new Setting(containerEl)
+      .setName(t("settings_signature_mode_name"))
+      .setDesc(t("settings_signature_mode_desc"))
+      .addDropdown((dropdown) => dropdown
+        .addOption("approval", t("signature_mode_approval"))
+        .addOption("certify", t("signature_mode_certify"))
+        .setValue(plugin.settings.signatureMode)
+        .onChange(async (value) => {
+          plugin.settings.signatureMode = normalizeSignatureMode(value);
+          await plugin.saveSettings();
+        }));
+
+    if (compact) return;
+
+    const jurisdictionSetting = new Setting(containerEl)
+      .setName(t("settings_jurisdiction_name"))
+      .setDesc(getJurisdictionGuidance(plugin.settings.jurisdiction));
+    jurisdictionSetting.addDropdown((dropdown) => dropdown
+      .addOption("international", t("jurisdiction_international"))
+      .addOption("CL", t("jurisdiction_cl"))
+      .addOption("EU", t("jurisdiction_eu"))
+      .addOption("UK", t("jurisdiction_uk"))
+      .addOption("US", t("jurisdiction_us"))
+      .setValue(plugin.settings.jurisdiction)
+      .onChange(async (value) => {
+        plugin.settings.jurisdiction = normalizeJurisdiction(value);
+        await plugin.saveSettings();
+        jurisdictionSetting.setDesc(getJurisdictionGuidance(plugin.settings.jurisdiction));
+      }));
+    containerEl.createEl("p", { cls: "setting-item-description", text: t("settings_signature_levels_desc") });
+
 }

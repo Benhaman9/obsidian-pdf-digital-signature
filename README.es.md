@@ -1,5 +1,28 @@
 # Firma Digital PDF para Obsidian
 
+## Firmar y comprobar en 1.1.1
+
+Usa el menú contextual del archivo PDF o los comandos para el PDF activo para firmarlo o comprobarlo. Al firmar un PDF existente se revisan el archivo, el certificado y el modo; después se crea una copia .signed.pdf (con sufijo único si hace falta) y se conserva el original. Los PDFs exportados se firman después de exportar. Si el archivo cambia mientras espera en la cola, se rechaza el trabajo para evitar firmar el documento actual con ajustes anteriores. Si Windows bloquea el reemplazo de un PDF exportado, el plugin crea una copia firmada .signed.pdf sin forzar la escritura sobre el archivo bloqueado; el nombre mostrado y el PDF que se abre después corresponden a esa copia.
+
+Los detalles del certificado muestran el titular, el emisor y la huella SHA-256 indicados en él, y si es autofirmado. Sirven para identificar el certificado configurado; no acreditan identidad ni confianza. Crear un certificado autofirmado es una acción expresa de Ajustes. Si el archivo configurado existe, se elige otro archivo y se conserva el anterior; esto no renueva un certificado de proveedor.
+
+La entrada admite hasta 64 MiB por PDF y 4 MiB por certificado PKCS#12. La salida firmada también se limita a 64 MiB: un PDF cercano al límite de entrada puede rechazarse si al firmarlo aumenta su tamaño. Antes de guardar, toda firma generada debe superar las comprobaciones locales de criptografía y cobertura del archivo completo. Es una comprobación de integridad, no de confianza ni jurídica.
+
+
+## Elegir cómo firmar
+
+- **Certificar — sin cambios permitidos** es la opción predeterminada: incorpora una política DocMDP con permiso `P=1`. Los lectores compatibles pueden rechazar cambios posteriores según esa política. Los programas que la ignoren siguen pudiendo editar el PDF.
+- **Firma de integridad** firma la revisión actual sin certificación. Un lector puede mostrar la firma original como criptográficamente válida y advertir de revisiones posteriores; comprueba el estado de modificación del documento actual.
+- **País o contexto jurídico** solo cambia la orientación, no tu certificado, identidad, formato ni situación jurídica. Revisa los requisitos del destinatario.
+
+Configura un `.pfx`/`.p12` existente y su contraseña, o crea expresamente un certificado autofirmado en Ajustes. Un certificado ausente no se sustituye silenciosamente. Los autofirmados pueden servir para comprobar integridad personal; el destinatario debe establecer la confianza por separado.
+
+Usa **Comprobar integridad de la firma de un PDF** desde la paleta de comandos o el menú del archivo PDF. Comprueba firmas compatibles y cobertura del archivo completo, detectando bytes añadidos. Las estructuras incompatibles reciben un resultado explícito de no compatibles. No valida cadenas de confianza, revocación, sellos de tiempo de confianza, modificaciones permitidas, cumplimiento PAdES ni suficiencia jurídica. Para validación independiente opcional y configuración de confianza, consulta la [guía de pyHanko](https://docs.pyhanko.eu/en/latest/cli-guide/validation.html).
+
+No se admiten sellos de tiempo de confianza, PAdES T/LT/LTA, tokens de proveedores ni firma remota. No se afirma cumplimiento PAdES B. Los perfiles técnicos y las categorías jurídicas son distintos.
+
+Fuentes: [ETSI PAdES](https://www.etsi.org/deliver/etsi_EN/319100_319199/31914201/01.02.01_60/en_31914201v010201p.pdf), [Comisión Europea FAQ](https://ec.europa.eu/digital-building-blocks/sites/spaces/DIGITAL/pages/880312429/eSignature%2BFAQ), [Chile — Ley 19.799](https://www.bcn.cl/leychile/navegar?idNorma=196640), [ICO británico](https://ico.org.uk/for-organisations/guide-to-eidas/qualified-trust-services/), [Estados Unidos — 15 USC 7001](https://uscode.house.gov/view.xhtml?req=%28title%3A15+section%3A7001%28c%29+edition%3Aprelim%29).
+
 > **Idiomas / Languages / Lingue:**
 > 🇪🇸 **Español** | 🇬🇧 [English](README.md) | 🇧🇷 [Português](README.pt.md) | 🇮🇹 [Italiano](README.it.md) | 🇫🇷 [Français](README.fr.md)
 
@@ -30,7 +53,7 @@ La firma permite comprobar si el contenido firmado ha cambiado. La confianza en 
 - 🌐 **Soporte Multiidioma Nativo (i18n):**
   Traducción completa en **Español (`es`)**, **Inglés (`en`)**, **Portugués (`pt`)**, **Italiano (`it`)** y **Francés (`fr`)**, adaptándose automáticamente al idioma de Obsidian.
 - ⏳ **Monitor de Caducidad y Alertas Recurrentes (<= 30 días):**
-  Calcula la vigencia del certificado y muestra advertencias proactivas si le quedan **30 días o menos para vencer**, con un botón de renovación inmediata en 1 clic.
+  Calcula la vigencia del certificado y muestra advertencias proactivas si le quedan **30 días o menos para vencer**, para que puedas configurar un certificado vigente.
 - 🎛️ **Integración Nativa con Obsidian:**
   Aparece como tres controles independientes dentro de la ventana oficial de **«Exportar a PDF»** y recuerda tu preferencia para futuras exportaciones.
 - ⏱️ **Automatización Inteligente:**
@@ -105,6 +128,6 @@ Creado con ❤️ por [Benjamín Alcalde G.](https://github.com/Benhaman9)
 
 ## Limitaciones del certificado y la firma
 
-Se genera una contraseña aleatoria al iniciar por primera vez. Puedes cambiarla antes de crear un certificado; no se permite crear certificados nuevos con contraseña vacía. Se requiere Obsidian 1.11.5 o posterior. La contraseña se guarda en el almacén local SecretStorage, fuera de `data.json`; las contraseñas anteriores se migran al cargar el plugin. Debe configurarse por separado en cada dispositivo. La renovación conserva el certificado anterior en un archivo `.bak` contiguo. No se puede firmar con certificados caducados o todavía no vigentes. Se rechazan PDFs ya firmados porque el plugin reescribe el documento en lugar de añadir una firma incremental. Usa `adbe.pkcs7.detached`; no se afirma conformidad completa con perfiles PAdES, sellado de tiempo de confianza ni validación a largo plazo.
+Se genera una contraseña aleatoria al iniciar por primera vez. Puedes cambiarla antes de crear un certificado; no se permite crear certificados nuevos con contraseña vacía. Se requiere Obsidian 1.11.5 o posterior. La contraseña se guarda en el almacén local SecretStorage, fuera de `data.json`; las contraseñas anteriores se migran al cargar el plugin. Debe configurarse por separado en cada dispositivo. Crear un certificado autofirmado nunca sobrescribe el certificado configurado. No se puede firmar con certificados caducados o todavía no vigentes. Se rechazan PDFs ya firmados porque el plugin reescribe el documento en lugar de añadir una firma incremental. Usa `adbe.pkcs7.detached`; no se afirma conformidad completa con perfiles PAdES, sellado de tiempo de confianza ni validación a largo plazo.
 
 [Adobe: certificate trust](https://helpx.adobe.com/acrobat/using/trusted-identities.html) · [Signing library](https://github.com/vbuch/node-signpdf)

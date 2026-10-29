@@ -24,6 +24,7 @@ class Plugin {
 }
 class Setting {
   setName() { return this; } setDesc() { return this; }
+  addDropdown(callback) { callback({ addOption() { return this; }, setValue() { return this; }, onChange() { return this; } }); return this; }
   addToggle(callback) { callback({ setValue() {}, onChange() {} }); return this; }
 }
 const mock = {
@@ -326,7 +327,9 @@ test('native math print hook refreshes after rendering, waits for fonts and rest
 test('signing jobs deduplicate and catch rejected file dialogs', async () => {
   const plugin = new PluginClass();
   plugin.settings = { ...defaults };
-  plugin.scheduleSigning('same.pdf'); plugin.scheduleSigning('same.pdf');
+  const queueDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pdf-queue-test-'));
+  const queued = path.join(queueDir, 'same.pdf'); fs.writeFileSync(queued, 'test PDF');
+  plugin.scheduleSigning(queued); plugin.scheduleSigning(queued);
   assert.equal(timers.length, 1);
   assert.ok(notices.includes('This PDF is already waiting to be signed.'));
   // No global Electron remote is required for normal signing.
@@ -338,4 +341,91 @@ test('signing jobs deduplicate and catch rejected file dialogs', async () => {
   await plugin.promptSignExistingPdf();
   assert.match(notices.at(-1), /Error opening the file picker: (Error: )?dialog rejected/);
   delete mockWindow.require;
+  fs.rmSync(queueDir, { recursive: true, force: true });
+});
+
+
+test('a missing configured certificate never silently becomes a self-signed identity', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pdf-missing-cert-'));
+  try {
+    const plugin = new PluginClass();
+    const certPath = path.join(dir, 'provider.pfx');
+    const pdfPath = path.join(dir, 'document.pdf');
+    fs.writeFileSync(pdfPath, Buffer.from('untouched original'));
+    plugin.settings = { ...defaults, certPath };
+    await assert.rejects(plugin.executeDigitalSignature(pdfPath), /certificate file does not exist/);
+    assert.equal(fs.existsSync(certPath), false);
+    assert.equal(fs.readFileSync(pdfPath).toString(), 'untouched original');
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('signature policy migrates safely and keeps the selected legal context independent', async () => {
+  const plugin = new PluginClass();
+  plugin.saveData = async () => {};
+  plugin.loadData = async () => ({ firmarCriptograficamente: true, signatureMode: 'approval', jurisdiction: 'CL', ubicacion: 'Custom place' });
+  await plugin.loadSettings();
+  assert.equal(plugin.settings.signatureMode, 'approval');
+  assert.equal(plugin.settings.jurisdiction, 'CL');
+  assert.equal(plugin.settings.ubicacion, 'Custom place');
+  plugin.loadData = async () => ({ firmarCriptograficamente: true, signatureMode: 'qualified', jurisdiction: 'invalid' });
+  await plugin.loadSettings();
+  assert.equal(plugin.settings.signatureMode, 'certify');
+  assert.equal(plugin.settings.jurisdiction, 'international');
+});
+
+
+test('queued signing rejects a replacement PDF and unloading cancels pending work', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pdf-queue-replace-'));
+  try {
+    const filename = path.join(dir, 'same.pdf'); fs.writeFileSync(filename, 'export A');
+    const plugin = new PluginClass(); plugin.settings = { ...defaults };
+    let signed = 0; plugin.executeDigitalSignature = async () => { signed++; };
+    const before = timers.length;
+    plugin.scheduleSigning(filename);
+    fs.writeFileSync(filename, 'export B');
+    await timers[before](); await new Promise(resolve => setImmediate(resolve));
+    assert.equal(signed, 0);
+    assert.ok(notices.some(message => message.includes(i18n.t('notice_pending_changed'))));
+    plugin.scheduleSigning(filename);
+    plugin.onunload();
+    await timers[before + 1](); await new Promise(resolve => setImmediate(resolve));
+    assert.equal(signed, 0);
+    assert.equal(plugin.pendingSigning.size, 0);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('empty certificate settings do not break alerts and generating never replaces an existing identity', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pdf-cert-preserve-'));
+  try {
+    const plugin = new PluginClass(); plugin.settings = { ...defaults, certPath: '' };
+    assert.doesNotThrow(() => plugin.checkCertificateExpirationAlert());
+    const provider = path.join(dir, 'provider.pfx'); fs.writeFileSync(provider, 'original provider identity');
+    plugin.settings.certPath = provider; plugin.settings.certPassword = 'test-password';
+    plugin.saveData = async () => {};
+    const generated = await plugin.generateCertificate();
+    assert.notEqual(generated, provider);
+    assert.equal(fs.readFileSync(provider).toString(), 'original provider identity');
+    assert.equal(plugin.settings.certPath, generated);
+    assert.equal(signer.getCertificateInfo(generated, 'test-password').selfSigned, true);
+  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
+
+test('a locked Windows destination falls back to a signed copy only for rename access failures', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pdf-locked-destination-'));
+  const rename = fs.promises.rename; const writeFile = fs.promises.writeFile;
+  try {
+    const input = path.join(dir, 'document.pdf'); const certPath = path.join(dir, 'certificate.pfx');
+    const pdf = await PDFDocument.create(); pdf.addPage(); const original = Buffer.from(await pdf.save());
+    fs.writeFileSync(input, original); fs.writeFileSync(certPath, signer.createSelfSignedCertificate('Test', 'test'));
+    const plugin = new PluginClass(); plugin.settings = { ...defaults, certPath, certPassword: 'test' };
+    fs.promises.rename = async () => { throw Object.assign(new Error('locked'), { syscall: 'rename', code: 'EPERM' }); };
+    const output = await plugin.executeDigitalSignature(input);
+    assert.equal(output, path.join(dir, 'document.signed.pdf'));
+    assert.deepEqual(fs.readFileSync(input), original);
+    assert.equal(load('verifier').inspectPdfSignature(fs.readFileSync(output)).status, 'intact');
+    fs.promises.writeFile = async () => { throw Object.assign(new Error('cannot create'), { syscall: 'open', code: 'EPERM' }); };
+    await assert.rejects(plugin.executeDigitalSignature(input), /cannot create/);
+    assert.equal(fs.readdirSync(dir).filter(name => name.includes('.signed')).length, 1);
+  } finally { fs.promises.rename = rename; fs.promises.writeFile = writeFile; fs.rmSync(dir, { recursive: true, force: true }); }
 });

@@ -1,5 +1,28 @@
 # PDF Digital Signature for Obsidian
 
+## Signing and checking in 1.1.1
+
+Use the PDF file's context menu or the commands for the active PDF to sign or check it. Signing an existing PDF opens a review of the file, certificate and signature mode, then creates a new .signed.pdf copy (with a unique suffix if needed); the original is preserved. Exported PDFs are signed after export. If a file changes while waiting in the signing queue, the job is refused so the current document is not signed with stale settings. If Windows blocks replacement of an exported PDF, the plugin creates a signed .signed.pdf copy without forcing a write to the locked file; the displayed filename and the PDF opened afterwards refer to that copy.
+
+Certificate details show the subject, issuer and SHA-256 fingerprint stated by the certificate, plus whether it is self-signed. These details help identify the configured certificate; they do not establish identity or trust. Creating a self-signed certificate is an explicit Settings action. If the configured file exists, a new file is chosen and the previous certificate is preserved; this does not renew a provider-issued certificate.
+
+Input limits are 64 MiB per PDF and 4 MiB per PKCS#12 certificate. Signed output is also limited to 64 MiB; a PDF close to the input limit can be rejected after signing increases its size. Before saving, every generated signature must pass the plugin's local cryptographic and complete-file coverage checks. This is an integrity check, not a trust or legal assessment.
+
+
+## Choosing how to sign
+
+- **Certify — no changes allowed** is the default: it adds a DocMDP certification policy with permission `P=1`. Compatible readers can reject later changes against that policy. Software that ignores it can still edit the PDF.
+- **Integrity signature** signs the current revision without certification. A reader may report the original signature as cryptographically valid while also reporting later revisions; inspect the current document's modification status.
+- **Country or legal context** changes guidance only, not your certificate, identity, format or legal status. Check the recipient's requirements.
+
+Configure an existing `.pfx`/`.p12` and its password, or explicitly create a self-signed certificate using Settings. Missing certificates are not silently replaced. Self-signed certificates can help with personal integrity checks; recipients must establish trust separately.
+
+Use **Check PDF signature integrity** from the command palette or PDF file menu. It checks supported signatures and complete-file coverage, detecting appended bytes. Unsupported structures receive an explicit unsupported result. It does not validate trust chains, revocation, trusted timestamps, permitted modifications, PAdES compliance or legal sufficiency. For optional independent validation and trust configuration, see [pyHanko's guide](https://docs.pyhanko.eu/en/latest/cli-guide/validation.html).
+
+Trusted timestamps, PAdES T/LT/LTA, provider tokens and remote signing are unsupported. PAdES B compliance is not claimed. Technical profiles differ from legal signature categories.
+
+References: [ETSI PAdES](https://www.etsi.org/deliver/etsi_EN/319100_319199/31914201/01.02.01_60/en_31914201v010201p.pdf), [European Commission FAQ](https://ec.europa.eu/digital-building-blocks/sites/spaces/DIGITAL/pages/880312429/eSignature%2BFAQ), [Chile — Law 19,799](https://www.bcn.cl/leychile/navegar?idNorma=196640), [UK ICO](https://ico.org.uk/for-organisations/guide-to-eidas/qualified-trust-services/), [US — 15 USC 7001](https://uscode.house.gov/view.xhtml?req=%28title%3A15+section%3A7001%28c%29+edition%3Aprelim%29).
+
 > **Languages / Idiomas / Lingue:**
 > 🇬🇧 **English** | 🇪🇸 [Español](README.es.md) | 🇧🇷 [Português](README.pt.md) | 🇮🇹 [Italiano](README.it.md) | 🇫🇷 [Français](README.fr.md)
 
@@ -29,8 +52,8 @@ The signature allows a PDF reader to check whether the signed content has change
   Built entirely in pure TypeScript/JavaScript (`node-forge` + `pdf-lib` + `@signpdf`). No Python, no OpenSSL, no terminal commands required.
 - 🌐 **Multi-Language Support (i18n):**
   Full translations in **English (`en`)**, **Spanish (`es`)**, **Portuguese (`pt`)**, **Italian (`it`)**, and **French (`fr`)**, automatically matching your Obsidian display language.
-- ⏳ **Expiration Warnings & 1-Click Renewal:**
-  Monitors certificate validity and shows proactive alerts when your certificate has **30 days or less remaining**, with an instant renewal button.
+- ⏳ **Certificate Expiration Warnings:**
+  Monitors certificate validity and shows proactive alerts when your certificate has **30 days or less remaining**, so you can configure a current certificate.
 - 🎛️ **Native Integration:**
   Hooks directly into Obsidian's built-in **"Export to PDF"** dialog with three independent controls that remember your preferences.
 - ⏱️ **Automated Post-Processing:**
@@ -105,7 +128,7 @@ Made with ❤️ by [Benjamín Alcalde G.](https://github.com/Benhaman9)
 
 ## Certificate and signature limitations
 
-A random password is generated on first load. You can change it before creating a certificate; a blank password is refused for new certificates. Obsidian 1.11.5 or newer is required. The password is kept in the vault's local SecretStorage instead of the plugin's `data.json`; existing passwords are migrated when the plugin loads. Configure it separately on each device. Older vault backups or sync history may still contain the former plaintext value, so review those copies and rotate the certificate if it was exposed. Renewal preserves the previous certificate in a `.bak` file next to it. Expired or not-yet-valid certificates cannot be used to sign. Existing signed PDFs are rejected because this plugin rewrites the PDF rather than adding an incremental signature. The signature uses `adbe.pkcs7.detached`; full PAdES profile conformance, trusted timestamps and long-term validation are not claimed.
+A random password is generated on first load. You can change it before creating a certificate; a blank password is refused for new certificates. Obsidian 1.11.5 or newer is required. The password is kept in the vault's local SecretStorage instead of the plugin's `data.json`; existing passwords are migrated when the plugin loads. Configure it separately on each device. Older vault backups or sync history may still contain the former plaintext value, so review those copies and rotate the certificate if it was exposed. Creating a self-signed certificate never overwrites the configured certificate. Expired or not-yet-valid certificates cannot be used to sign. Existing signed PDFs are rejected because this plugin rewrites the PDF rather than adding an incremental signature. The signature uses `adbe.pkcs7.detached`; full PAdES profile conformance, trusted timestamps and long-term validation are not claimed.
 
 Malformed PDF objects are rejected rather than recovered during signing. XRef
 streams are checked before allocating entries: safe counts and byte widths,

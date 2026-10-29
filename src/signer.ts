@@ -1,14 +1,25 @@
 import * as forge from "node-forge";
 import { withPdfDecodeBudget } from "./pdf-limits";
-import { PDFDocument, PDFSignature, PDFName, PDFDict } from "pdf-lib";
+import { PDFDocument, PDFSignature, PDFName, PDFDict, PDFInvalidObject } from "pdf-lib";
 import { pdflibAddPlaceholder } from "@signpdf/placeholder-pdf-lib";
 import { SignPdf } from "@signpdf/signpdf";
 import { P12Signer } from "@signpdf/signer-p12";
 import * as fs from "fs";
-import { randomUUID } from "crypto";
+import * as path from "path";
+import { createHash, randomUUID } from "crypto";
 import { t } from "./i18n";
+import { inspectPdfSignature } from "./verifier";
 
 type ForgeModule = typeof forge;
+export const MAX_SIGNING_PDF_BYTES = 64 * 1024 * 1024;
+export const MAX_CERTIFICATE_BYTES = 4 * 1024 * 1024;
+
+async function checkSigningFileSizes(filePath: string, certPath: string): Promise<void> {
+  const [pdf, certificate] = await Promise.all([fs.promises.stat(filePath), fs.promises.stat(certPath)]);
+  if (pdf.size > MAX_SIGNING_PDF_BYTES || certificate.size > MAX_CERTIFICATE_BYTES) {
+    throw new Error(t("error_file_too_large"));
+  }
+}
 
 function getForge(): ForgeModule {
   const forgeObject = forge as unknown as { default?: ForgeModule };
@@ -17,6 +28,7 @@ function getForge(): ForgeModule {
 
 export interface SignatureMetadata {
   signerName: string;
+  signatureMode?: "approval" | "certify";
   reason?: string;
   location?: string;
   contactInfo?: string;
@@ -26,10 +38,13 @@ export interface CertificateInfo {
   exists: boolean;
   valid: boolean;
   commonName?: string;
+  issuer?: string;
+  fingerprint?: string;
+  selfSigned?: boolean;
   notBefore?: Date;
   notAfter?: Date;
   daysRemaining?: number;
-  isExpiringSoon?: boolean; // <= 30 días
+  isExpiringSoon?: boolean; // <= 30 dÃ­as
   isExpired?: boolean;
   error?: string;
 }
@@ -41,14 +56,26 @@ function inspectCertificate(p12Buffer: Buffer, password: string): CertificateInf
     const p12 = f.pkcs12.pkcs12FromAsn1(p12Asn1, false, password);
     // Use the same encrypted RSA key bag that P12Signer uses for the signature.
     const bags = p12.safeContents.flatMap((content) => content.safeBags);
-    const key = bags.find((bag) => bag.type === f.pki.oids.pkcs8ShroudedKeyBag && bag.key)?.key;
-    const cert = key && bags.find((bag) => {
+    const keyBags = bags.filter((bag) => bag.type === f.pki.oids.pkcs8ShroudedKeyBag);
+    if (keyBags.length > 1) return { exists: true, valid: false, error: t("error_ambiguous_cert") };
+    // P12Signer uses keyBags[0], so never silently select a later usable key.
+    const key = keyBags[0]?.key;
+    const matchingCertificates = key ? bags.filter((bag) => {
       const publicKey = bag.cert?.publicKey as forge.pki.rsa.PublicKey | undefined;
       return publicKey?.n && publicKey.e && key.n.compareTo(publicKey.n) === 0 && key.e.compareTo(publicKey.e) === 0;
-    })?.cert;
+    }).map((bag) => bag.cert!) : [];
+    const certificateDer = (cert: forge.pki.Certificate) => f.asn1.toDer(f.pki.certificateToAsn1(cert)).getBytes();
+    const distinctCertificates = new Map(matchingCertificates.map(cert => [certificateDer(cert), cert]));
+    if (distinctCertificates.size > 1) return { exists: true, valid: false, error: t("error_ambiguous_cert") };
+    const cert = matchingCertificates[matchingCertificates.length - 1];
 
     if (!cert) {
       return { exists: true, valid: false, error: t("error_no_signing_cert") };
+    }
+    if (key!.n.bitLength() < 2048) return { exists: true, valid: false, error: t("error_weak_rsa") };
+    const usage = cert.getExtension("keyUsage") as { digitalSignature?: boolean; nonRepudiation?: boolean } | null;
+    if (usage && !usage.digitalSignature && !usage.nonRepudiation) {
+      return { exists: true, valid: false, error: t("error_cert_key_usage") };
     }
 
     const notBefore = cert.validity.notBefore;
@@ -67,6 +94,9 @@ function inspectCertificate(p12Buffer: Buffer, password: string): CertificateInf
       valid: !isExpired && !isNotYetValid,
       error: isNotYetValid ? t("error_not_yet_valid") : undefined,
       commonName,
+      issuer: cert.issuer.attributes.map(attr => `${attr.shortName || attr.name || attr.type}=${String(attr.value)}`).join(", "),
+      fingerprint: createHash("sha256").update(Buffer.from(certificateDer(cert), "binary")).digest("hex").toUpperCase().match(/.{2}/g)!.join(":"),
+      selfSigned: cert.isIssuer(cert) && cert.verify(cert),
       notBefore,
       notAfter,
       daysRemaining,
@@ -79,7 +109,7 @@ function inspectCertificate(p12Buffer: Buffer, password: string): CertificateInf
 }
 
 /**
- * Inspecciona un certificado PKCS#12 (.pfx / .p12) y extrae vigencia y expiración.
+ * Inspecciona un certificado PKCS#12 (.pfx / .p12) y extrae vigencia y expiraciÃ³n.
  */
 export function getCertificateInfo(certPath: string, password = ""): CertificateInfo {
   if (!fs.existsSync(certPath)) {
@@ -87,6 +117,9 @@ export function getCertificateInfo(certPath: string, password = ""): Certificate
   }
 
   try {
+    if (fs.statSync(certPath).size > MAX_CERTIFICATE_BYTES) {
+      return { exists: true, valid: false, error: t("error_file_too_large") };
+    }
     return inspectCertificate(fs.readFileSync(certPath), password);
   } catch {
     return { exists: true, valid: false, error: t("error_invalid_cert") };
@@ -138,11 +171,6 @@ export function createSelfSignedCertificate(
       keyEncipherment: false,
       dataEncipherment: false,
     },
-    {
-      name: "extKeyUsage",
-      clientAuth: true,
-      emailProtection: true,
-    },
   ]);
 
   cert.sign(keys.privateKey, f.md.sha256.create());
@@ -166,11 +194,18 @@ export async function signPdfBuffer(
   password: string,
   metadata: SignatureMetadata
 ): Promise<Buffer> {
+  if (!Buffer.isBuffer(pdfBuffer) || !Buffer.isBuffer(p12Buffer)) throw new TypeError("PDF and certificate must be Buffers");
+  if (pdfBuffer.length > MAX_SIGNING_PDF_BYTES || p12Buffer.length > MAX_CERTIFICATE_BYTES) {
+    throw new Error(t("error_file_too_large"));
+  }
   const certificateInfo = inspectCertificate(p12Buffer, password);
   if (!certificateInfo.valid) {
     throw new Error(certificateInfo.isExpired
       ? t("error_expired_cert")
       : certificateInfo.error || t("error_invalid_cert"));
+  }
+  if (metadata.signatureMode !== undefined && !["approval", "certify"].includes(metadata.signatureMode)) {
+    throw new Error("Unsupported signature mode");
   }
   const signer = new P12Signer(p12Buffer, {
     passphrase: password || "",
@@ -185,6 +220,10 @@ export async function signPdfBuffer(
     throw new Error(t("error_already_signed"));
   }
 
+  if (pdfDoc.catalog.has(PDFName.of("Perms"))) {
+    throw new Error(t("error_already_signed"));
+  }
+
   pdflibAddPlaceholder({
     pdfDoc,
     reason: metadata.reason ?? "",
@@ -193,6 +232,29 @@ export async function signPdfBuffer(
     location: metadata.location ?? "",
     signatureLength: 8192,
   });
+
+  // The placeholder library serializes the signature as PDFInvalidObject so it
+  // cannot enter an object stream. Preserve that representation when adding DocMDP.
+  if (metadata.signatureMode !== "approval") {
+    const fields = pdfDoc.getForm().getFields();
+    const field = fields[fields.length - 1];
+    const signatureRef = field.acroField.dict.get(PDFName.of("V"))!;
+    const signatureObject = pdfDoc.context.lookup(signatureRef);
+    if (!(signatureObject instanceof PDFInvalidObject)) throw new Error("Invalid signature placeholder");
+    const bytes = new Uint8Array(signatureObject.sizeInBytes());
+    signatureObject.copyBytesInto(bytes, 0);
+    const serialized = Buffer.from(bytes).toString("latin1");
+    const reference = pdfDoc.context.obj([{
+      Type: "SigRef", TransformMethod: "DocMDP", Data: pdfDoc.context.trailerInfo.Root,
+      TransformParams: { Type: "TransformParams", P: 1, V: "1.2" },
+    }]);
+    const end = serialized.lastIndexOf(">>");
+    if (end < 0) throw new Error("Invalid signature placeholder");
+    pdfDoc.context.assign(signatureRef as import("pdf-lib").PDFRef, PDFInvalidObject.of(
+      Buffer.from(serialized.slice(0, end) + "/Reference " + reference.toString() + "\n" + serialized.slice(end), "latin1")
+    ));
+    pdfDoc.catalog.set(PDFName.of("Perms"), pdfDoc.context.obj({ DocMDP: signatureRef }));
+  }
 
   const rawBytesWithPlaceholder = await pdfDoc.save({
     useObjectStreams: false,
@@ -203,7 +265,9 @@ export async function signPdfBuffer(
     Buffer.from(rawBytesWithPlaceholder),
     signer
   );
-
+  if (inspectPdfSignature(signedBuffer).status !== "intact") {
+    throw new Error(t("error_signing_verification"));
+  }
   return signedBuffer;
 }
 
@@ -223,6 +287,7 @@ export async function signPdfFile(
     throw new Error(t("error_cert_missing", { path: certPath }));
   }
 
+  await checkSigningFileSizes(filePath, certPath);
   const pdfBuffer = await fs.promises.readFile(filePath);
   const p12Buffer = await fs.promises.readFile(certPath);
 
@@ -230,12 +295,50 @@ export async function signPdfFile(
 
   const tempPath = `${filePath}.${randomUUID()}.signed.tmp`;
   try {
-    await fs.promises.writeFile(tempPath, signedBuffer, { flag: "wx" });
+    await fs.promises.writeFile(tempPath, signedBuffer, { flag: "wx", mode: 0o600 });
     if (!(await fs.promises.readFile(filePath)).equals(pdfBuffer)) {
       throw new Error(t("error_pdf_changed"));
     }
     await fs.promises.rename(tempPath, filePath);
   } finally {
     await fs.promises.rm(tempPath, { force: true });
+  }
+}
+
+/** Sign an existing PDF into a new sibling file without replacing the source. */
+export async function signPdfCopy(
+  filePath: string,
+  certPath: string,
+  password: string,
+  metadata: SignatureMetadata
+): Promise<string> {
+  if (!fs.existsSync(filePath)) throw new Error(t("error_pdf_missing", { path: filePath }));
+  if (!fs.existsSync(certPath)) throw new Error(t("error_cert_missing", { path: certPath }));
+  await checkSigningFileSizes(filePath, certPath);
+  const original = await fs.promises.readFile(filePath);
+  const certificate = await fs.promises.readFile(certPath);
+  const signed = await signPdfBuffer(original, certificate, password, metadata);
+  if (!(await fs.promises.readFile(filePath)).equals(original)) throw new Error(t("error_pdf_changed"));
+  const parsed = path.parse(filePath);
+  let output = path.join(parsed.dir, `${parsed.name}.signed.pdf`);
+  let handle: fs.promises.FileHandle | undefined;
+  try {
+    try {
+      handle = await fs.promises.open(output, "wx", 0o600);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+      output = path.join(parsed.dir, `${parsed.name}.signed-${randomUUID().slice(0, 8)}.pdf`);
+      handle = await fs.promises.open(output, "wx", 0o600);
+    }
+    await handle.writeFile(signed);
+    await handle.close();
+    handle = undefined;
+    return output;
+  } catch (error) {
+    // Remove only the file whose exclusive creation succeeded in this call.
+    if (handle) {
+      try { await handle.close(); } finally { await fs.promises.rm(output, { force: true }); }
+    }
+    throw error;
   }
 }
