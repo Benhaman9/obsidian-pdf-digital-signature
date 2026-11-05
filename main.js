@@ -49858,6 +49858,17 @@ var forge2 = __toESM(require_lib());
 var import_PDFXRefStreamParser = __toESM(require_PDFXRefStreamParser());
 var import_DecodeStream = __toESM(require_DecodeStream());
 var import_node_async_hooks = require("node:async_hooks");
+var import_node_timers = require("node:timers");
+var pdfAsync = require_async();
+if (typeof pdfAsync.waitForTick !== "function") throw new Error("Unsupported PDF scheduler version");
+pdfAsync.waitForTick = () => new Promise((resolve3) => {
+  (0, import_node_timers.setTimeout)(resolve3, 0);
+});
+var pdfUtils = require_utils2();
+if (Object.getOwnPropertyDescriptor(pdfUtils, "waitForTick")?.writable) {
+  pdfUtils.waitForTick = pdfAsync.waitForTick;
+}
+if (pdfUtils.waitForTick !== pdfAsync.waitForTick) throw new Error("Unsupported PDF scheduler binding");
 var MAX_DECODED_STREAM_BYTES = 64 * 1024 * 1024;
 var MAX_DECODED_DOCUMENT_BYTES = 128 * 1024 * 1024;
 var decodeBudget = new import_node_async_hooks.AsyncLocalStorage();

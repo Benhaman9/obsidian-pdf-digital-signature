@@ -1,6 +1,22 @@
 import PDFXRefStreamParser from "pdf-lib/cjs/core/parser/PDFXRefStreamParser";
 import DecodeStream from "pdf-lib/cjs/core/streams/DecodeStream";
 import { AsyncLocalStorage } from "node:async_hooks";
+import { setTimeout } from "node:timers";
+
+// pdf-lib's parser and writer yield through a browser-global timer. Obsidian
+// can suspend that timer when the native export window closes, leaving larger
+// PDFs pending forever. Patch only our pinned CommonJS dependency, preserving
+// cooperative yields without changing the host's globals or removing budgets.
+const pdfAsync = require("pdf-lib/cjs/utils/async") as { waitForTick: () => Promise<void> };
+if (typeof pdfAsync.waitForTick !== "function") throw new Error("Unsupported PDF scheduler version");
+pdfAsync.waitForTick = () => new Promise<void>(resolve => { setTimeout(resolve, 0); });
+// Bundled tslib versions may copy re-exports instead of keeping live getters.
+// Update that writable snapshot too; native CommonJS getters already see it.
+const pdfUtils = require("pdf-lib/cjs/utils") as { waitForTick: () => Promise<void> };
+if (Object.getOwnPropertyDescriptor(pdfUtils, "waitForTick")?.writable) {
+  pdfUtils.waitForTick = pdfAsync.waitForTick;
+}
+if (pdfUtils.waitForTick !== pdfAsync.waitForTick) throw new Error("Unsupported PDF scheduler binding");
 
 export const MAX_DECODED_STREAM_BYTES = 64 * 1024 * 1024;
 export const MAX_DECODED_DOCUMENT_BYTES = 128 * 1024 * 1024;
