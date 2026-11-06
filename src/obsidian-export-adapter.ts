@@ -4,6 +4,7 @@ import type PdfDigitalSignaturePlugin from "./main";
 import { renderSigningPolicySettings } from "./settings";
 import { refreshMathPrintStyles } from "./math-print-styles";
 import { t } from "./i18n";
+import { keepExportActive } from "./export-activity";
 
 // Helper para setCssStyles seguro contra versiones de tipos antiguas
 const applyStyles = (el: HTMLElement, styles: Record<string, string>): void => {
@@ -177,6 +178,7 @@ export class ObsidianExportAdapter {
         new Notice(t("signature_choice_required")); return;
       }
       exporting = true;
+      const releaseActivity = keepExportActive();
       try {
       const exportSettings = { ...plugin.settings };
       const shouldSignCryptographically = plugin.settings.firmarCriptograficamente;
@@ -221,7 +223,7 @@ export class ObsidianExportAdapter {
       }
 
       return result;
-      } finally { exporting = false; }
+      } finally { releaseActivity(); exporting = false; }
     };
 
   }

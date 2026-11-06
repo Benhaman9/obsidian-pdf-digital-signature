@@ -50703,6 +50703,51 @@ async function refreshMathPrintStyles(source, rendered) {
   await destination.fonts.ready;
 }
 
+// src/export-activity.ts
+var activities = /* @__PURE__ */ new Map();
+function restore(activity) {
+  try {
+    if (activity.previous && !activity.contents.isDestroyed?.() && !activity.contents.getBackgroundThrottling()) {
+      activity.contents.setBackgroundThrottling(true);
+    }
+  } catch {
+  }
+}
+function keepExportActive() {
+  let activity;
+  try {
+    const electron = require("electron");
+    const contents = electron.remote?.getCurrentWebContents?.();
+    if (!contents || !Number.isInteger(contents.id) || typeof contents.getBackgroundThrottling !== "function" || typeof contents.setBackgroundThrottling !== "function" || contents.isDestroyed?.()) return () => {
+    };
+    const existing = activities.get(contents.id);
+    if (existing) activity = existing;
+    else {
+      activity = { contents, users: 0, previous: contents.getBackgroundThrottling() };
+      if (activity.previous) contents.setBackgroundThrottling(false);
+      activities.set(contents.id, activity);
+    }
+    activity.users++;
+  } catch {
+    return () => {
+    };
+  }
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    if (activities.get(activity.contents.id) !== activity) return;
+    if (--activity.users === 0) {
+      activities.delete(activity.contents.id);
+      restore(activity);
+    }
+  };
+}
+function releaseExportActivity() {
+  for (const activity of activities.values()) restore(activity);
+  activities.clear();
+}
+
 // src/obsidian-export-adapter.ts
 var applyStyles2 = (el, styles) => {
   const setStyles = obsidian2.setCssStyles;
@@ -50850,6 +50895,7 @@ var ObsidianExportAdapter = class {
         return;
       }
       exporting = true;
+      const releaseActivity = keepExportActive();
       try {
         const exportSettings = { ...plugin.settings };
         const shouldSignCryptographically = plugin.settings.firmarCriptograficamente;
@@ -50886,6 +50932,7 @@ var ObsidianExportAdapter = class {
         }
         return result;
       } finally {
+        releaseActivity();
         exporting = false;
       }
     };
@@ -51145,6 +51192,7 @@ var PdfDigitalSignaturePlugin = class extends import_obsidian4.Plugin {
     for (const controller of this.signingControllers.values()) controller.abort();
     this.signingControllers.clear();
     this.pendingSigning.clear();
+    releaseExportActivity();
   }
   async loadSettings() {
     const savedSettings = await this.loadData() || {};
@@ -51259,6 +51307,7 @@ var PdfDigitalSignaturePlugin = class extends import_obsidian4.Plugin {
     const update = (text) => {
       status.setMessage?.(text);
     };
+    const releaseActivity = keepExportActive();
     try {
       let expectedFingerprint;
       try {
@@ -51303,6 +51352,7 @@ var PdfDigitalSignaturePlugin = class extends import_obsidian4.Plugin {
         new import_obsidian4.Notice(t("notice_signing_error", { name: baseName, error: message }), 12e3);
       }
     } finally {
+      releaseActivity();
       status.hide();
       this.pendingSigning.delete(jobPath);
       this.signingControllers.delete(jobPath);

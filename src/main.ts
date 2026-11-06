@@ -29,6 +29,7 @@ import { waitForExport } from "./export-readiness";
 import { defaultCertificatePath, certificateLocation } from "./certificate-location";
 import { completeExportFingerprint, fileFingerprint } from "./file-snapshot";
 import { inspectPdfSignature } from "./verifier";
+import { keepExportActive, releaseExportActivity } from "./export-activity";
 
 interface ElectronModule {
   shell?: { openPath: (path: string) => Promise<string> };
@@ -125,6 +126,7 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
     for (const controller of this.signingControllers.values()) controller.abort();
     this.signingControllers.clear();
     this.pendingSigning.clear();
+    releaseExportActivity();
   }
 
   async loadSettings(): Promise<void> {
@@ -247,6 +249,7 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
     const baseName = path.basename(filepath);
     const status = new Notice(t("export_waiting", { name: baseName }), 0);
     const update = (text: string) => { status.setMessage?.(text); };
+    const releaseActivity = keepExportActive();
     try {
       // A complete existing revision is pinned immediately. Incomplete new exports
       // can finish writing, but a second job for the same destination cancels this one.
@@ -288,6 +291,7 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
         new Notice(t("notice_signing_error", { name: baseName, error: message }), 12000);
       }
     } finally {
+      releaseActivity();
       status.hide();
       this.pendingSigning.delete(jobPath);
       this.signingControllers.delete(jobPath);
