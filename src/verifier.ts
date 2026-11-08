@@ -150,10 +150,10 @@ export function inspectPdfSignature(buffer: Buffer): SignatureInspection {
     // Forge supports this options object at runtime; its declaration only lists strict:boolean.
     const parseDer = f.asn1.fromDer as unknown as (input: typeof reader, options: { parseAllBytes: boolean }) => forge.asn1.Asn1;
     const cms = parseDer(reader, { parseAllBytes: false });
-    if (!/^\x00*$/.test(reader.getBytes())) return unsupported("nonzero-signature-padding", "invalid");
+    for (const byte of reader.getBytes()) if (byte !== "\0") return unsupported("nonzero-signature-padding", "invalid");
     const children = (node: forge.asn1.Asn1): forge.asn1.Asn1[] => {
       if (!Array.isArray(node.value)) throw new Error("ASN.1 sequence expected");
-      return node.value as forge.asn1.Asn1[];
+      return node.value;
     };
     const oid = (node: forge.asn1.Asn1): string => {
       if (typeof node.value !== "string" || node.tagClass !== f.asn1.Class.UNIVERSAL ||
@@ -171,16 +171,16 @@ export function inspectPdfSignature(buffer: Buffer): SignatureInspection {
     const info = children(signerInfos[0]);
     if (info.length !== 6 || oid(children(info[2])[0]) !== "2.16.840.1.101.3.4.2.1" ||
         !["1.2.840.113549.1.1.1", "1.2.840.113549.1.1.11"].includes(oid(children(info[4])[0])) ||
-        info[3].tagClass !== f.asn1.Class.CONTEXT_SPECIFIC || info[3].type !== 0) {
+        Number(info[3].tagClass) !== Number(f.asn1.Class.CONTEXT_SPECIFIC) || Number(info[3].type) !== 0) {
       return unsupported("cms-algorithm");
     }
     const identity = children(info[1]);
     if (identity.length !== 2) return unsupported("cms-signer-identity");
-    const certContainer = data.find((node, index) => index > 2 && node.tagClass === f.asn1.Class.CONTEXT_SPECIFIC && node.type === 0);
+    const certContainer = data.find((node, index) => index > 2 && Number(node.tagClass) === Number(f.asn1.Class.CONTEXT_SPECIFIC) && Number(node.type) === 0);
     if (!certContainer) return unsupported("missing-certificate");
     const certificates = children(certContainer).filter((certificate) => {
       const tbs = children(children(certificate)[0]);
-      const offset = tbs[0].tagClass === f.asn1.Class.CONTEXT_SPECIFIC ? 1 : 0;
+      const offset = Number(tbs[0].tagClass) === Number(f.asn1.Class.CONTEXT_SPECIFIC) ? 1 : 0;
       return der(tbs[offset]) === der(identity[1]) && der(tbs[offset + 2]) === der(identity[0]);
     });
     if (certificates.length !== 1) return unsupported("ambiguous-certificate");

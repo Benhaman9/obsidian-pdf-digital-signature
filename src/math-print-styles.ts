@@ -10,7 +10,8 @@ export async function refreshMathPrintStyles(source: Document, rendered: HTMLEle
   const css = Array.from(sourceStyle.sheet.cssRules, rule => rule.cssText).join('\n');
   let target = destination.getElementById(sourceStyle.id) as HTMLStyleElement | null;
   if (!target) {
-    target = destination.createElement('style');
+    // Copy Obsidian's trusted MathJax stylesheet, including its runtime rules.
+    target = sourceStyle.cloneNode(false) as HTMLStyleElement;
     target.id = sourceStyle.id;
     destination.head.appendChild(target);
   }

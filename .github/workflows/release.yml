@@ -1,0 +1,70 @@
+name: Build, attest, and publish release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag and draft release (for example 1.2.3)
+        required: true
+        type: string
+      publish:
+        description: Publish after checks and attestations (disable to inspect the draft first)
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    env:
+      RELEASE_TAG: ${{ inputs.tag }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Check out the exact release tag
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.tag }}
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Validate tag, manifest, and draft
+        shell: bash
+        run: |
+          [[ "$RELEASE_TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          node -e 'const tag=process.env.RELEASE_TAG; for (const name of ["./package.json","./manifest.json"]) if (require(name).version !== tag) throw new Error("Version does not match tag");'
+          test "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = true
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run build
+      - name: Check reproducible bundle
+        run: git diff --exit-code -- main.js
+      - run: npm test
+      - name: Upload the verified draft assets
+        run: gh release upload "$RELEASE_TAG" main.js manifest.json styles.css --clobber
+      - name: Attest the three release assets
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: |
+            main.js
+            manifest.json
+            styles.css
+          create-storage-record: false
+      - name: Publish only after attestations exist
+        if: ${{ inputs.publish }}
+        run: gh release edit "$RELEASE_TAG" --draft=false --latest

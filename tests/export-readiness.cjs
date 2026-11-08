@@ -54,6 +54,17 @@ test('missing files and permanently empty exports stop at a bounded deadline', a
   });
 });
 
+test('PDF EOF accepts only the PDF whitespace set, including NUL, after the final marker', async () => {
+  await temporary(async filename => {
+    const pdf = await pdfBytes();
+    const valid = Buffer.concat([pdf, Buffer.from([0, 9, 10, 12, 13, 32])]);
+    fs.writeFileSync(filename, valid);
+    assert.equal(await waitForExport(filename, fast), hash(valid));
+    fs.writeFileSync(filename, Buffer.concat([pdf, Buffer.from([11])]));
+    await assert.rejects(waitForExport(filename, { ...fast, timeoutMs: 60 }), hasCode('EXPORT_INVALID'));
+  });
+});
+
 test('a stable file with an EOF marker and invalid xref is never accepted as a complete PDF', async () => {
   await temporary(async filename => {
     fs.writeFileSync(filename, '%PDF-1.7\nnot a PDF object tree\nstartxref\n0\n%%EOF\n');

@@ -152,3 +152,15 @@ Documents exceeding these limits fail explicitly. These are parser allocation
 guards, not a total process-memory or CPU limit on every PDF feature.
 
 [Adobe: certificate trust](https://helpx.adobe.com/acrobat/using/trusted-identities.html) · [Signing library](https://github.com/vbuch/node-signpdf)
+
+## Local file access
+
+This desktop plugin uses Node filesystem APIs to sign the export destination selected by the user and to read the configured PKCS#12 certificate, including paths outside the vault. New certificate locations default outside the vault to reduce accidental sync exposure. The fallback PDF picker enumerates vault file paths and filters them to PDFs; it does not read every file's contents. Signing, certificate generation, and signature inspection run locally without network requests.
+
+## Build and release checks
+
+Use Node 24, then run `npm ci`, `npm run lint`, `npm run typecheck`, `npm run build`, and `npm test`. The official Obsidian ESLint configuration is checked with zero warnings. The build rejects an installed `node-forge` version that differs from the pinned dependency, so stale dependencies cannot silently enter a release.
+
+Settings use searchable definitions on Obsidian 1.13.0 and later, with the same rows rendered through the legacy fallback on older supported versions. The certificate-password row retains its SecretStorage handler rather than automatic JSON persistence.
+
+To release, push the version commit and matching tag, create a draft GitHub release, and dispatch the **Build, attest, and publish release** workflow with that tag. The workflow checks the bundle against the committed source, runs the checks, uploads the three assets, creates provenance attestations, and publishes the draft only after those attestations exist. Disable its `publish` input to inspect the attested draft first. Verify a downloaded asset with `gh attestation verify main.js --repo Benhaman9/obsidian-pdf-digital-signature`.

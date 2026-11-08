@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import { createHash } from "crypto";
+import { trimPdfEnd } from "./pdf-whitespace";
 
 /** Fingerprint a bounded, stable on-disk PDF before placing it in the signing queue. */
 export function fileFingerprint(filepath: string): string {
@@ -33,7 +34,7 @@ export function completeExportFingerprint(filepath: string): string | undefined 
     if (size < 12) return undefined;
     const head = Buffer.alloc(5); fs.readSync(file, head, 0, 5, 0);
     const tail = Buffer.alloc(Math.min(size, 2048)); fs.readSync(file, tail, 0, tail.length, size - tail.length);
-    if (head.toString("ascii") !== "%PDF-" || !/%%EOF[\x00\x09\x0a\x0c\x0d\x20]*$/.test(tail.toString("latin1"))) return undefined;
+    if (head.toString("ascii") !== "%PDF-" || !trimPdfEnd(tail.toString("latin1")).endsWith("%%EOF")) return undefined;
   } finally { fs.closeSync(file); }
   return fileFingerprint(filepath);
 }

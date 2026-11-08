@@ -81,7 +81,7 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
       id: "sign-existing-pdf-file",
       name: t("cmd_sign_existing"),
       callback: () => {
-        this.promptSignExistingPdf();
+        void this.promptSignExistingPdf();
       },
     });
 
@@ -130,14 +130,16 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
   }
 
   async loadSettings(): Promise<void> {
-    const savedSettings = ((await this.loadData()) || {}) as Partial<PdfSignatureSettings>;
+    const loadedSettings: unknown = await this.loadData();
+    const savedSettings = (loadedSettings && typeof loadedSettings === "object" && !Array.isArray(loadedSettings)
+      ? loadedSettings : {}) as Partial<PdfSignatureSettings>;
     const secretId = "obsidian-pdf-digital-signature-certificate-password";
     const storedPassword = this.app.secretStorage.getSecret(secretId);
     const password = storedPassword ?? savedSettings.certPassword ?? randomUUID();
     if (storedPassword === null) this.app.secretStorage.setSecret(secretId, password);
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, {
+    this.settings = { ...DEFAULT_SETTINGS,
       nombreFirmante: t("default_signer_name"), motivo: t("default_reason"), ubicacion: t("default_location"),
-    }, savedSettings, { certPassword: password });
+      ...savedSettings, certPassword: password };
 
     const newInstallation = Object.keys(savedSettings).length === 0;
     this.settings.signatureMode = savedSettings.signatureMode === "approval" || savedSettings.signatureMode === "certify"
@@ -332,7 +334,7 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
       const result = inspectPdfSignature(bytes);
       const modal = new Modal(this.app);
       modal.titleEl.setText(t("verify_title"));
-      modal.contentEl.style.overflowWrap = "anywhere";
+      modal.contentEl.addClass("pdf-sig-verification-content");
       modal.contentEl.createEl("p", { text: path.basename(filepath) });
       modal.contentEl.createEl("p", { text: t(result.signedRevisionIntegrity === "valid" ? "verify_revision_valid"
         : result.signedRevisionIntegrity === "invalid" ? "verify_revision_invalid" : "verify_revision_unknown") });
@@ -387,7 +389,7 @@ export default class PdfDigitalSignaturePlugin extends Plugin {
         if (this.settings.signatureModeChosen === false) { new Notice(t("signature_choice_required")); return; }
         button.setDisabled(true);
         modal.close();
-        this.scheduleSigning(filepath, { ...this.settings }, true);
+        void this.scheduleSigning(filepath, { ...this.settings }, true);
       }));
     modal.open();
   }

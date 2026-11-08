@@ -20,3 +20,10 @@
   font-size: var(--font-ui-smaller);
   color: var(--text-muted);
 }
+.pdf-sig-verification-content {
+  overflow-wrap: anywhere;
+}
+
+.pdf-sig-settings-description {
+  display: block;
+}

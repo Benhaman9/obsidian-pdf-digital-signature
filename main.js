@@ -1709,9 +1709,17 @@ var require_cipherModes = __commonJS({
         return false;
       }
       var len = output.length();
+      if (len === 0) {
+        return true;
+      }
       var count = output.at(len - 1);
-      if (count > this.blockSize << 2) {
+      if (count === 0 || count > this.blockSize || count > len) {
         return false;
+      }
+      for (var i = 2; i <= count; ++i) {
+        if (output.at(len - i) !== count) {
+          return false;
+        }
       }
       output.truncate(count);
       return true;
@@ -1774,9 +1782,17 @@ var require_cipherModes = __commonJS({
         return false;
       }
       var len = output.length();
+      if (len === 0) {
+        return true;
+      }
       var count = output.at(len - 1);
-      if (count > this.blockSize << 2) {
+      if (count === 0 || count > this.blockSize || count > len) {
         return false;
+      }
+      for (var i = 2; i <= count; ++i) {
+        if (output.at(len - i) !== count) {
+          return false;
+        }
       }
       output.truncate(count);
       return true;
@@ -2035,10 +2051,13 @@ var require_cipherModes = __commonJS({
       } else {
         additionalData = forge3.util.createBuffer();
       }
-      if ("tagLength" in options) {
-        this._tagLength = options.tagLength;
+      if (options.tagLength !== void 0 && options.tagLength !== null) {
+        this._tagLength = Number(options.tagLength);
       } else {
         this._tagLength = 128;
+      }
+      if ([128, 120, 112, 104, 96, 64, 32].indexOf(this._tagLength) === -1) {
+        throw new Error("Invalid tag length.");
       }
       this._tag = null;
       if (options.decrypt) {
@@ -2990,7 +3009,10 @@ var require_asn1 = __commonJS({
             var subOptions = {
               // enforce strict mode to avoid parsing ASN.1 from plain data
               strict: true,
-              decodeBitStrings: true
+              // only decode one level of BIT STRINGs, nested decoding has
+              // quadratic cost due to copies for change detection
+              decodeBitStrings: false,
+              maxDepth: options.maxDepth
             };
             var composed = _fromDer(bytes, remaining, depth + 1, subOptions);
             var used = start - bytes.length();
@@ -3094,12 +3116,16 @@ var require_asn1 = __commonJS({
     asn1.oidToDer = function(oid) {
       var values = oid.split(".");
       var bytes = forge3.util.createBuffer();
-      bytes.putByte(40 * parseInt(values[0], 10) + parseInt(values[1], 10));
+      var first = parseInt(values[0], 10);
+      var second = parseInt(values[1], 10);
+      if (!(first >= 0 && first <= 2 && second >= 0) || first < 2 && second > 39) {
+        throw new Error("Invalid OID; the first two arcs are out of range.");
+      }
       var last, valueBytes, value, b;
-      for (var i = 2; i < values.length; ++i) {
+      for (var i = 1; i < values.length; ++i) {
         last = true;
         valueBytes = [];
-        value = parseInt(values[i], 10);
+        value = i === 1 ? 40 * first + second : parseInt(values[i], 10);
         if (value > 4294967295) {
           throw new Error("OID value too large; max is 32-bits.");
         }
@@ -3123,9 +3149,9 @@ var require_asn1 = __commonJS({
       if (typeof bytes === "string") {
         bytes = forge3.util.createBuffer(bytes);
       }
-      var b = bytes.getByte();
-      oid = Math.floor(b / 40) + "." + b % 40;
+      var b;
       var value = 0;
+      var first = true;
       while (bytes.length() > 0) {
         if (value > 70368744177663) {
           throw new Error("OID value too large; max is 53-bits.");
@@ -3135,7 +3161,13 @@ var require_asn1 = __commonJS({
         if (b & 128) {
           value += b & 127;
         } else {
-          oid += "." + (value + b);
+          value += b;
+          if (first) {
+            oid = value < 80 ? Math.floor(value / 40) + "." + value % 40 : "2." + (value - 80);
+            first = false;
+          } else {
+            oid += "." + value;
+          }
           value = 0;
         }
       }
@@ -3971,12 +4003,13 @@ var require_pem = __commonJS({
     };
     pem.decode = function(str) {
       var rval = [];
-      var rMessage = /\s*-----BEGIN ([A-Z0-9- ]+)-----\r?\n?([\x21-\x7e\s]+?(?:\r?\n\r?\n))?([:A-Za-z0-9+\/=\s]+?)-----END \1-----/g;
-      var rHeader = /([\x21-\x7e]+):\s*([\x21-\x7e\s^:]+)/;
+      str = String(str);
+      var messages = _pemMessageScanner(str);
+      var rHeader = /(?:^|[^\x21-\x7e])([\x21-\x7e]+):\s*([\x21-\x7e\s^:]+)/;
       var rCRLF = /\r?\n/;
       var match;
       while (true) {
-        match = rMessage.exec(str);
+        match = messages.next();
         if (!match) {
           break;
         }
@@ -3999,7 +4032,7 @@ var require_pem = __commonJS({
         var lines = match[2].split(rCRLF);
         var li = 0;
         while (match && li < lines.length) {
-          var line = lines[li].replace(/\s+$/, "");
+          var line = rtrim(lines[li]);
           for (var nl = li + 1; nl < lines.length; ++nl) {
             var next = lines[nl];
             if (!/\s/.test(next[0])) {
@@ -4076,6 +4109,140 @@ var require_pem = __commonJS({
     }
     function ltrim(str) {
       return str.replace(/^\s+/, "");
+    }
+    function rtrim(str) {
+      var end = str.length;
+      while (end > 0 && /\s/.test(str.charAt(end - 1))) {
+        --end;
+      }
+      return str.substring(0, end);
+    }
+    function _pemMessageScanner(str) {
+      var rBody = /[:A-Za-z0-9+\/=\s]/;
+      var rNotBody = /[^:A-Za-z0-9+\/=\s]/g;
+      var rNotHeader = /[^\x21-\x7e\s]/g;
+      var rLabel = /[A-Z0-9- ]/;
+      function indexOfRegex(regex, i) {
+        regex.lastIndex = i;
+        var match = regex.exec(str);
+        return match ? match.index : str.length;
+      }
+      function labelAt(i) {
+        for (var j = i; j < str.length && rLabel.test(str.charAt(j)); ++j) {
+          if (j > i && str.substr(j, 5) === "-----") {
+            return str.substring(i, j);
+          }
+        }
+        return null;
+      }
+      function blankLineEnd(i) {
+        if (str.charAt(i) === "\r") {
+          ++i;
+        }
+        if (str.charAt(i) !== "\n") {
+          return -1;
+        }
+        if (str.charAt(++i) === "\r") {
+          ++i;
+        }
+        return str.charAt(i) === "\n" ? i + 1 : -1;
+      }
+      function firstBlankLine(start2, end2) {
+        for (var i = start2; i < end2; ++i) {
+          var v = blankLineEnd(i);
+          if (v !== -1 && v < end2) {
+            return i;
+          }
+        }
+        return -1;
+      }
+      var ends = {};
+      for (var end = str.indexOf("-----END "); end !== -1; end = str.indexOf("-----END ", end + 1)) {
+        var endLabel = labelAt(end + 9);
+        var start = end;
+        while (start > 0 && rBody.test(str.charAt(start - 1))) {
+          --start;
+        }
+        var blank = firstBlankLine(start, end);
+        if (endLabel !== null && blank !== -1) {
+          var key = "$" + endLabel;
+          (ends[key] = ends[key] || []).push({ end, blank });
+        }
+      }
+      var pos = 0;
+      var headerEnd = -1;
+      return {
+        next: function() {
+          var begin;
+          while ((begin = str.indexOf("-----BEGIN ", pos)) !== -1) {
+            pos = begin + 1;
+            var label = labelAt(begin + 11);
+            if (label === null) {
+              continue;
+            }
+            var q = begin + 16 + label.length;
+            var bodyEnd = indexOfRegex(rNotBody, q);
+            var bodyEndOk = str.substr(bodyEnd, 9) === "-----END " && labelAt(bodyEnd + 9) === label;
+            if (q > headerEnd) {
+              headerEnd = indexOfRegex(rNotHeader, q);
+            }
+            var later = null;
+            var list = ends["$" + label];
+            if (list) {
+              var lo = 0;
+              var hi = list.length;
+              while (lo < hi) {
+                var mid = lo + hi >> 1;
+                if (list[mid].end > bodyEnd) {
+                  hi = mid;
+                } else {
+                  lo = mid + 1;
+                }
+              }
+              later = list[lo] || null;
+            }
+            var starts = [];
+            if (str.charAt(q) === "\r") {
+              if (str.charAt(q + 1) === "\n") {
+                starts.push(q + 2);
+              }
+              starts.push(q + 1);
+            } else if (str.charAt(q) === "\n") {
+              starts.push(q + 1);
+            }
+            starts.push(q);
+            for (var i = 0; i < starts.length; ++i) {
+              var t2 = starts[i];
+              var blank2 = bodyEndOk ? firstBlankLine(t2 + 1, bodyEnd) : -1;
+              var end2 = bodyEnd;
+              if (blank2 === -1 && later) {
+                blank2 = later.blank;
+                end2 = later.end;
+              }
+              if (blank2 !== -1 && blank2 <= headerEnd) {
+                var v = blankLineEnd(blank2);
+                pos = end2 + 14 + label.length;
+                return [
+                  str.substring(begin, pos),
+                  label,
+                  str.substring(t2, v),
+                  str.substring(v, end2)
+                ];
+              }
+              if (bodyEndOk && t2 < bodyEnd) {
+                pos = bodyEnd + 14 + label.length;
+                return [
+                  str.substring(begin, pos),
+                  label,
+                  void 0,
+                  str.substring(t2, bodyEnd)
+                ];
+              }
+            }
+          }
+          return null;
+        }
+      };
     }
   }
 });
@@ -6514,7 +6681,7 @@ var require_jsbn = __commonJS({
       return r;
     }
     function bnModInverse(m) {
-      if (this.signum() == 0) {
+      if (this.signum() <= 0 || m.signum() <= 0) {
         return BigInteger.ZERO;
       }
       var ac = m.isEven();
@@ -7393,6 +7560,41 @@ var require_rsa = __commonJS({
         capture: "digest"
       }]
     };
+    var _encodeDigestInfo = function(oid, digest, withParameters) {
+      var digestAlgorithm = [asn1.create(
+        asn1.Class.UNIVERSAL,
+        asn1.Type.OID,
+        false,
+        asn1.oidToDer(oid).getBytes()
+      )];
+      if (withParameters) {
+        digestAlgorithm.push(asn1.create(
+          asn1.Class.UNIVERSAL,
+          asn1.Type.NULL,
+          false,
+          ""
+        ));
+      }
+      return asn1.toDer(asn1.create(
+        asn1.Class.UNIVERSAL,
+        asn1.Type.SEQUENCE,
+        true,
+        [
+          asn1.create(
+            asn1.Class.UNIVERSAL,
+            asn1.Type.SEQUENCE,
+            true,
+            digestAlgorithm
+          ),
+          asn1.create(
+            asn1.Class.UNIVERSAL,
+            asn1.Type.OCTETSTRING,
+            false,
+            digest
+          )
+        ]
+      )).getBytes();
+    };
     var emsaPkcs1v15encode = function(md) {
       var oid;
       if (md.algorithm in pki.oids) {
@@ -7895,6 +8097,13 @@ var require_rsa = __commonJS({
                     "ASN.1 object does not contain a valid RSASSA-PKCS1-v1_5 DigestInfo value. Missing algorithm identifier NULL parameters."
                   );
                 }
+              }
+              var withParameters = _encodeDigestInfo(oid, capture.digest, true);
+              var withoutParameters = _encodeDigestInfo(oid, capture.digest, false);
+              if (d2.substring(0, withParameters.length) !== withParameters && d2.substring(0, withoutParameters.length) !== withoutParameters) {
+                throw new Error(
+                  "ASN.1 object does not contain a valid RSASSA-PKCS1-v1_5 DigestInfo value."
+                );
               }
               return digest2 === capture.digest;
             }
@@ -8856,6 +9065,9 @@ var require_pbe = __commonJS({
     };
     pki.pbe.generatePkcs12Key = function(password, salt, id, iter, n, md) {
       var j, l;
+      if (!(iter >= 1)) {
+        throw new Error("PKCS#12 key derivation iteration count must be >= 1.");
+      }
       if (typeof md === "undefined" || md === null) {
         if (!("sha1" in forge3.md)) {
           throw new Error('"sha1" hash algorithm unavailable.');
@@ -10141,6 +10353,7 @@ var require_x509 = __commonJS({
     };
     var _verifySignature = function(options) {
       var cert = options.certificate;
+      var publicKey = options.publicKey || cert.publicKey;
       var scheme;
       switch (cert.signatureOid) {
         case oids.sha1WithRSAEncryption:
@@ -10178,7 +10391,7 @@ var require_x509 = __commonJS({
           );
           break;
       }
-      return cert.publicKey.verify(
+      return publicKey.verify(
         options.md.digest().getBytes(),
         options.signature,
         scheme
@@ -10398,7 +10611,8 @@ var require_x509 = __commonJS({
         }
         if (md !== null) {
           rval = _verifySignature({
-            certificate: cert,
+            certificate: child,
+            publicKey: cert.publicKey,
             md,
             signature: child.signature
           });
@@ -10653,6 +10867,14 @@ var require_x509 = __commonJS({
               default:
             }
           }
+        } else if (e.name === "nameConstraints" && e.id === "2.5.29.30") {
+          try {
+            var nc = _readNameConstraints(asn1.fromDer(e.value));
+            e.permittedSubtrees = nc.permittedSubtrees;
+            e.excludedSubtrees = nc.excludedSubtrees;
+            e.unsupportedSubtreeRange = nc.unsupportedSubtreeRange;
+          } catch (ex) {
+          }
         } else if (e.name === "subjectKeyIdentifier") {
           var ev = asn1.fromDer(e.value);
           e.subjectKeyIdentifier = forge3.util.bytesToHex(ev.value);
@@ -10660,6 +10882,60 @@ var require_x509 = __commonJS({
       }
       return e;
     };
+    function _readNameConstraints(ev) {
+      var rval = {
+        permittedSubtrees: [],
+        excludedSubtrees: [],
+        unsupportedSubtreeRange: false
+      };
+      if (ev.tagClass !== asn1.Class.UNIVERSAL || ev.type !== asn1.Type.SEQUENCE || !forge3.util.isArray(ev.value)) {
+        throw new Error("Invalid nameConstraints extension.");
+      }
+      for (var i = 0; i < ev.value.length; ++i) {
+        var trees = ev.value[i];
+        var list;
+        if (trees.tagClass === asn1.Class.CONTEXT_SPECIFIC && trees.type === 0) {
+          list = rval.permittedSubtrees;
+        } else if (trees.tagClass === asn1.Class.CONTEXT_SPECIFIC && trees.type === 1) {
+          list = rval.excludedSubtrees;
+        } else {
+          throw new Error("Invalid nameConstraints extension.");
+        }
+        if (!forge3.util.isArray(trees.value)) {
+          throw new Error("Invalid nameConstraints extension.");
+        }
+        for (var n = 0; n < trees.value.length; ++n) {
+          var subtree = trees.value[n];
+          if (subtree.type !== asn1.Type.SEQUENCE || !forge3.util.isArray(subtree.value) || subtree.value.length === 0 || subtree.value[0].tagClass !== asn1.Class.CONTEXT_SPECIFIC) {
+            throw new Error("Invalid nameConstraints extension.");
+          }
+          var gn = subtree.value[0];
+          var base = {
+            type: gn.type,
+            value: gn.value
+          };
+          if (gn.type === 4 && forge3.util.isArray(gn.value) && gn.value.length === 1 && gn.value[0].type === asn1.Type.SEQUENCE && forge3.util.isArray(gn.value[0].value)) {
+            base.attributes = pki.RDNAttributesAsArray(gn.value[0]);
+          }
+          for (var m = 1; m < subtree.value.length; ++m) {
+            var bd = subtree.value[m];
+            if (bd.tagClass === asn1.Class.CONTEXT_SPECIFIC && bd.type === 0) {
+              base.minimum = asn1.derToInteger(bd.value);
+              if (base.minimum !== 0) {
+                rval.unsupportedSubtreeRange = true;
+              }
+            } else if (bd.tagClass === asn1.Class.CONTEXT_SPECIFIC && bd.type === 1) {
+              base.maximum = asn1.derToInteger(bd.value);
+              rval.unsupportedSubtreeRange = true;
+            } else {
+              throw new Error("Invalid nameConstraints extension.");
+            }
+          }
+          list.push(base);
+        }
+      }
+      return rval;
+    }
     pki.certificationRequestFromAsn1 = function(obj, computeHash) {
       var capture = {};
       var errors = [];
@@ -11593,6 +11869,382 @@ var require_x509 = __commonJS({
       certificate_unknown: "forge.pki.CertificateUnknown",
       unknown_ca: "forge.pki.UnknownCertificateAuthority"
     };
+    var _generalNameTypes = {
+      0: "otherName",
+      1: "rfc822Name",
+      2: "dNSName",
+      3: "x400Address",
+      4: "directoryName",
+      5: "ediPartyName",
+      6: "uniformResourceIdentifier",
+      7: "iPAddress",
+      8: "registeredID"
+    };
+    var _maxNameConstraintChecks = 1 << 20;
+    function _getNameConstraints(cert) {
+      var rval = [];
+      for (var i = 0; i < cert.extensions.length; ++i) {
+        var ext = cert.extensions[i];
+        if (ext.id !== "2.5.29.30") {
+          continue;
+        }
+        var nc;
+        try {
+          var value = ext.value;
+          if (typeof value === "string") {
+            value = asn1.fromDer(value);
+          }
+          nc = _readNameConstraints(value);
+        } catch (ex) {
+          rval.push({ invalid: true });
+          continue;
+        }
+        rval.push({
+          permitted: _prepareSubtrees(nc.permittedSubtrees),
+          excluded: _prepareSubtrees(nc.excludedSubtrees)
+        });
+      }
+      return rval;
+    }
+    function _prepareSubtrees(subtrees) {
+      var rval = [];
+      for (var i = 0; i < subtrees.length; ++i) {
+        var subtree = subtrees[i];
+        var st = { type: subtree.type, supported: _isSupportedSubtree(subtree) };
+        if (st.supported) {
+          switch (st.type) {
+            case 1:
+              var at = subtree.value.lastIndexOf("@");
+              st.local = at === -1 ? null : subtree.value.substr(0, at);
+              st.host = subtree.value.substr(at + 1).toLowerCase();
+              break;
+            case 2:
+            case 6:
+              st.host = subtree.value.toLowerCase();
+              break;
+            case 4:
+              st.attributes = _canonicalAttributes(subtree.attributes);
+              break;
+            case 7:
+              st.value = subtree.value;
+              break;
+          }
+        }
+        rval.push(st);
+      }
+      return rval;
+    }
+    function _isSupportedSubtree(subtree) {
+      if (subtree.minimum && subtree.minimum !== 0 || "maximum" in subtree) {
+        return false;
+      }
+      switch (subtree.type) {
+        case 1:
+        case 2:
+        case 6:
+          return typeof subtree.value === "string";
+        case 4:
+          return forge3.util.isArray(subtree.attributes);
+        case 7:
+          return typeof subtree.value === "string" && (subtree.value.length === 8 || subtree.value.length === 32);
+      }
+      return false;
+    }
+    function _canonicalAttributes(attrs) {
+      var rval = [];
+      for (var i = 0; i < attrs.length; ++i) {
+        var value = attrs[i].value;
+        if (typeof value === "string") {
+          value = value.replace(/[ \t\n\v\f\r]+/g, " ");
+          if (value.charAt(0) === " ") {
+            value = value.substr(1);
+          }
+          if (value.charAt(value.length - 1) === " ") {
+            value = value.substr(0, value.length - 1);
+          }
+          value = value.replace(/[A-Z]+/g, function(s) {
+            return s.toLowerCase();
+          });
+        }
+        rval.push({ type: attrs[i].type, value });
+      }
+      return rval;
+    }
+    function _isHostName(value) {
+      if (typeof value !== "string") {
+        return false;
+      }
+      var labels = false;
+      for (var i = 0; i < value.length; ++i) {
+        var c = value.charAt(i);
+        if (/[a-zA-Z0-9_]/.test(c)) {
+          continue;
+        }
+        if (i > 0 && i < value.length - 1) {
+          if (c === "-") {
+            continue;
+          }
+          var next = value.charAt(i + 1);
+          if (c === "." && next !== "." && next !== "-" && value.charAt(i - 1) !== "-") {
+            labels = true;
+            continue;
+          }
+        }
+        return false;
+      }
+      return labels;
+    }
+    function _getConstrainedNames(cert, leaf) {
+      var rval = { names: [], unsupported: {}, types: {} };
+      var attrs = cert.subject.attributes;
+      var i;
+      if (attrs.length > 0) {
+        _addConstrainedName(rval, 4, attrs);
+      }
+      for (i = 0; i < attrs.length; ++i) {
+        if (attrs[i].type === oids.emailAddress) {
+          _addConstrainedName(rval, 1, attrs[i].value);
+        }
+      }
+      var hasDnsName = false;
+      for (i = 0; i < cert.extensions.length; ++i) {
+        var san = cert.extensions[i];
+        if (san.id !== "2.5.29.17") {
+          continue;
+        }
+        var altNames = san.altNames || [];
+        for (var n = 0; n < altNames.length; ++n) {
+          var altName = altNames[n];
+          var value = altName.value;
+          if (altName.type === 2) {
+            hasDnsName = true;
+          }
+          switch (altName.type) {
+            case 4:
+              value = null;
+              if (forge3.util.isArray(altName.value) && altName.value.length === 1 && altName.value[0].type === asn1.Type.SEQUENCE && forge3.util.isArray(altName.value[0].value)) {
+                value = pki.RDNAttributesAsArray(altName.value[0]);
+              }
+              break;
+            case 7:
+              if (altName.ip) {
+                value = forge3.util.bytesFromIP(altName.ip);
+              }
+              break;
+          }
+          _addConstrainedName(rval, altName.type, value);
+        }
+      }
+      if (leaf && !hasDnsName) {
+        for (i = 0; i < attrs.length; ++i) {
+          if (attrs[i].type === oids.commonName && _isHostName(attrs[i].value)) {
+            _addConstrainedName(rval, 2, attrs[i].value);
+          }
+        }
+      }
+      return rval;
+    }
+    function _addConstrainedName(names, type, value) {
+      var name = { type, value };
+      var ok = false;
+      names.types[type] = true;
+      switch (type) {
+        case 1:
+          ok = typeof value === "string" && value.lastIndexOf("@") !== -1;
+          if (ok) {
+            var at = value.lastIndexOf("@");
+            name.local = value.substr(0, at);
+            name.host = value.substr(at + 1).toLowerCase();
+          }
+          break;
+        case 2:
+          ok = typeof value === "string";
+          if (ok) {
+            name.host = value.toLowerCase();
+          }
+          break;
+        case 4:
+          ok = forge3.util.isArray(value);
+          if (ok) {
+            name.attributes = _canonicalAttributes(value);
+          }
+          break;
+        case 6:
+          var m = typeof value === "string" && /^[a-zA-Z][a-zA-Z0-9+.\-]*:\/\/([^\/?#]*)/.exec(value);
+          if (m) {
+            var host = m[1].substr(m[1].lastIndexOf("@") + 1);
+            if (host.charAt(0) === "[") {
+              name.host = null;
+            } else {
+              var colon = host.indexOf(":");
+              if (colon !== -1) {
+                host = host.substr(0, colon);
+              }
+              name.host = host.toLowerCase();
+            }
+            ok = host.length > 0;
+          }
+          break;
+        case 7:
+          ok = typeof value === "string" && (value.length === 4 || value.length === 16);
+          break;
+      }
+      if (ok) {
+        names.names.push(name);
+      } else {
+        names.unsupported[type] = true;
+      }
+    }
+    function _hostMatchesConstraint(host, base) {
+      if (base.length === 0) {
+        return true;
+      }
+      if (base.charAt(0) === ".") {
+        return host.length > base.length && host.substr(host.length - base.length) === base;
+      }
+      return host === base;
+    }
+    function _nameMatchesConstraint(name, subtree) {
+      var value = name.host;
+      var base = subtree.host;
+      var i;
+      switch (name.type) {
+        case 1:
+          if (subtree.local !== null) {
+            return (subtree.local === "" || name.local === subtree.local) && value === base;
+          }
+          return _hostMatchesConstraint(value, base);
+        case 2:
+          if (base.length === 0) {
+            return true;
+          }
+          if (base.charAt(0) === ".") {
+            return value.length > base.length && value.substr(value.length - base.length) === base;
+          }
+          return value === base || value.length > base.length && value.substr(value.length - base.length - 1) === "." + base;
+        case 6:
+          return value !== null && _hostMatchesConstraint(value, base);
+        case 4:
+          var battrs = subtree.attributes;
+          var attrs = name.attributes;
+          if (battrs.length > attrs.length) {
+            return false;
+          }
+          for (i = 0; i < battrs.length; ++i) {
+            if (battrs[i].type !== attrs[i].type || battrs[i].value !== attrs[i].value) {
+              return false;
+            }
+          }
+          return true;
+        case 7:
+          value = name.value;
+          base = subtree.value;
+          if (base.length !== value.length * 2) {
+            return false;
+          }
+          for (i = 0; i < value.length; ++i) {
+            var mask = base.charCodeAt(value.length + i);
+            if ((value.charCodeAt(i) & mask) !== (base.charCodeAt(i) & mask)) {
+              return false;
+            }
+          }
+          return true;
+      }
+      return false;
+    }
+    function _nameToString(name) {
+      if (name.type === 4) {
+        var parts = [];
+        for (var i = 0; i < name.value.length; ++i) {
+          var attr = name.value[i];
+          parts.push((attr.shortName || attr.name || attr.type) + "=" + attr.value);
+        }
+        return parts.join(", ");
+      }
+      if (name.type === 7) {
+        return forge3.util.bytesToIP(name.value);
+      }
+      return name.value;
+    }
+    function _checkNameConstraints(cert, constraints, count, leaf, work) {
+      if (count === 0) {
+        return null;
+      }
+      var subject = _getConstrainedNames(cert, leaf);
+      var names = subject.names;
+      var i;
+      var n;
+      var k;
+      var nc;
+      var subtree;
+      var typeName;
+      for (i = 0; i < count && work.checks <= _maxNameConstraintChecks; ++i) {
+        nc = constraints[i];
+        work.checks += (names.length + 1) * (nc.invalid ? 1 : nc.permitted.length + nc.excluded.length + 1);
+      }
+      if (work.checks > _maxNameConstraintChecks) {
+        return {
+          message: "Certificate name constraints require too many checks.",
+          error: pki.certificateError.unsupported_certificate
+        };
+      }
+      for (i = 0; i < count; ++i) {
+        nc = constraints[i];
+        if (nc.invalid) {
+          return {
+            message: "Certificate name constraint could not be parsed.",
+            error: pki.certificateError.unsupported_certificate
+          };
+        }
+        var all = nc.permitted.concat(nc.excluded);
+        for (n = 0; n < all.length; ++n) {
+          subtree = all[n];
+          if (subtree.type in subject.unsupported || !subtree.supported && subtree.type in subject.types) {
+            typeName = _generalNameTypes[subtree.type] || String(subtree.type);
+            return {
+              message: "Certificate name constraint of type " + typeName + " is not supported.",
+              error: pki.certificateError.unsupported_certificate,
+              nameType: typeName
+            };
+          }
+        }
+      }
+      for (k = 0; k < names.length; ++k) {
+        var name = names[k];
+        for (i = 0; i < count; ++i) {
+          nc = constraints[i];
+          var found = false;
+          var matched = false;
+          for (n = 0; !matched && n < nc.permitted.length; ++n) {
+            subtree = nc.permitted[n];
+            if (subtree.type === name.type) {
+              found = true;
+              matched = _nameMatchesConstraint(name, subtree);
+            }
+          }
+          if (found && !matched) {
+            return {
+              message: "Certificate subject name is not permitted by a name constraint.",
+              error: pki.certificateError.bad_certificate,
+              nameValue: _nameToString(name),
+              nameType: _generalNameTypes[name.type]
+            };
+          }
+          for (n = 0; n < nc.excluded.length; ++n) {
+            subtree = nc.excluded[n];
+            if (subtree.type === name.type && _nameMatchesConstraint(name, subtree)) {
+              return {
+                message: "Certificate subject name is excluded by a name constraint.",
+                error: pki.certificateError.bad_certificate,
+                nameValue: _nameToString(name),
+                nameType: _generalNameTypes[name.type]
+              };
+            }
+          }
+        }
+      }
+      return null;
+    }
     pki.verifyCertificateChain = function(caStore, chain, options) {
       if (typeof options === "function") {
         options = { verify: options };
@@ -11603,6 +12255,34 @@ var require_x509 = __commonJS({
       var validityCheckDate = options.validityCheckDate;
       if (typeof validityCheckDate === "undefined") {
         validityCheckDate = /* @__PURE__ */ new Date();
+      }
+      var ncList = [];
+      var ncCount = [];
+      var ncWork = { checks: 0 };
+      var last = certs[certs.length - 1];
+      if (last && !last.isIssuer(last)) {
+        var anchors = caStore.getIssuer(last);
+        anchors = anchors ? forge3.util.isArray(anchors) ? anchors.slice() : [anchors] : [];
+        for (var ai = 0; ai < anchors.length; ++ai) {
+          var anchorNc = _getNameConstraints(anchors[ai]);
+          if (anchorNc.length > 0) {
+            var anchorVerified = false;
+            try {
+              anchorVerified = anchors[ai].verify(last);
+            } catch (ex) {
+            }
+            for (var an = 0; anchorVerified && an < anchorNc.length; ++an) {
+              ncList.push(anchorNc[an]);
+            }
+          }
+        }
+      }
+      for (var ci = certs.length - 1; ci >= 0; --ci) {
+        ncCount[ci] = ncList.length;
+        var certNc = ci > 0 ? _getNameConstraints(certs[ci]) : [];
+        for (var cn = 0; cn < certNc.length; ++cn) {
+          ncList.push(certNc[cn]);
+        }
       }
       var first = true;
       var error = null;
@@ -11633,10 +12313,7 @@ var require_x509 = __commonJS({
             }
           }
           if (parent) {
-            var parents = parent;
-            if (!forge3.util.isArray(parents)) {
-              parents = [parents];
-            }
+            var parents = forge3.util.isArray(parent) ? parent.slice() : [parent];
             var verified = false;
             while (!verified && parents.length > 0) {
               parent = parents.shift();
@@ -11665,14 +12342,24 @@ var require_x509 = __commonJS({
             error: pki.certificateError.bad_certificate
           };
         }
+        if (error === null && (first || !cert.isIssuer(cert))) {
+          error = _checkNameConstraints(
+            cert,
+            ncList,
+            ncCount[depth],
+            first,
+            ncWork
+          );
+        }
         if (error === null) {
           var se = {
             keyUsage: true,
-            basicConstraints: true
+            basicConstraints: true,
+            nameConstraints: true
           };
           for (var i = 0; error === null && i < cert.extensions.length; ++i) {
             var ext = cert.extensions[i];
-            if (ext.critical && !(ext.name in se)) {
+            if (ext.critical && (!(ext.name in se) || ext.name === "nameConstraints" && ext.id !== "2.5.29.30")) {
               error = {
                 message: "Certificate has an unsupported critical extension.",
                 error: pki.certificateError.unsupported_certificate
@@ -11681,7 +12368,7 @@ var require_x509 = __commonJS({
           }
         }
         if (error === null && (!first || chain.length === 0 && (!parent || selfSigned))) {
-          var bcExt = cert.getExtension("basicConstraints");
+          var bcExt = cert.getExtension({ id: "2.5.29.19" });
           var keyUsageExt = cert.getExtension("keyUsage");
           if (keyUsageExt !== null) {
             if (!keyUsageExt.keyCertSign || bcExt === null) {
@@ -11703,7 +12390,7 @@ var require_x509 = __commonJS({
               error: pki.certificateError.bad_certificate
             };
           }
-          if (error === null && keyUsageExt !== null && "pathLenConstraint" in bcExt) {
+          if (error === null && bcExt !== null && "pathLenConstraint" in bcExt) {
             var pathLen = depth - 1;
             if (pathLen > bcExt.pathLenConstraint) {
               error = {
@@ -12087,6 +12774,9 @@ var require_pkcs12 = __commonJS({
         }
         var macSalt = new forge3.util.ByteBuffer(capture.macSalt);
         var macIterations = "macIterations" in capture ? parseInt(forge3.util.bytesToHex(capture.macIterations), 16) : 1;
+        if (!(macIterations >= 1)) {
+          throw new Error("PKCS#12 MAC iteration count must be >= 1.");
+        }
         var macKey = p12.generateKey(
           password,
           macSalt,
@@ -12996,6 +13686,16 @@ var require_tls = __commonJS({
           });
         }
         if (client) {
+          if (msg.compression_method !== tls.CompressionMethod.none) {
+            return c.error(c, {
+              message: "Unsupported compression method.",
+              send: true,
+              alert: {
+                level: tls.Alert.Level.fatal,
+                description: tls.Alert.Description.illegal_parameter
+              }
+            });
+          }
           c.session.compressionMethod = msg.compression_method;
         } else {
           c.session.compressionMethod = tls.CompressionMethod.none;
@@ -13348,7 +14048,7 @@ var require_tls = __commonJS({
           }
         });
       }
-      if (c.serverCertificate === null) {
+      if (c.session.serverCertificate === null) {
         var error = {
           message: "No server certificate provided. Not enough security.",
           send: true,
@@ -13372,8 +14072,8 @@ var require_tls = __commonJS({
               error.alert.description = ret;
             }
           }
-          return c.error(c, error);
         }
+        return c.error(c, error);
       }
       if (c.session.certificateRequest !== null) {
         record = tls.createRecord(c, {
@@ -13591,7 +14291,7 @@ var require_tls = __commonJS({
       b.read -= 4;
       var bytes = b.bytes(length + 4);
       b.read += 4;
-      if (type in hsTable[c.entity][c.expect]) {
+      if (type in hsTable[c.entity][c.expect] && (c.session || c.entity === tls.ConnectionEnd.server)) {
         if (c.entity === tls.ConnectionEnd.server && !c.open && !c.fail) {
           c.handshaking = true;
           c.session = {
@@ -13629,7 +14329,7 @@ var require_tls = __commonJS({
       var length = b.getInt16();
       var payload = b.getBytes(length);
       if (type === tls.HeartbeatMessageType.heartbeat_request) {
-        if (c.handshaking || length > payload.length) {
+        if (c.handshakes === 0 || c.handshaking || length > payload.length) {
           return c.process();
         }
         tls.queue(c, tls.createRecord(c, {
@@ -14544,6 +15244,7 @@ var require_tls = __commonJS({
                     description: tls.Alert.Description.unexpected_message
                   }
                 });
+                return rval;
               }
             }
             c2.record.ready = true;
@@ -14608,24 +15309,48 @@ var require_tls = __commonJS({
           tls.flush(c);
         }
       };
+      var _processing = false;
+      var _processNext = false;
+      var _processRecord = function(c2) {
+        var rval = 0;
+        if (!c2.fail) {
+          if (c2.record !== null && c2.record.ready && c2.record.fragment.isEmpty()) {
+            c2.record = null;
+          }
+          if (c2.record === null) {
+            rval = _readRecordHeader(c2);
+          }
+          if (!c2.fail && c2.record !== null && !c2.record.ready) {
+            rval = _readRecord(c2);
+          }
+          if (!c2.fail && c2.record !== null && c2.record.ready) {
+            _update(c2, c2.record);
+          }
+        }
+        return rval;
+      };
       c.process = function(data) {
         var rval = 0;
         if (data) {
           c.input.putBytes(data);
         }
-        if (!c.fail) {
-          if (c.record !== null && c.record.ready && c.record.fragment.isEmpty()) {
-            c.record = null;
+        if (_processing && typeof data === "undefined") {
+          _processNext = true;
+          return rval;
+        }
+        var processing = _processing;
+        var processNext = _processNext;
+        _processing = true;
+        _processNext = false;
+        try {
+          rval = _processRecord(c);
+          while (_processNext) {
+            _processNext = false;
+            _processRecord(c);
           }
-          if (c.record === null) {
-            rval = _readRecordHeader(c);
-          }
-          if (!c.fail && c.record !== null && !c.record.ready) {
-            rval = _readRecord(c);
-          }
-          if (!c.fail && c.record !== null && c.record.ready) {
-            _update(c, c.record);
-          }
+        } finally {
+          _processing = processing;
+          _processNext = processNext;
         }
         return rval;
       };
@@ -15748,6 +16473,9 @@ var require_ed25519 = __commonJS({
       if (unpackneg(q, pk)) {
         return -1;
       }
+      if (_isSmallOrder(q)) {
+        return -1;
+      }
       if (!_isCanonicalSignatureScalar(sm, 32)) {
         return -1;
       }
@@ -15787,6 +16515,24 @@ var require_ed25519 = __commonJS({
         }
       }
       return false;
+    }
+    function _isSmallOrder(p) {
+      var i;
+      var t2 = new NativeBuffer(32);
+      var r = [gf(p[0]), gf(p[1]), gf(p[2]), gf(p[3])];
+      for (i = 0; i < 3; ++i) {
+        add(r, r);
+      }
+      pack(t2, r);
+      if (t2[0] !== 1) {
+        return false;
+      }
+      for (i = 1; i < 32; ++i) {
+        if (t2[i] !== 0) {
+          return false;
+        }
+      }
+      return true;
     }
     function modL(r, x) {
       var carry, i, j, k;
@@ -18536,19 +19282,18 @@ var require_arrays = __commonJS({
   }
 });
 
-// node_modules/pdf-lib/cjs/utils/async.js
-var require_async = __commonJS({
-  "node_modules/pdf-lib/cjs/utils/async.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.waitForTick = void 0;
-    exports2.waitForTick = function() {
-      return new Promise(function(resolve3) {
-        setTimeout(function() {
-          return resolve3();
-        }, 0);
-      });
-    };
+// src/pdf-scheduler.ts
+var pdf_scheduler_exports = {};
+__export(pdf_scheduler_exports, {
+  waitForTick: () => waitForTick
+});
+var import_timers, waitForTick;
+var init_pdf_scheduler = __esm({
+  "src/pdf-scheduler.ts"() {
+    import_timers = require("timers");
+    waitForTick = () => new Promise((resolve3) => {
+      (0, import_timers.setTimeout)(resolve3, 0);
+    });
   }
 });
 
@@ -23607,7 +24352,7 @@ var require_utils2 = __commonJS({
     Object.defineProperty(exports2, "__esModule", { value: true });
     var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
     tslib_1.__exportStar(require_arrays(), exports2);
-    tslib_1.__exportStar(require_async(), exports2);
+    tslib_1.__exportStar((init_pdf_scheduler(), __toCommonJS(pdf_scheduler_exports)), exports2);
     tslib_1.__exportStar(require_strings(), exports2);
     tslib_1.__exportStar(require_unicode(), exports2);
     tslib_1.__exportStar(require_numbers(), exports2);
@@ -49858,17 +50603,6 @@ var forge2 = __toESM(require_lib());
 var import_PDFXRefStreamParser = __toESM(require_PDFXRefStreamParser());
 var import_DecodeStream = __toESM(require_DecodeStream());
 var import_node_async_hooks = require("node:async_hooks");
-var import_node_timers = require("node:timers");
-var pdfAsync = require_async();
-if (typeof pdfAsync.waitForTick !== "function") throw new Error("Unsupported PDF scheduler version");
-pdfAsync.waitForTick = () => new Promise((resolve3) => {
-  (0, import_node_timers.setTimeout)(resolve3, 0);
-});
-var pdfUtils = require_utils2();
-if (Object.getOwnPropertyDescriptor(pdfUtils, "waitForTick")?.writable) {
-  pdfUtils.waitForTick = pdfAsync.waitForTick;
-}
-if (pdfUtils.waitForTick !== pdfAsync.waitForTick) throw new Error("Unsupported PDF scheduler binding");
 var MAX_DECODED_STREAM_BYTES = 64 * 1024 * 1024;
 var MAX_DECODED_DOCUMENT_BYTES = 128 * 1024 * 1024;
 var decodeBudget = new import_node_async_hooks.AsyncLocalStorage();
@@ -50060,7 +50794,7 @@ function inspectPdfSignature(buffer) {
     const reader = f.util.createBuffer(raw.toString("binary"));
     const parseDer = f.asn1.fromDer;
     const cms = parseDer(reader, { parseAllBytes: false });
-    if (!/^\x00*$/.test(reader.getBytes())) return unsupported("nonzero-signature-padding", "invalid");
+    for (const byte of reader.getBytes()) if (byte !== "\0") return unsupported("nonzero-signature-padding", "invalid");
     const children = (node) => {
       if (!Array.isArray(node.value)) throw new Error("ASN.1 sequence expected");
       return node.value;
@@ -50078,16 +50812,16 @@ function inspectPdfSignature(buffer) {
     const signerInfos = children(data[data.length - 1]);
     if (signerInfos.length !== 1) return unsupported("multiple-cms-signers");
     const info = children(signerInfos[0]);
-    if (info.length !== 6 || oid(children(info[2])[0]) !== "2.16.840.1.101.3.4.2.1" || !["1.2.840.113549.1.1.1", "1.2.840.113549.1.1.11"].includes(oid(children(info[4])[0])) || info[3].tagClass !== f.asn1.Class.CONTEXT_SPECIFIC || info[3].type !== 0) {
+    if (info.length !== 6 || oid(children(info[2])[0]) !== "2.16.840.1.101.3.4.2.1" || !["1.2.840.113549.1.1.1", "1.2.840.113549.1.1.11"].includes(oid(children(info[4])[0])) || Number(info[3].tagClass) !== Number(f.asn1.Class.CONTEXT_SPECIFIC) || Number(info[3].type) !== 0) {
       return unsupported("cms-algorithm");
     }
     const identity = children(info[1]);
     if (identity.length !== 2) return unsupported("cms-signer-identity");
-    const certContainer = data.find((node, index) => index > 2 && node.tagClass === f.asn1.Class.CONTEXT_SPECIFIC && node.type === 0);
+    const certContainer = data.find((node, index) => index > 2 && Number(node.tagClass) === Number(f.asn1.Class.CONTEXT_SPECIFIC) && Number(node.type) === 0);
     if (!certContainer) return unsupported("missing-certificate");
     const certificates = children(certContainer).filter((certificate2) => {
       const tbs = children(children(certificate2)[0]);
-      const offset = tbs[0].tagClass === f.asn1.Class.CONTEXT_SPECIFIC ? 1 : 0;
+      const offset = Number(tbs[0].tagClass) === Number(f.asn1.Class.CONTEXT_SPECIFIC) ? 1 : 0;
       return der(tbs[offset]) === der(identity[1]) && der(tbs[offset + 2]) === der(identity[0]);
     });
     if (certificates.length !== 1) return unsupported("ambiguous-certificate");
@@ -50173,7 +50907,7 @@ function inspectCertificate(p12Buffer, password) {
     const diffMs = notAfter.getTime() - now.getTime();
     const daysRemaining = Math.ceil(diffMs / (1e3 * 60 * 60 * 24));
     const commonNameAttr = cert.subject.getField("CN");
-    const commonName = commonNameAttr && commonNameAttr.value ? String(commonNameAttr.value) : void 0;
+    const commonName = commonNameAttr && typeof commonNameAttr === "object" && "value" in commonNameAttr && typeof commonNameAttr.value === "string" && commonNameAttr.value ? commonNameAttr.value : void 0;
     const isExpired = diffMs <= 0;
     const isNotYetValid = now < notBefore;
     const isExpiringSoon = !isExpired && !isNotYetValid && diffMs <= 30 * 24 * 60 * 60 * 1e3;
@@ -50488,96 +51222,114 @@ var PdfSignatureSettingTab = class extends import_obsidian2.PluginSettingTab {
     super(app, plugin);
     this.plugin = plugin;
   }
-  display() {
-    this.cancelCertificateStatusRefresh();
-    const { containerEl } = this;
-    containerEl.empty();
-    new import_obsidian2.Setting(containerEl).setName(t("settings_title")).setHeading();
-    containerEl.createEl("p", {
-      cls: "setting-item-description",
-      text: t("settings_desc")
+  getSettingDefinitions() {
+    const plugin = this.plugin;
+    const row = (name, desc, render) => ({ name: t(name), desc: t(desc), render });
+    const toggle = (key, name, desc) => row(name, desc, (setting) => {
+      setting.addToggle((control) => control.setValue(plugin.settings[key]).onChange(async (value) => {
+        plugin.settings[key] = value;
+        await plugin.saveSettings();
+      }));
     });
-    new import_obsidian2.Setting(containerEl).setName(t("settings_default_toggle_name")).setDesc(t("settings_default_toggle_desc")).addToggle(
-      (toggle) => toggle.setValue(this.plugin.settings.firmarCriptograficamente).onChange(async (val) => {
-        this.plugin.settings.firmarCriptograficamente = val;
-        await this.plugin.saveSettings();
-      })
-    );
-    renderSigningPolicySettings(containerEl, this.plugin);
-    new import_obsidian2.Setting(containerEl).setName(t("settings_signer_toggle_name")).setDesc(t("settings_signer_toggle_desc")).addToggle(
-      (toggle) => toggle.setValue(this.plugin.settings.mostrarNombreFirmante).onChange(async (val) => {
-        this.plugin.settings.mostrarNombreFirmante = val;
-        await this.plugin.saveSettings();
-      })
-    );
-    new import_obsidian2.Setting(containerEl).setName(t("settings_signer_name_name")).setDesc(t("settings_signer_name_desc")).addText(
-      (text) => text.setPlaceholder(t("default_signer_name")).setValue(this.plugin.settings.nombreFirmante).onChange(async (val) => {
-        this.plugin.settings.nombreFirmante = val.trim();
-        await this.plugin.saveSettings();
-      })
-    );
-    new import_obsidian2.Setting(containerEl).setName(t("settings_page_number_name")).setDesc(t("settings_page_number_desc")).addToggle(
-      (toggle) => toggle.setValue(this.plugin.settings.mostrarNumeroPagina).onChange(async (val) => {
-        this.plugin.settings.mostrarNumeroPagina = val;
-        await this.plugin.saveSettings();
-      })
-    );
-    new import_obsidian2.Setting(containerEl).setName(t("settings_delay_name")).setDesc(t("settings_delay_desc")).addSlider(
-      (slider) => slider.setLimits(5, 60, 1).setValue(this.plugin.settings.exportTimeoutSeconds).onChange(async (val) => {
-        this.plugin.settings.exportTimeoutSeconds = val;
-        await this.plugin.saveSettings();
-      })
-    );
-    new import_obsidian2.Setting(containerEl).setName(t("settings_open_after_name")).setDesc(t("settings_open_after_desc")).addToggle(
-      (toggle) => toggle.setValue(this.plugin.settings.openAfterSigning).onChange(async (val) => {
-        this.plugin.settings.openAfterSigning = val;
-        await this.plugin.saveSettings();
-      })
-    );
-    new import_obsidian2.Setting(containerEl).setName(t("settings_cert_section_title")).setHeading();
-    this.renderCertificateStatus(containerEl);
-    new import_obsidian2.Setting(containerEl).setName(t("settings_cert_path_name")).setDesc(t("settings_cert_path_desc")).addText(
-      (text) => text.setPlaceholder(t("cert_private_path")).setValue(this.plugin.settings.certPath).onChange(async (val) => {
-        this.plugin.settings.certPath = val.trim();
-        this.scheduleCertificateStatusRefresh(containerEl);
-        await this.plugin.saveSettings();
-      })
-    );
-    new import_obsidian2.Setting(containerEl).setName(t("settings_cert_password_name")).setDesc(t("settings_cert_password_desc")).addText((text) => {
-      text.inputEl.type = "password";
-      text.setValue(this.plugin.settings.certPassword).onChange(async (val) => {
-        const saving = this.plugin.setCertificatePassword(val);
-        this.scheduleCertificateStatusRefresh(containerEl);
-        await saving;
+    const refreshCertificate = () => {
+      const host = this.certificateStatusEl?.parentElement;
+      if (host) this.scheduleCertificateStatusRefresh(host);
+    };
+    const text = (key, name, desc, placeholder, trim = false) => row(name, desc, (setting) => {
+      setting.addText((control) => {
+        if (placeholder) control.setPlaceholder(t(placeholder));
+        control.setValue(plugin.settings[key]).onChange(async (value) => {
+          plugin.settings[key] = trim ? value.trim() : value;
+          if (key === "certPath") refreshCertificate();
+          await plugin.saveSettings();
+        });
       });
     });
-    new import_obsidian2.Setting(containerEl).setName(t("settings_reason_name")).setDesc(t("settings_reason_desc")).addText(
-      (text) => text.setValue(this.plugin.settings.motivo).onChange(async (val) => {
-        this.plugin.settings.motivo = val;
-        await this.plugin.saveSettings();
-      })
-    );
-    new import_obsidian2.Setting(containerEl).setName(t("settings_location_name")).setDesc(t("settings_location_desc")).addText(
-      (text) => text.setValue(this.plugin.settings.ubicacion).onChange(async (val) => {
-        this.plugin.settings.ubicacion = val;
-        await this.plugin.saveSettings();
-      })
-    );
-    new import_obsidian2.Setting(containerEl).setName(t("settings_btn_generate")).setDesc(t("settings_btn_generate_desc")).addButton(
-      (btn) => btn.setButtonText(t("settings_btn_generate")).setCta().onClick(async () => {
-        btn.setDisabled(true);
-        try {
-          await this.plugin.generateCertificate();
-          new import_obsidian2.Notice(t("notice_cert_generated", { path: this.plugin.settings.certPath }));
-          this.display();
-        } catch (err) {
-          const msg = err instanceof Error ? err.message : String(err);
-          new import_obsidian2.Notice(t("notice_cert_gen_error", { error: msg }));
-        } finally {
-          btn.setDisabled(false);
+    return [
+      row("settings_title", "settings_desc", (setting) => {
+        setting.setHeading();
+      }),
+      toggle("firmarCriptograficamente", "settings_default_toggle_name", "settings_default_toggle_desc"),
+      row("settings_signature_mode_name", "settings_signature_mode_desc", (setting) => {
+        configureSigningMode(setting, plugin);
+      }),
+      {
+        name: t("settings_jurisdiction_name"),
+        desc: getJurisdictionGuidance(plugin.settings.jurisdiction),
+        render: (setting) => {
+          configureJurisdiction(setting, plugin);
         }
+      },
+      { name: t("settings_signature_levels_desc"), render: (setting) => {
+        setting.settingEl.empty();
+        setting.settingEl.addClass("pdf-sig-settings-description");
+        setting.settingEl.createEl("p", { cls: "setting-item-description", text: t("settings_signature_levels_desc") });
+      } },
+      toggle("mostrarNombreFirmante", "settings_signer_toggle_name", "settings_signer_toggle_desc"),
+      text("nombreFirmante", "settings_signer_name_name", "settings_signer_name_desc", "default_signer_name", true),
+      toggle("mostrarNumeroPagina", "settings_page_number_name", "settings_page_number_desc"),
+      row("settings_delay_name", "settings_delay_desc", (setting) => {
+        setting.addSlider((control) => control.setLimits(5, 60, 1).setValue(plugin.settings.exportTimeoutSeconds).onChange(async (value) => {
+          plugin.settings.exportTimeoutSeconds = value;
+          await plugin.saveSettings();
+        }));
+      }),
+      toggle("openAfterSigning", "settings_open_after_name", "settings_open_after_desc"),
+      { name: t("settings_cert_section_title"), render: (setting) => {
+        setting.setHeading();
+      } },
+      { name: t("settings_cert_section_title"), desc: t("settings_cert_path_desc"), render: (setting) => {
+        const host = setting.settingEl;
+        host.empty();
+        host.addClass("pdf-sig-settings-description");
+        this.renderCertificateStatus(host);
+        return () => {
+          this.cancelCertificateStatusRefresh();
+          if (this.certificateStatusEl?.parentElement === host) this.certificateStatusEl = void 0;
+        };
+      } },
+      text("certPath", "settings_cert_path_name", "settings_cert_path_desc", "cert_private_path", true),
+      row("settings_cert_password_name", "settings_cert_password_desc", (setting) => {
+        setting.addText((control) => {
+          control.inputEl.type = "password";
+          control.setValue(plugin.settings.certPassword).onChange(async (value) => {
+            const saving = plugin.setCertificatePassword(value);
+            refreshCertificate();
+            await saving;
+          });
+        });
+      }),
+      text("motivo", "settings_reason_name", "settings_reason_desc"),
+      text("ubicacion", "settings_location_name", "settings_location_desc"),
+      row("settings_btn_generate", "settings_btn_generate_desc", (setting) => {
+        setting.addButton((button) => button.setButtonText(t("settings_btn_generate")).setCta().onClick(async () => {
+          button.setDisabled(true);
+          try {
+            await plugin.generateCertificate();
+            new import_obsidian2.Notice(t("notice_cert_generated", { path: plugin.settings.certPath }));
+            if (typeof this.update === "function") this.update();
+            else this.renderLegacySettings();
+          } catch (error) {
+            new import_obsidian2.Notice(t("notice_cert_gen_error", { error: error instanceof Error ? error.message : String(error) }));
+          } finally {
+            button.setDisabled(false);
+          }
+        }));
       })
-    );
+    ];
+  }
+  // Obsidian <1.13 uses the same rows through the imperative fallback.
+  display() {
+    this.renderLegacySettings();
+  }
+  renderLegacySettings() {
+    this.cancelCertificateStatusRefresh();
+    this.containerEl.empty();
+    for (const definition of this.getSettingDefinitions()) {
+      const setting = new import_obsidian2.Setting(this.containerEl).setName(definition.name);
+      if (definition.desc) setting.setDesc(definition.desc);
+      definition.render(setting);
+    }
   }
   hide() {
     this.cancelCertificateStatusRefresh();
@@ -50665,19 +51417,24 @@ var PdfSignatureSettingTab = class extends import_obsidian2.PluginSettingTab {
     });
   }
 };
-function renderSigningPolicySettings(containerEl, plugin, compact = false) {
-  new import_obsidian2.Setting(containerEl).setName(t("settings_signature_mode_name")).setDesc(t("settings_signature_mode_desc")).addDropdown((dropdown) => dropdown.addOption("", t("signature_mode_choose")).addOption("approval", t("signature_mode_approval")).addOption("certify", t("signature_mode_certify")).setValue(plugin.settings.signatureModeChosen === false ? "" : plugin.settings.signatureMode).onChange(async (value) => {
+function configureSigningMode(setting, plugin) {
+  setting.setName(t("settings_signature_mode_name")).setDesc(t("settings_signature_mode_desc")).addDropdown((dropdown) => dropdown.addOption("", t("signature_mode_choose")).addOption("approval", t("signature_mode_approval")).addOption("certify", t("signature_mode_certify")).setValue(plugin.settings.signatureModeChosen === false ? "" : plugin.settings.signatureMode).onChange(async (value) => {
     plugin.settings.signatureModeChosen = value !== "";
     if (value !== "") plugin.settings.signatureMode = normalizeSignatureMode(value);
     await plugin.saveSettings();
   }));
-  if (compact) return;
-  const jurisdictionSetting = new import_obsidian2.Setting(containerEl).setName(t("settings_jurisdiction_name")).setDesc(getJurisdictionGuidance(plugin.settings.jurisdiction));
-  jurisdictionSetting.addDropdown((dropdown) => dropdown.addOption("international", t("jurisdiction_international")).addOption("CL", t("jurisdiction_cl")).addOption("EU", t("jurisdiction_eu")).addOption("UK", t("jurisdiction_uk")).addOption("US", t("jurisdiction_us")).setValue(plugin.settings.jurisdiction).onChange(async (value) => {
+}
+function configureJurisdiction(setting, plugin) {
+  setting.setName(t("settings_jurisdiction_name")).setDesc(getJurisdictionGuidance(plugin.settings.jurisdiction)).addDropdown((dropdown) => dropdown.addOption("international", t("jurisdiction_international")).addOption("CL", t("jurisdiction_cl")).addOption("EU", t("jurisdiction_eu")).addOption("UK", t("jurisdiction_uk")).addOption("US", t("jurisdiction_us")).setValue(plugin.settings.jurisdiction).onChange(async (value) => {
     plugin.settings.jurisdiction = normalizeJurisdiction(value);
     await plugin.saveSettings();
-    jurisdictionSetting.setDesc(getJurisdictionGuidance(plugin.settings.jurisdiction));
+    setting.setDesc(getJurisdictionGuidance(plugin.settings.jurisdiction));
   }));
+}
+function renderSigningPolicySettings(containerEl, plugin, compact = false) {
+  configureSigningMode(new import_obsidian2.Setting(containerEl), plugin);
+  if (compact) return;
+  configureJurisdiction(new import_obsidian2.Setting(containerEl), plugin);
   containerEl.createEl("p", { cls: "setting-item-description", text: t("settings_signature_levels_desc") });
 }
 
@@ -50694,7 +51451,7 @@ async function refreshMathPrintStyles(source, rendered) {
   const css = Array.from(sourceStyle.sheet.cssRules, (rule) => rule.cssText).join("\n");
   let target = destination.getElementById(sourceStyle.id);
   if (!target) {
-    target = destination.createElement("style");
+    target = sourceStyle.cloneNode(false);
     target.id = sourceStyle.id;
     destination.head.appendChild(target);
   }
@@ -50716,8 +51473,9 @@ function restore(activity) {
 function keepExportActive() {
   let activity;
   try {
-    const electron = require("electron");
-    const contents = electron.remote?.getCurrentWebContents?.();
+    const host = typeof window === "undefined" ? {} : window;
+    const electron = host.require?.("electron");
+    const contents = electron?.remote?.getCurrentWebContents?.();
     if (!contents || !Number.isInteger(contents.id) || typeof contents.getBackgroundThrottling !== "function" || typeof contents.setBackgroundThrottling !== "function" || contents.isDestroyed?.()) return () => {
     };
     const existing = activities.get(contents.id);
@@ -50772,24 +51530,26 @@ var ObsidianExportAdapter = class {
   }
   install() {
     const plugin = this.plugin;
-    const adapter = this;
     if (typeof import_obsidian3.Modal.prototype.open !== "function") {
       this.disable();
       return;
     }
-    const originalModalOpen = import_obsidian3.Modal.prototype.open;
+    const modalPrototype = import_obsidian3.Modal.prototype;
+    const originalModalOpen = modalPrototype.open;
     let active = true;
-    const enhancedOpen = /* @__PURE__ */ ((plugin2) => {
-      return function() {
-        const res = originalModalOpen.call(this);
-        try {
-          if (active && !adapter.disabled) adapter.enhance(this);
-        } catch {
-          adapter.disable();
-        }
-        return res;
-      };
-    })(plugin);
+    const enhance = (modal) => {
+      if (active && !this.disabled) this.enhance(modal);
+    };
+    const disable = () => this.disable();
+    const enhancedOpen = function() {
+      const res = originalModalOpen.call(this);
+      try {
+        enhance(this);
+      } catch {
+        disable();
+      }
+      return res;
+    };
     try {
       import_obsidian3.Modal.prototype.open = enhancedOpen;
     } catch {
@@ -50828,12 +51588,10 @@ var ObsidianExportAdapter = class {
     const originalPrintToPdf = targetModal.printToPdf;
     const originalPrint = targetModal.print;
     let settingContainer;
-    let restoreLayout;
     const cleanup = () => {
       targetModal.printToPdf = originalPrintToPdf;
       targetModal.print = originalPrint;
       targetModal._firmaPdfEnhanced = false;
-      restoreLayout?.();
       settingContainer?.remove?.();
     };
     this.cleanups.set(targetModal, cleanup);
@@ -50928,7 +51686,7 @@ var ObsidianExportAdapter = class {
         renderingFailed = false;
         const result = await originalPrintToPdf.call(targetModal, options);
         if (!renderingFailed && shouldSignCryptographically && options && typeof options.filepath === "string") {
-          plugin.scheduleSigning(options.filepath, exportSettings);
+          void plugin.scheduleSigning(options.filepath, exportSettings);
         }
         return result;
       } finally {
@@ -50940,10 +51698,20 @@ var ObsidianExportAdapter = class {
 };
 
 // src/export-readiness.ts
-var import_timers = require("timers");
+var import_timers2 = require("timers");
 var fs3 = __toESM(require("fs"));
 var import_crypto4 = require("crypto");
 var import_pdf_lib2 = __toESM(require_cjs());
+
+// src/pdf-whitespace.ts
+var PDF_WHITESPACE = "\0	\n\f\r ";
+function trimPdfEnd(value) {
+  let end = value.length;
+  while (end > 0 && PDF_WHITESPACE.includes(value[end - 1])) end--;
+  return value.slice(0, end);
+}
+
+// src/export-readiness.ts
 var MAX_PDF_BYTES = 64 * 1024 * 1024;
 var ExportReadinessError = class extends Error {
   constructor(code) {
@@ -50963,11 +51731,11 @@ async function pause(ms, signal) {
   checkAbort(signal);
   await new Promise((resolve3, reject) => {
     const abort = () => {
-      (0, import_timers.clearTimeout)(timer);
+      (0, import_timers2.clearTimeout)(timer);
       signal?.removeEventListener("abort", abort);
       reject(new ExportReadinessError("EXPORT_ABORTED"));
     };
-    const timer = (0, import_timers.setTimeout)(() => {
+    const timer = (0, import_timers2.setTimeout)(() => {
       signal?.removeEventListener("abort", abort);
       resolve3();
     }, ms);
@@ -51007,7 +51775,7 @@ async function readCandidate(filepath, collect, signal) {
 function hasCompleteEnvelope(bytes) {
   if (!/^%PDF-\d\.\d/.test(bytes.subarray(0, 16).toString("latin1"))) return false;
   const tail = bytes.subarray(Math.max(0, bytes.length - 4096)).toString("latin1");
-  const end = /startxref\s+(\d+)\s+%%EOF[\x00\x09\x0a\x0c\x0d\x20]*$/.exec(tail);
+  const end = /startxref\s+(\d+)\s+%%EOF$/.exec(trimPdfEnd(tail));
   if (!end) return false;
   const offset = Number(end[1]);
   if (!Number.isSafeInteger(offset) || offset < 0 || offset >= bytes.length) return false;
@@ -51103,7 +51871,7 @@ function completeExportFingerprint(filepath) {
     fs4.readSync(file, head, 0, 5, 0);
     const tail = Buffer.alloc(Math.min(size, 2048));
     fs4.readSync(file, tail, 0, tail.length, size - tail.length);
-    if (head.toString("ascii") !== "%PDF-" || !/%%EOF[\x00\x09\x0a\x0c\x0d\x20]*$/.test(tail.toString("latin1"))) return void 0;
+    if (head.toString("ascii") !== "%PDF-" || !trimPdfEnd(tail.toString("latin1")).endsWith("%%EOF")) return void 0;
   } finally {
     fs4.closeSync(file);
   }
@@ -51148,7 +51916,7 @@ var PdfDigitalSignaturePlugin = class extends import_obsidian4.Plugin {
       id: "sign-existing-pdf-file",
       name: t("cmd_sign_existing"),
       callback: () => {
-        this.promptSignExistingPdf();
+        void this.promptSignExistingPdf();
       }
     });
     this.addCommand({
@@ -51195,16 +51963,20 @@ var PdfDigitalSignaturePlugin = class extends import_obsidian4.Plugin {
     releaseExportActivity();
   }
   async loadSettings() {
-    const savedSettings = await this.loadData() || {};
+    const loadedSettings = await this.loadData();
+    const savedSettings = loadedSettings && typeof loadedSettings === "object" && !Array.isArray(loadedSettings) ? loadedSettings : {};
     const secretId = "obsidian-pdf-digital-signature-certificate-password";
     const storedPassword = this.app.secretStorage.getSecret(secretId);
     const password = storedPassword ?? savedSettings.certPassword ?? (0, import_crypto6.randomUUID)();
     if (storedPassword === null) this.app.secretStorage.setSecret(secretId, password);
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, {
+    this.settings = {
+      ...DEFAULT_SETTINGS,
       nombreFirmante: t("default_signer_name"),
       motivo: t("default_reason"),
-      ubicacion: t("default_location")
-    }, savedSettings, { certPassword: password });
+      ubicacion: t("default_location"),
+      ...savedSettings,
+      certPassword: password
+    };
     const newInstallation = Object.keys(savedSettings).length === 0;
     this.settings.signatureMode = savedSettings.signatureMode === "approval" || savedSettings.signatureMode === "certify" ? savedSettings.signatureMode : newInstallation ? "approval" : "certify";
     this.settings.signatureModeChosen = typeof savedSettings.signatureModeChosen === "boolean" ? savedSettings.signatureModeChosen : !newInstallation;
@@ -51391,7 +52163,7 @@ var PdfDigitalSignaturePlugin = class extends import_obsidian4.Plugin {
       const result = inspectPdfSignature(bytes);
       const modal = new import_obsidian4.Modal(this.app);
       modal.titleEl.setText(t("verify_title"));
-      modal.contentEl.style.overflowWrap = "anywhere";
+      modal.contentEl.addClass("pdf-sig-verification-content");
       modal.contentEl.createEl("p", { text: path3.basename(filepath) });
       modal.contentEl.createEl("p", { text: t(result.signedRevisionIntegrity === "valid" ? "verify_revision_valid" : result.signedRevisionIntegrity === "invalid" ? "verify_revision_invalid" : "verify_revision_unknown") });
       modal.contentEl.createEl("p", { text: t(result.currentFileCoverage === "entire-file" ? "verify_coverage_full" : result.currentFileCoverage === "signed-revision-only" ? "verify_coverage_partial" : "verify_coverage_unknown") });
@@ -51449,7 +52221,7 @@ var PdfDigitalSignaturePlugin = class extends import_obsidian4.Plugin {
       }
       button.setDisabled(true);
       modal.close();
-      this.scheduleSigning(filepath, { ...this.settings }, true);
+      void this.scheduleSigning(filepath, { ...this.settings }, true);
     }));
     modal.open();
   }

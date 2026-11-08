@@ -3,6 +3,7 @@ import * as fs from "fs";
 import { createHash } from "crypto";
 import { PDFDocument, PDFInvalidObject } from "pdf-lib";
 import { withPdfDecodeBudget } from "./pdf-limits";
+import { trimPdfEnd } from "./pdf-whitespace";
 
 const MAX_PDF_BYTES = 64 * 1024 * 1024;
 export type ExportReadinessCode = "EXPORT_TIMEOUT" | "EXPORT_INVALID" | "EXPORT_CHANGED" | "EXPORT_TOO_LARGE" | "EXPORT_ABORTED";
@@ -74,7 +75,7 @@ async function readCandidate(filepath: string, collect: boolean, signal?: AbortS
 function hasCompleteEnvelope(bytes: Buffer): boolean {
   if (!/^%PDF-\d\.\d/.test(bytes.subarray(0, 16).toString("latin1"))) return false;
   const tail = bytes.subarray(Math.max(0, bytes.length - 4096)).toString("latin1");
-  const end = /startxref\s+(\d+)\s+%%EOF[\x00\x09\x0a\x0c\x0d\x20]*$/.exec(tail);
+  const end = /startxref\s+(\d+)\s+%%EOF$/.exec(trimPdfEnd(tail));
   if (!end) return false;
   const offset = Number(end[1]);
   if (!Number.isSafeInteger(offset) || offset < 0 || offset >= bytes.length) return false;

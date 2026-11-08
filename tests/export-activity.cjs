@@ -10,10 +10,11 @@ function fixture(initial = true, available = true) {
     setBackgroundThrottling(value) { changes.push(value); throttling = value; } };
   const module = { exports: {} };
   const code = transformSync(fs.readFileSync(path.join(__dirname, '../src/export-activity.ts'), 'utf8'), { loader: 'ts', format: 'cjs' }).code;
-  vm.runInNewContext(code, { module, exports: module.exports, require() {
+  const hostRequire = () => {
     if (!available) throw new Error('No Electron remote API');
     return { remote: { getCurrentWebContents: () => contents } };
-  } });
+  };
+  vm.runInNewContext(code, { module, exports: module.exports, require: hostRequire, window: { require: hostRequire } });
   return { ...module.exports, changes, enabled: () => throttling, close() { destroyed = true; } };
 }
 test('native export hands activity to signing without re-suspending the renderer between them', () => {

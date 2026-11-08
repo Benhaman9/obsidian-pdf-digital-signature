@@ -23,7 +23,7 @@ async function checkSigningFileSizes(filePath: string, certPath: string): Promis
 
 function getForge(): ForgeModule {
   const forgeObject = forge as unknown as { default?: ForgeModule };
-  return forgeObject.default || (forge as unknown as ForgeModule);
+  return forgeObject.default || forge;
 }
 
 export interface SignatureMetadata {
@@ -85,8 +85,9 @@ function inspectCertificate(p12Buffer: Buffer, password: string): CertificateInf
     const now = new Date();
     const diffMs = notAfter.getTime() - now.getTime();
     const daysRemaining = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-    const commonNameAttr = cert.subject.getField("CN");
-    const commonName = commonNameAttr && commonNameAttr.value ? String(commonNameAttr.value) : undefined;
+    const commonNameAttr: unknown = cert.subject.getField("CN");
+    const commonName = commonNameAttr && typeof commonNameAttr === "object" && "value" in commonNameAttr &&
+      typeof commonNameAttr.value === "string" && commonNameAttr.value ? commonNameAttr.value : undefined;
     const isExpired = diffMs <= 0;
     const isNotYetValid = now < notBefore;
     const isExpiringSoon = !isExpired && !isNotYetValid && diffMs <= 30 * 24 * 60 * 60 * 1000;

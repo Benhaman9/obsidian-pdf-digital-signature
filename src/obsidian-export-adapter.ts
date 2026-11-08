@@ -29,22 +29,22 @@ export class ObsidianExportAdapter {
   }
   install(): void {
     const plugin = this.plugin;
-    const adapter = this;
     if (typeof Modal.prototype.open !== "function") { this.disable(); return; }
-    const originalModalOpen = Modal.prototype.open;
+    const modalPrototype = Modal.prototype as { open: (this: Modal) => void };
+    const originalModalOpen = modalPrototype.open;
     let active = true;
 
-    const enhancedOpen = ((plugin: PdfDigitalSignaturePlugin) => {
-      return function (this: Modal) {
+    const enhance = (modal: Modal) => { if (active && !this.disabled) this.enhance(modal); };
+    const disable = () => this.disable();
+    const enhancedOpen = function (this: Modal) {
         const res = originalModalOpen.call(this);
         try {
-          if (active && !adapter.disabled) adapter.enhance(this);
+          enhance(this);
         } catch {
-          adapter.disable();
+          disable();
         }
         return res;
       };
-    })(plugin);
     try { Modal.prototype.open = enhancedOpen; } catch { this.disable(); return; }
 
     plugin.register(() => {
@@ -93,12 +93,10 @@ export class ObsidianExportAdapter {
     const originalPrintToPdf = targetModal.printToPdf;
     const originalPrint = targetModal.print;
     let settingContainer!: HTMLElement;
-    let restoreLayout: (() => void) | undefined;
     const cleanup = () => {
       targetModal.printToPdf = originalPrintToPdf;
       targetModal.print = originalPrint;
       targetModal._firmaPdfEnhanced = false;
-      restoreLayout?.();
       settingContainer?.remove?.();
     };
     this.cleanups.set(targetModal, cleanup);
@@ -219,7 +217,7 @@ export class ObsidianExportAdapter {
       const result = await originalPrintToPdf.call(targetModal, options);
 
       if (!renderingFailed && shouldSignCryptographically && options && typeof options.filepath === "string") {
-        plugin.scheduleSigning(options.filepath, exportSettings);
+        void plugin.scheduleSigning(options.filepath, exportSettings);
       }
 
       return result;

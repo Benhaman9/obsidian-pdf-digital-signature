@@ -1,7 +1,7 @@
 import { App, Notice, PluginSettingTab, Setting } from "obsidian";
 import * as obsidian from "obsidian";
 import type PdfDigitalSignaturePlugin from "./main";
-import { t, getLanguage } from "./i18n";
+import { t, getLanguage, type TranslationKey } from "./i18n";
 import { getCertificateInfo } from "./signer";
 import { certificateLocation } from "./certificate-location";
 import { getJurisdictionGuidance, normalizeJurisdiction, normalizeSignatureMode, type Jurisdiction, type SignatureMode } from "./signing-policy";
@@ -54,6 +54,12 @@ export const DEFAULT_SETTINGS: PdfSignatureSettings = {
   jurisdiction: "international",
 };
 
+interface SignatureSettingRow {
+  name: string;
+  desc?: string;
+  render: (setting: Setting) => void | (() => void);
+}
+
 export class PdfSignatureSettingTab extends PluginSettingTab {
   plugin: PdfDigitalSignaturePlugin;
   private certificateStatusEl?: HTMLElement;
@@ -64,179 +70,104 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
     this.plugin = plugin;
   }
 
-  display(): void {
-    this.cancelCertificateStatusRefresh();
-    const { containerEl } = this;
-    containerEl.empty();
-
-    new Setting(containerEl).setName(t("settings_title")).setHeading();
-    containerEl.createEl("p", {
-      cls: "setting-item-description",
-      text: t("settings_desc"),
-    });
-
-    // 1. Activar por defecto
-    new Setting(containerEl)
-      .setName(t("settings_default_toggle_name"))
-      .setDesc(t("settings_default_toggle_desc"))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.firmarCriptograficamente)
-          .onChange(async (val) => {
-            this.plugin.settings.firmarCriptograficamente = val;
-            await this.plugin.saveSettings();
-          })
-      );
-
-    renderSigningPolicySettings(containerEl, this.plugin);
-
-    // 2. Mostrar nombre del firmante
-    new Setting(containerEl)
-      .setName(t("settings_signer_toggle_name"))
-      .setDesc(t("settings_signer_toggle_desc"))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.mostrarNombreFirmante)
-          .onChange(async (val) => {
-            this.plugin.settings.mostrarNombreFirmante = val;
-            await this.plugin.saveSettings();
-          })
-      );
-
-    // 3. Nombre del firmante
-    new Setting(containerEl)
-      .setName(t("settings_signer_name_name"))
-      .setDesc(t("settings_signer_name_desc"))
-      .addText((text) =>
-        text
-          .setPlaceholder(t("default_signer_name"))
-          .setValue(this.plugin.settings.nombreFirmante)
-          .onChange(async (val) => {
-            this.plugin.settings.nombreFirmante = val.trim();
-            await this.plugin.saveSettings();
-          })
-      );
-
-    // 4. Mostrar número de página
-    new Setting(containerEl)
-      .setName(t("settings_page_number_name"))
-      .setDesc(t("settings_page_number_desc"))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.mostrarNumeroPagina)
-          .onChange(async (val) => {
-            this.plugin.settings.mostrarNumeroPagina = val;
-            await this.plugin.saveSettings();
-          })
-      );
-
-    // 5. Plazo máximo para completar y validar la exportación
-    new Setting(containerEl)
-      .setName(t("settings_delay_name"))
-      .setDesc(t("settings_delay_desc"))
-      .addSlider((slider) =>
-        slider
-          .setLimits(5, 60, 1)
-          .setValue(this.plugin.settings.exportTimeoutSeconds)
-          .onChange(async (val) => {
-            this.plugin.settings.exportTimeoutSeconds = val;
-            await this.plugin.saveSettings();
-          })
-      );
-
-    // 6. Abrir visor tras firmar
-    new Setting(containerEl)
-      .setName(t("settings_open_after_name"))
-      .setDesc(t("settings_open_after_desc"))
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.openAfterSigning)
-          .onChange(async (val) => {
-            this.plugin.settings.openAfterSigning = val;
-            await this.plugin.saveSettings();
-          })
-      );
-
-    new Setting(containerEl).setName(t("settings_cert_section_title")).setHeading();
-
-    // Estado del certificado con semáforo y días restantes
-    this.renderCertificateStatus(containerEl);
-
-    // 7. Ruta del certificado
-    new Setting(containerEl)
-      .setName(t("settings_cert_path_name"))
-      .setDesc(t("settings_cert_path_desc"))
-      .addText((text) =>
-        text
-          .setPlaceholder(t("cert_private_path"))
-          .setValue(this.plugin.settings.certPath)
-          .onChange(async (val) => {
-            this.plugin.settings.certPath = val.trim();
-            this.scheduleCertificateStatusRefresh(containerEl);
-            await this.plugin.saveSettings();
-          })
-      );
-
-    // 8. Contraseña del certificado
-    new Setting(containerEl)
-      .setName(t("settings_cert_password_name"))
-      .setDesc(t("settings_cert_password_desc"))
-      .addText((text) => {
-        text.inputEl.type = "password";
-        text
-          .setValue(this.plugin.settings.certPassword)
-          .onChange(async (val) => {
-            const saving = this.plugin.setCertificatePassword(val);
-            this.scheduleCertificateStatusRefresh(containerEl);
+  getSettingDefinitions(): SignatureSettingRow[] {
+    const plugin = this.plugin;
+    const row = (name: TranslationKey, desc: TranslationKey, render: SignatureSettingRow["render"]): SignatureSettingRow =>
+      ({ name: t(name), desc: t(desc), render });
+    const toggle = (key: "firmarCriptograficamente" | "mostrarNombreFirmante" | "mostrarNumeroPagina" | "openAfterSigning",
+      name: TranslationKey, desc: TranslationKey): SignatureSettingRow => row(name, desc, setting => {
+        setting.addToggle(control => control.setValue(plugin.settings[key]).onChange(async value => {
+          plugin.settings[key] = value;
+          await plugin.saveSettings();
+        }));
+      });
+    const refreshCertificate = () => {
+      const host = this.certificateStatusEl?.parentElement;
+      if (host) this.scheduleCertificateStatusRefresh(host);
+    };
+    const text = (key: "nombreFirmante" | "certPath" | "motivo" | "ubicacion", name: TranslationKey,
+      desc: TranslationKey, placeholder?: TranslationKey, trim = false): SignatureSettingRow => row(name, desc, setting => {
+        setting.addText(control => {
+          if (placeholder) control.setPlaceholder(t(placeholder));
+          control.setValue(plugin.settings[key]).onChange(async value => {
+            plugin.settings[key] = trim ? value.trim() : value;
+            if (key === "certPath") refreshCertificate();
+            await plugin.saveSettings();
+          });
+        });
+      });
+    return [
+      row("settings_title", "settings_desc", setting => { setting.setHeading(); }),
+      toggle("firmarCriptograficamente", "settings_default_toggle_name", "settings_default_toggle_desc"),
+      row("settings_signature_mode_name", "settings_signature_mode_desc", setting => { configureSigningMode(setting, plugin); }),
+      { name: t("settings_jurisdiction_name"), desc: getJurisdictionGuidance(plugin.settings.jurisdiction),
+        render: setting => { configureJurisdiction(setting, plugin); } },
+      { name: t("settings_signature_levels_desc"), render: setting => {
+        setting.settingEl.empty();
+        setting.settingEl.addClass("pdf-sig-settings-description");
+        setting.settingEl.createEl("p", { cls: "setting-item-description", text: t("settings_signature_levels_desc") });
+      } },
+      toggle("mostrarNombreFirmante", "settings_signer_toggle_name", "settings_signer_toggle_desc"),
+      text("nombreFirmante", "settings_signer_name_name", "settings_signer_name_desc", "default_signer_name", true),
+      toggle("mostrarNumeroPagina", "settings_page_number_name", "settings_page_number_desc"),
+      row("settings_delay_name", "settings_delay_desc", setting => {
+        setting.addSlider(control => control.setLimits(5, 60, 1).setValue(plugin.settings.exportTimeoutSeconds).onChange(async value => {
+          plugin.settings.exportTimeoutSeconds = value;
+          await plugin.saveSettings();
+        }));
+      }),
+      toggle("openAfterSigning", "settings_open_after_name", "settings_open_after_desc"),
+      { name: t("settings_cert_section_title"), render: setting => { setting.setHeading(); } },
+      { name: t("settings_cert_section_title"), desc: t("settings_cert_path_desc"), render: setting => {
+        const host = setting.settingEl;
+        host.empty(); host.addClass("pdf-sig-settings-description");
+        this.renderCertificateStatus(host);
+        return () => {
+          this.cancelCertificateStatusRefresh();
+          if (this.certificateStatusEl?.parentElement === host) this.certificateStatusEl = undefined;
+        };
+      } },
+      text("certPath", "settings_cert_path_name", "settings_cert_path_desc", "cert_private_path", true),
+      row("settings_cert_password_name", "settings_cert_password_desc", setting => {
+        // Keep this custom handler: declarative auto-binding would persist the secret in data.json.
+        setting.addText(control => {
+          control.inputEl.type = "password";
+          control.setValue(plugin.settings.certPassword).onChange(async value => {
+            const saving = plugin.setCertificatePassword(value);
+            refreshCertificate();
             await saving;
           });
-      });
-
-    // 9. Motivo de la firma
-    new Setting(containerEl)
-      .setName(t("settings_reason_name"))
-      .setDesc(t("settings_reason_desc"))
-      .addText((text) =>
-        text
-          .setValue(this.plugin.settings.motivo)
-          .onChange(async (val) => {
-            this.plugin.settings.motivo = val;
-            await this.plugin.saveSettings();
-          })
-      );
-
-    // 10. Ubicación
-    new Setting(containerEl)
-      .setName(t("settings_location_name"))
-      .setDesc(t("settings_location_desc"))
-      .addText((text) =>
-        text
-          .setValue(this.plugin.settings.ubicacion)
-          .onChange(async (val) => {
-            this.plugin.settings.ubicacion = val;
-            await this.plugin.saveSettings();
-          })
-      );
-
-    // 11. Botones de acción directa en JS puro
-    new Setting(containerEl)
-      .setName(t("settings_btn_generate"))
-      .setDesc(t("settings_btn_generate_desc"))
-      .addButton((btn) =>
-        btn.setButtonText(t("settings_btn_generate")).setCta().onClick(async () => {
-          btn.setDisabled(true);
+        });
+      }),
+      text("motivo", "settings_reason_name", "settings_reason_desc"),
+      text("ubicacion", "settings_location_name", "settings_location_desc"),
+      row("settings_btn_generate", "settings_btn_generate_desc", setting => {
+        setting.addButton(button => button.setButtonText(t("settings_btn_generate")).setCta().onClick(async () => {
+          button.setDisabled(true);
           try {
-            await this.plugin.generateCertificate();
-            new Notice(t("notice_cert_generated", { path: this.plugin.settings.certPath }));
-            this.display(); // actualizar estado del certificado en pantalla
-          } catch (err: unknown) {
-            const msg = err instanceof Error ? err.message : String(err);
-            new Notice(t("notice_cert_gen_error", { error: msg }));
-          } finally {
-            btn.setDisabled(false);
-          }
-        })
-      );
+            await plugin.generateCertificate();
+            new Notice(t("notice_cert_generated", { path: plugin.settings.certPath }));
+            if (typeof this.update === "function") this.update();
+            else this.renderLegacySettings();
+          } catch (error: unknown) {
+            new Notice(t("notice_cert_gen_error", { error: error instanceof Error ? error.message : String(error) }));
+          } finally { button.setDisabled(false); }
+        }));
+      }),
+    ];
+  }
+
+  // Obsidian <1.13 uses the same rows through the imperative fallback.
+  display(): void { this.renderLegacySettings(); }
+
+  private renderLegacySettings(): void {
+    this.cancelCertificateStatusRefresh();
+    this.containerEl.empty();
+    for (const definition of this.getSettingDefinitions()) {
+      const setting = new Setting(this.containerEl).setName(definition.name);
+      if (definition.desc) setting.setDesc(definition.desc);
+      definition.render(setting);
+    }
   }
 
   hide(): void {
@@ -333,38 +264,39 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
   }
 }
 
-export function renderSigningPolicySettings(containerEl: HTMLElement, plugin: PdfDigitalSignaturePlugin, compact = false): void {
-    new Setting(containerEl)
-      .setName(t("settings_signature_mode_name"))
-      .setDesc(t("settings_signature_mode_desc"))
-      .addDropdown((dropdown) => dropdown
-        .addOption("", t("signature_mode_choose"))
-        .addOption("approval", t("signature_mode_approval"))
-        .addOption("certify", t("signature_mode_certify"))
-        .setValue(plugin.settings.signatureModeChosen === false ? "" : plugin.settings.signatureMode)
-        .onChange(async (value) => {
-          plugin.settings.signatureModeChosen = value !== "";
-          if (value !== "") plugin.settings.signatureMode = normalizeSignatureMode(value);
-          await plugin.saveSettings();
-        }));
+function configureSigningMode(setting: Setting, plugin: PdfDigitalSignaturePlugin): void {
+  setting.setName(t("settings_signature_mode_name")).setDesc(t("settings_signature_mode_desc"))
+    .addDropdown(dropdown => dropdown
+      .addOption("", t("signature_mode_choose"))
+      .addOption("approval", t("signature_mode_approval"))
+      .addOption("certify", t("signature_mode_certify"))
+      .setValue(plugin.settings.signatureModeChosen === false ? "" : plugin.settings.signatureMode)
+      .onChange(async value => {
+        plugin.settings.signatureModeChosen = value !== "";
+        if (value !== "") plugin.settings.signatureMode = normalizeSignatureMode(value);
+        await plugin.saveSettings();
+      }));
+}
 
-    if (compact) return;
-
-    const jurisdictionSetting = new Setting(containerEl)
-      .setName(t("settings_jurisdiction_name"))
-      .setDesc(getJurisdictionGuidance(plugin.settings.jurisdiction));
-    jurisdictionSetting.addDropdown((dropdown) => dropdown
+function configureJurisdiction(setting: Setting, plugin: PdfDigitalSignaturePlugin): void {
+  setting.setName(t("settings_jurisdiction_name")).setDesc(getJurisdictionGuidance(plugin.settings.jurisdiction))
+    .addDropdown(dropdown => dropdown
       .addOption("international", t("jurisdiction_international"))
       .addOption("CL", t("jurisdiction_cl"))
       .addOption("EU", t("jurisdiction_eu"))
       .addOption("UK", t("jurisdiction_uk"))
       .addOption("US", t("jurisdiction_us"))
       .setValue(plugin.settings.jurisdiction)
-      .onChange(async (value) => {
+      .onChange(async value => {
         plugin.settings.jurisdiction = normalizeJurisdiction(value);
         await plugin.saveSettings();
-        jurisdictionSetting.setDesc(getJurisdictionGuidance(plugin.settings.jurisdiction));
+        setting.setDesc(getJurisdictionGuidance(plugin.settings.jurisdiction));
       }));
-    containerEl.createEl("p", { cls: "setting-item-description", text: t("settings_signature_levels_desc") });
+}
 
+export function renderSigningPolicySettings(containerEl: HTMLElement, plugin: PdfDigitalSignaturePlugin, compact = false): void {
+  configureSigningMode(new Setting(containerEl), plugin);
+  if (compact) return;
+  configureJurisdiction(new Setting(containerEl), plugin);
+  containerEl.createEl("p", { cls: "setting-item-description", text: t("settings_signature_levels_desc") });
 }

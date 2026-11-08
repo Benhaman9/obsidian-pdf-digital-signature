@@ -28,8 +28,10 @@ function restore(activity: Activity): void {
 export function keepExportActive(): () => void {
   let activity: Activity;
   try {
-    const electron = require("electron") as { remote?: { getCurrentWebContents?: () => ExportWebContents } };
-    const contents = electron.remote?.getCurrentWebContents?.();
+    // Optional host API, resolved through the renderer rather than a bundled library import.
+    const host = (typeof window === "undefined" ? {} : window) as unknown as { require?: (name: string) => unknown };
+    const electron = host.require?.("electron") as { remote?: { getCurrentWebContents?: () => ExportWebContents } } | undefined;
+    const contents = electron?.remote?.getCurrentWebContents?.();
     if (!contents || !Number.isInteger(contents.id) || typeof contents.getBackgroundThrottling !== "function" ||
         typeof contents.setBackgroundThrottling !== "function" || contents.isDestroyed?.()) return () => {};
     const existing = activities.get(contents.id);
