@@ -49994,6 +49994,7 @@ var en = {
   settings_open_after_name: "Open PDF after signing",
   settings_open_after_desc: "Automatically open the signed PDF in your default viewer.",
   settings_cert_section_title: "Digital Certificate (.pfx / .p12)",
+  settings_cert_status_title: "Certificate status",
   settings_cert_status_valid: "\u{1F7E2} Certificate within its validity period until {date} ({days} days remaining). Trust and revocation have not been checked.",
   settings_cert_status_expiring: "\u{1F7E1} Certificate status: Expiring soon! Only {days} days remaining (expires on {date}).",
   settings_cert_status_expired: "\u{1F534} Certificate expired on {date}. Configure a current certificate from your provider, or create a new self-signed certificate for personal use.",
@@ -50134,6 +50135,7 @@ var es = {
   settings_open_after_name: "Abrir PDF tras firmar",
   settings_open_after_desc: "Abre el archivo PDF en tu visor predeterminado una vez finalizada la firma criptogr\xE1fica.",
   settings_cert_section_title: "Certificado Digital (.pfx / .p12)",
+  settings_cert_status_title: "Estado del certificado",
   settings_cert_status_valid: "\u{1F7E2} Certificado dentro de su vigencia hasta el {date} (quedan {days} d\xEDas). No se han comprobado la confianza ni la revocaci\xF3n.",
   settings_cert_status_expiring: "\u{1F7E1} Estado del certificado: \xA1Por caducar! Quedan {days} d\xEDas (vence el {date}).",
   settings_cert_status_expired: "\u{1F534} Certificado caducado el {date}. Configura un certificado vigente de tu proveedor o crea uno autofirmado nuevo para uso personal.",
@@ -50274,6 +50276,7 @@ var pt = {
   settings_open_after_name: "Abrir PDF ap\xF3s assinar",
   settings_open_after_desc: "Abre o arquivo PDF no leitor padr\xE3o ap\xF3s a conclus\xE3o da assinatura.",
   settings_cert_section_title: "Certificado Digital (.pfx / .p12)",
+  settings_cert_status_title: "Estado do certificado",
   settings_cert_status_valid: "\u{1F7E2} Certificado dentro do prazo de validade at\xE9 {date} (restam {days} dias). Confian\xE7a e revoga\xE7\xE3o n\xE3o foram verificadas.",
   settings_cert_status_expiring: "\u{1F7E1} Status do certificado: Expirando em breve! Restam {days} dias (expira em {date}).",
   settings_cert_status_expired: "\u{1F534} Certificado expirado em {date}. Configure um certificado vigente do seu prestador ou crie um novo autoassinado para uso pessoal.",
@@ -50414,6 +50417,7 @@ var it = {
   settings_open_after_name: "Apri PDF dopo la firma",
   settings_open_after_desc: "Apre automaticamente il file PDF nel visualizzatore predefinito dopo la firma.",
   settings_cert_section_title: "Certificato Digitale (.pfx / .p12)",
+  settings_cert_status_title: "Stato del certificato",
   settings_cert_status_valid: "\u{1F7E2} Certificato nel periodo di validit\xE0 fino al {date} ({days} giorni rimanenti). Fiducia e revoca non sono state verificate.",
   settings_cert_status_expiring: "\u{1F7E1} Stato certificato: In scadenza! Mancano {days} giorni (scade il {date}).",
   settings_cert_status_expired: "\u{1F534} Certificato scaduto il {date}. Configura un certificato valido del tuo prestatore o creane uno autofirmato per uso personale.",
@@ -50536,6 +50540,7 @@ var fr = {
   settings_open_after_name: "Ouvrir le PDF apr\xE8s la signature",
   settings_open_after_desc: "Ouvrir automatiquement le PDF sign\xE9 dans le lecteur par d\xE9faut.",
   settings_cert_section_title: "Certificat num\xE9rique (.pfx / .p12)",
+  settings_cert_status_title: "\xC9tat du certificat",
   settings_cert_status_valid: "\u{1F7E2} Certificat dans sa p\xE9riode de validit\xE9 jusqu\u2019au {date} ({days} jours restants). La confiance et la r\xE9vocation n\u2019ont pas \xE9t\xE9 v\xE9rifi\xE9es.",
   settings_cert_status_expiring: "\u{1F7E1} \xC9tat du certificat : expiration prochaine ! Il reste {days} jours (expiration le {date}).",
   settings_cert_status_expired: "\u{1F534} Certificat expir\xE9 le {date}. Configurez un certificat valide de votre prestataire ou cr\xE9ez un nouveau certificat autosign\xE9 pour un usage personnel.",
@@ -51278,7 +51283,7 @@ var PdfSignatureSettingTab = class extends import_obsidian2.PluginSettingTab {
       { name: t("settings_cert_section_title"), render: (setting) => {
         setting.setHeading();
       } },
-      { name: t("settings_cert_section_title"), desc: t("settings_cert_path_desc"), render: (setting) => {
+      { name: t("settings_cert_status_title"), desc: t("settings_cert_path_desc"), render: (setting) => {
         const host = setting.settingEl;
         host.empty();
         host.addClass("pdf-sig-settings-description");

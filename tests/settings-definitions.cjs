@@ -51,3 +51,9 @@ test('the older Obsidian display fallback renders the same definitions', () => {
   } }];
   tab.display(); assert.equal(emptied, true); assert.equal(rendered, true);
 });
+
+test('searchable settings have unique names, including the certificate heading and status', () => {
+  const { tab } = fixture();
+  const names = tab.getSettingDefinitions().map(row => row.name);
+  assert.equal(new Set(names).size, names.length);
+});

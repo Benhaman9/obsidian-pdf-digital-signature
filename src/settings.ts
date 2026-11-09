@@ -118,7 +118,7 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
       }),
       toggle("openAfterSigning", "settings_open_after_name", "settings_open_after_desc"),
       { name: t("settings_cert_section_title"), render: setting => { setting.setHeading(); } },
-      { name: t("settings_cert_section_title"), desc: t("settings_cert_path_desc"), render: setting => {
+      { name: t("settings_cert_status_title"), desc: t("settings_cert_path_desc"), render: setting => {
         const host = setting.settingEl;
         host.empty(); host.addClass("pdf-sig-settings-description");
         this.renderCertificateStatus(host);

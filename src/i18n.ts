@@ -125,6 +125,7 @@ export type TranslationKey =
   | "settings_open_after_name"
   | "settings_open_after_desc"
   | "settings_cert_section_title"
+  | "settings_cert_status_title"
   | "settings_cert_status_valid"
   | "settings_cert_status_expiring"
   | "settings_cert_status_expired"
@@ -266,6 +267,7 @@ const en: Record<TranslationKey, string> = {
   settings_open_after_name: "Open PDF after signing",
   settings_open_after_desc: "Automatically open the signed PDF in your default viewer.",
   settings_cert_section_title: "Digital Certificate (.pfx / .p12)",
+  settings_cert_status_title: "Certificate status",
   settings_cert_status_valid: "🟢 Certificate within its validity period until {date} ({days} days remaining). Trust and revocation have not been checked.",
   settings_cert_status_expiring: "🟡 Certificate status: Expiring soon! Only {days} days remaining (expires on {date}).",
   settings_cert_status_expired: "🔴 Certificate expired on {date}. Configure a current certificate from your provider, or create a new self-signed certificate for personal use.",
@@ -408,6 +410,7 @@ const es: Record<TranslationKey, string> = {
   settings_open_after_name: "Abrir PDF tras firmar",
   settings_open_after_desc: "Abre el archivo PDF en tu visor predeterminado una vez finalizada la firma criptográfica.",
   settings_cert_section_title: "Certificado Digital (.pfx / .p12)",
+  settings_cert_status_title: "Estado del certificado",
   settings_cert_status_valid: "🟢 Certificado dentro de su vigencia hasta el {date} (quedan {days} días). No se han comprobado la confianza ni la revocación.",
   settings_cert_status_expiring: "🟡 Estado del certificado: ¡Por caducar! Quedan {days} días (vence el {date}).",
   settings_cert_status_expired: "🔴 Certificado caducado el {date}. Configura un certificado vigente de tu proveedor o crea uno autofirmado nuevo para uso personal.",
@@ -550,6 +553,7 @@ const pt: Record<TranslationKey, string> = {
   settings_open_after_name: "Abrir PDF após assinar",
   settings_open_after_desc: "Abre o arquivo PDF no leitor padrão após a conclusão da assinatura.",
   settings_cert_section_title: "Certificado Digital (.pfx / .p12)",
+  settings_cert_status_title: "Estado do certificado",
   settings_cert_status_valid: "🟢 Certificado dentro do prazo de validade até {date} (restam {days} dias). Confiança e revogação não foram verificadas.",
   settings_cert_status_expiring: "🟡 Status do certificado: Expirando em breve! Restam {days} dias (expira em {date}).",
   settings_cert_status_expired: "🔴 Certificado expirado em {date}. Configure um certificado vigente do seu prestador ou crie um novo autoassinado para uso pessoal.",
@@ -692,6 +696,7 @@ const it: Record<TranslationKey, string> = {
   settings_open_after_name: "Apri PDF dopo la firma",
   settings_open_after_desc: "Apre automaticamente il file PDF nel visualizzatore predefinito dopo la firma.",
   settings_cert_section_title: "Certificato Digitale (.pfx / .p12)",
+  settings_cert_status_title: "Stato del certificato",
   settings_cert_status_valid: "🟢 Certificato nel periodo di validità fino al {date} ({days} giorni rimanenti). Fiducia e revoca non sono state verificate.",
   settings_cert_status_expiring: "🟡 Stato certificato: In scadenza! Mancano {days} giorni (scade il {date}).",
   settings_cert_status_expired: "🔴 Certificato scaduto il {date}. Configura un certificato valido del tuo prestatore o creane uno autofirmato per uso personale.",
@@ -815,6 +820,7 @@ const fr: Record<TranslationKey, string> = {
   settings_open_after_name: "Ouvrir le PDF après la signature",
   settings_open_after_desc: "Ouvrir automatiquement le PDF signé dans le lecteur par défaut.",
   settings_cert_section_title: "Certificat numérique (.pfx / .p12)",
+  settings_cert_status_title: "État du certificat",
   settings_cert_status_valid: "🟢 Certificat dans sa période de validité jusqu’au {date} ({days} jours restants). La confiance et la révocation n’ont pas été vérifiées.",
   settings_cert_status_expiring: "🟡 État du certificat : expiration prochaine ! Il reste {days} jours (expiration le {date}).",
   settings_cert_status_expired: "🔴 Certificat expiré le {date}. Configurez un certificat valide de votre prestataire ou créez un nouveau certificat autosigné pour un usage personnel.",
