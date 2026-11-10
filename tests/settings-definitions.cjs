@@ -43,13 +43,18 @@ test('the searchable password setting uses SecretStorage handler rather than aut
   await onChange('new-private-value');
   assert.deepEqual(calls, [['secret', 'new-private-value']]);
 });
-test('the older Obsidian display fallback renders the same definitions', () => {
-  const { tab } = fixture(); let rendered = false, emptied = false;
-  tab.containerEl = { empty() { emptied = true; } };
-  tab.getSettingDefinitions = () => [{ name: 'Compatible row', desc: 'Legacy description', render(setting) {
-    assert.equal(setting.name, 'Compatible row'); assert.equal(setting.desc, 'Legacy description'); rendered = true;
-  } }];
-  tab.display(); assert.equal(emptied, true); assert.equal(rendered, true);
+test('certificate generation refreshes declarative settings with the supported update API', async () => {
+  const { tab, plugin, t } = fixture();
+  let click, generated = 0, updated = 0;
+  plugin.generateCertificate = async () => { generated++; };
+  tab.update = () => { updated++; };
+  const button = { setButtonText() { return this; }, setCta() { return this; },
+    setDisabled() { return this; }, onClick(callback) { click = callback; return this; } };
+  tab.getSettingDefinitions().find(row => row.name === t('settings_btn_generate'))
+    .render({ addButton(callback) { callback(button); return this; } });
+  await click();
+  assert.equal(generated, 1); assert.equal(updated, 1);
+  assert.equal(Object.hasOwn(Object.getPrototypeOf(tab), 'display'), false);
 });
 
 test('searchable settings have unique names, including the certificate heading and status', () => {

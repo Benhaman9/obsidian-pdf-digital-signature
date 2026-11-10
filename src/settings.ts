@@ -147,27 +147,13 @@ export class PdfSignatureSettingTab extends PluginSettingTab {
           try {
             await plugin.generateCertificate();
             new Notice(t("notice_cert_generated", { path: plugin.settings.certPath }));
-            if (typeof this.update === "function") this.update();
-            else this.renderLegacySettings();
+            this.update();
           } catch (error: unknown) {
             new Notice(t("notice_cert_gen_error", { error: error instanceof Error ? error.message : String(error) }));
           } finally { button.setDisabled(false); }
         }));
       }),
     ];
-  }
-
-  // Obsidian <1.13 uses the same rows through the imperative fallback.
-  display(): void { this.renderLegacySettings(); }
-
-  private renderLegacySettings(): void {
-    this.cancelCertificateStatusRefresh();
-    this.containerEl.empty();
-    for (const definition of this.getSettingDefinitions()) {
-      const setting = new Setting(this.containerEl).setName(definition.name);
-      if (definition.desc) setting.setDesc(definition.desc);
-      definition.render(setting);
-    }
   }
 
   hide(): void {

@@ -1,5 +1,11 @@
 # PDF Digital Signature for Obsidian
 
+## Changes in 1.2.5
+
+Requires Obsidian 1.13.0 or newer, matching the declarative settings refresh API used by this plugin. An independent TypeScript-symbol compatibility check now runs before every build and release; feature guards and ESLint suppression comments cannot bypass it. Historical releases retain their original minimum versions in versions.json.
+
+Third-party copyright and license notices are included in the distributed main.js and in [THIRD-PARTY-NOTICES.txt](THIRD-PARTY-NOTICES.txt). node-forge is used under its BSD-3-Clause option. Bundled libraries include pdf-lib, its font/image/compression dependencies, tslib, node-forge, and the @signpdf packages.
+
 ## Changes in 1.2.0
 
 On a new installation, explicitly choose Integrity signature or Certify before signing; the choice is remembered. Existing saved choices are preserved. Certify requests no later changes under DocMDP P=1; compatible readers evaluate that policy, but software can still edit a PDF.
@@ -127,7 +133,7 @@ In Obsidian's **Settings** ➔ **PDF Digital Signature**:
 | **Reason / Location** | Signature metadata displayed in Adobe Acrobat. | Generic placeholders |
 
 ### Using an Official Certificate
-If you own an accredited digital signature (such as a commercial X.509 certificate in `.p12` or `.pfx` format), simply place it in your vault or enter its absolute path and password in the settings.
+If you own an accredited digital signature (such as a commercial X.509 certificate in `.p12` or `.pfx` format), keep it in a protected location outside your vault and enter its absolute path and password in the settings.
 
 ---
 
@@ -139,7 +145,7 @@ Made with ❤️ by [Benjamín Alcalde G.](https://github.com/Benhaman9)
 
 ## Certificate and signature limitations
 
-A random password is generated on first load. You can change it before creating a certificate; a blank password is refused for new certificates. Obsidian 1.11.5 or newer is required. The password is kept in the vault's local SecretStorage instead of the plugin's `data.json`; existing passwords are migrated when the plugin loads. Configure it separately on each device. Older vault backups or sync history may still contain the former plaintext value, so review those copies and rotate the certificate if it was exposed. Creating a self-signed certificate never overwrites the configured certificate. Expired or not-yet-valid certificates cannot be used to sign. Existing signed PDFs are rejected because this plugin rewrites the PDF rather than adding an incremental signature. The signature uses `adbe.pkcs7.detached`; full PAdES profile conformance, trusted timestamps and long-term validation are not claimed.
+A random password is generated on first load. You can change it before creating a certificate; a blank password is refused for new certificates. Obsidian 1.13.0 or newer is required. The password is kept in the vault's local SecretStorage instead of the plugin's `data.json`; existing passwords are migrated when the plugin loads. Configure it separately on each device. Older vault backups or sync history may still contain the former plaintext value, so review those copies and rotate the certificate if it was exposed. Creating a self-signed certificate never overwrites the configured certificate. Expired or not-yet-valid certificates cannot be used to sign. Existing signed PDFs are rejected because this plugin rewrites the PDF rather than adding an incremental signature. The signature uses `adbe.pkcs7.detached`; full PAdES profile conformance, trusted timestamps and long-term validation are not claimed.
 
 Malformed PDF objects are rejected rather than recovered during signing. XRef
 streams are checked before allocating entries: safe counts and byte widths,
@@ -159,8 +165,8 @@ This desktop plugin uses Node filesystem APIs to sign the export destination sel
 
 ## Build and release checks
 
-Use Node 24, then run `npm ci`, `npm run lint`, `npm run typecheck`, `npm run build`, and `npm test`. The official Obsidian ESLint configuration is checked with zero warnings. The build rejects an installed `node-forge` version that differs from the pinned dependency, so stale dependencies cannot silently enter a release.
+Use Node 24, then run `npm ci`, `npm run lint`, `npm run typecheck`, `npm run check:api`, `npm run build`, and `npm test`. The official Obsidian ESLint configuration is checked with zero warnings. The build rejects an installed `node-forge` version that differs from the pinned dependency, so stale dependencies cannot silently enter a release.
 
-Settings use searchable definitions on Obsidian 1.13.0 and later, with the same rows rendered through the legacy fallback on older supported versions. The certificate-password row retains its SecretStorage handler rather than automatic JSON persistence.
+Settings use searchable definitions on the minimum supported version, Obsidian 1.13.0. The certificate-password row retains its SecretStorage handler rather than automatic JSON persistence.
 
 To release, push the version commit and matching tag, create a draft GitHub release, and dispatch the **Build, attest, and publish release** workflow with that tag. The workflow checks the bundle against the committed source, runs the checks, uploads the three assets, creates provenance attestations, and publishes the draft only after those attestations exist. Disable its `publish` input to inspect the attested draft first. Verify a downloaded asset with `gh attestation verify main.js --repo Benhaman9/obsidian-pdf-digital-signature`.

@@ -7,6 +7,15 @@ const os = require('node:os');
 const crypto = require('node:crypto');
 const { PDFDocument } = require('pdf-lib');
 
+test('the installable bundle carries full third-party copyright and license notices', () => {
+  const bundle = fs.readFileSync(path.join(__dirname, '../main.js'), 'utf8');
+  const notices = fs.readFileSync(path.join(__dirname, '../THIRD-PARTY-NOTICES.txt'), 'utf8');
+  assert.ok(bundle.includes(notices.replaceAll('*/', '* /')));
+  for (const text of ['pdf-lib@', 'node-forge@', '@signpdf/signpdf@', 'tslib@', 'Vitaly Puzrin', 'Jean-loup Gailly']) {
+    assert.ok(notices.includes(text), text);
+  }
+});
+
 test('production bundle loads, migrates the password, and uses French defaults', async () => {
   const module = { exports: {} };
   const mock = {

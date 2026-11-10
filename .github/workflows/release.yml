@@ -50,10 +50,12 @@ jobs:
           test "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = true
       - run: npm ci
       - run: npm run lint
+      - run: npm run check:api
+      - run: npm audit --omit=dev --audit-level=low
       - run: npm run typecheck
       - run: npm run build
       - name: Check reproducible bundle
-        run: git diff --exit-code -- main.js
+        run: git diff --exit-code -- main.js THIRD-PARTY-NOTICES.txt
       - run: npm test
       - name: Upload the verified draft assets
         run: gh release upload "$RELEASE_TAG" main.js manifest.json styles.css --clobber
